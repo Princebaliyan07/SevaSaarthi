@@ -1,0 +1,15 @@
+# Root level
+node_modules/
+.DS_Store
+*.log
+
+# Server
+server/.env
+server/uploads/
+server/node_modules/
+
+# Client
+client/.env
+client/.env.local
+client/node_modules/
+client/dist/

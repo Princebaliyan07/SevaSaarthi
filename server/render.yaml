@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: sevasaarthi-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: NASA_EONET_API_URL
+        value: https://eonet.gsfc.nasa.gov/api/v3/events
+      - key: NDMA_SACHET_URL
+        value: https://sachet.ndma.gov.in/cap_feed/rss
+      - key: SYNC_INTERVAL_MINUTES
+        value: 10
+      - key: ACCESS_TOKEN_EXPIRY
+        value: 7d

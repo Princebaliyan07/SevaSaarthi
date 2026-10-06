@@ -1,0 +1,10 @@
+{
+  "name": "SevaSaarthi",
+  "short_name": "SevaSaarthi",
+  "description": "Healthcare, disaster response, Mela safety and volunteers in one platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F7F6",
+  "theme_color": "#0F766E",
+  "icons": []
+}
