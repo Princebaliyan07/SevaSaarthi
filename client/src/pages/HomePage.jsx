@@ -4,6 +4,7 @@ import LiveSituationBoard from '../components/common/LiveSituationBoard';
 import DisasterProtectionVideos from '../components/DisasterProtectionVideos';
 import { downloadBilingualGuide } from '../utils/guideGenerator';
 import { useLanguage } from '../context/LanguageContext';
+import { DisasterSchemesSection } from '../components/common/DisasterSchemesSection';
 
 const QUICK_ACTIONS = [
   { key: 'medical', label: 'Medical help', labelHi: 'चिकित्सा सहायता', icon: '🩺', to: '/healthcare', color: 'teal' },
@@ -14,12 +15,8 @@ const QUICK_ACTIONS = [
   { key: 'missing', label: 'Missing person', labelHi: 'लापता व्यक्ति', icon: '🔍', to: '/mela', color: 'indigo' },
 ];
 
-const METRICS = [
-  { label: 'Active alerts', labelHi: 'सक्रिय अलर्ट', count: '7', change: '+2 new', color: 'from-amber-500 to-orange-500' },
-  { label: 'Incidents today', labelHi: 'आज की घटनाएं', count: '24', change: '85% resolved', color: 'from-rose-500 to-red-600' },
-  { label: 'Relief centres', labelHi: 'राहत केंद्र', count: '312', change: 'Online', color: 'from-teal-500 to-emerald-600' },
-  { label: 'Hospitals nearby', labelHi: 'आसपास के अस्पताल', count: '18', change: '24x7 Ready', color: 'from-indigo-500 to-blue-600' },
-];
+
+
 
 const LIVE_ALERTS = [
   {
@@ -185,33 +182,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4 Modern Metric Counter Cards with Gradient Accents */}
-      <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {METRICS.map((m, i) => (
-          <div
-            key={i}
-            className="glass-card relative overflow-hidden p-5 flex flex-col justify-between"
-          >
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${m.color}`} />
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {lang === 'hi' ? m.labelHi : m.label}
-                </span>
-                <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 dark:bg-teal-400/10 px-2 py-0.5 rounded-full">
-                  {m.change}
-                </span>
-              </div>
-              <div className="mt-3 flex items-baseline justify-between">
-                <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                  {m.count}
-                </span>
-                <Badge type="demo" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
+      {/* Government Schemes for Disaster Victims */}
+      <DisasterSchemesSection lang={lang} />
 
       {/* Live Alerts Across India List */}
       {/* <section className="glass-card p-6 sm:p-8 space-y-6">
