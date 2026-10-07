@@ -397,3 +397,176 @@ export function downloadBilingualGuide(guideKey) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+
+/**
+ * Generate a full-page print-ready HTML directory of ALL India helplines
+ */
+export function generateAllHelplinesHtml() {
+  const cats = [
+    {
+      title: 'Core Emergency Services / मुख्य आपातकालीन सेवाएं', icon: '🚨',
+      helplines: [
+        { name: 'National Unified Emergency', nameHi: 'राष्ट्रीय आपातकालीन सेवा', num: '112', note: '24×7 Toll Free' },
+        { name: 'Ambulance Emergency', nameHi: 'एम्बुलेंस सेवा', num: '108', note: 'Medical' },
+        { name: 'Fire & Rescue Service', nameHi: 'अग्निशमन एवं बचाव', num: '101', note: 'Fire' },
+        { name: 'Police Control Room', nameHi: 'पुलिस कंट्रोल रूम', num: '100', note: 'Police' },
+      ],
+    },
+    {
+      title: 'Disaster & Relief / आपदा एवं राहत', icon: '🌊',
+      helplines: [
+        { name: 'NDMA Disaster Helpline', nameHi: 'राष्ट्रीय आपदा प्रबंधन', num: '1078', note: 'Disaster' },
+        { name: 'State Disaster Helpline', nameHi: 'राज्य आपदा राहत', num: '1070', note: 'SDMA' },
+        { name: 'Flood Control Room', nameHi: 'बाढ़ नियंत्रण कक्ष', num: '1800-180-5521', note: 'Flood' },
+        { name: 'IMD Weather Warning', nameHi: 'मौसम विभाग', num: '1800-180-1717', note: 'Weather' },
+      ],
+    },
+    {
+      title: 'Women Safety & Protection / महिला सुरक्षा एवं संरक्षण', icon: '👩',
+      helplines: [
+        { name: 'Women Helpline (National)', nameHi: 'महिला राष्ट्रीय हेल्पलाइन', num: '1091', note: 'Safety' },
+        { name: 'Domestic Violence Helpline', nameHi: 'घरेलू हिंसा हेल्पलाइन', num: '181', note: 'NCW' },
+        { name: 'One Stop Centre (Sakhi)', nameHi: 'सखी वन स्टॉप सेंटर', num: '7827170170', note: 'WCD' },
+        { name: 'Anti-Stalking & Eve Teasing', nameHi: 'पीड़ित महिला हेल्पलाइन', num: '1096', note: 'Safety' },
+      ],
+    },
+    {
+      title: 'Child Safety & Labour / बाल सुरक्षा एवं बाल श्रम', icon: '👶',
+      helplines: [
+        { name: 'Childline India (24×7)', nameHi: 'चाइल्डलाइन इंडिया', num: '1098', note: 'Children' },
+        { name: 'Child Labour Helpline', nameHi: 'बाल श्रम हेल्पलाइन', num: '1800-425-8888', note: 'Labour' },
+        { name: 'Missing Child Helpline', nameHi: 'लापता बच्चा हेल्पलाइन', num: '1094', note: 'Missing' },
+        { name: 'POCSO / Child Abuse Report', nameHi: 'POCSO बाल यौन शोषण', num: '1098', note: 'NCPCR' },
+      ],
+    },
+    {
+      title: 'Health & Mental Wellness / स्वास्थ्य एवं मानसिक स्वास्थ्य', icon: '🏥',
+      helplines: [
+        { name: 'Health Helpline (NHM)', nameHi: 'स्वास्थ्य हेल्पलाइन', num: '104', note: 'Medical' },
+        { name: 'iCall Mental Health', nameHi: 'मानसिक स्वास्थ्य सहायता', num: '9152987821', note: 'Mental' },
+        { name: 'Vandrevala Foundation', nameHi: 'मनोवैज्ञानिक सहायता', num: '1860-2662-345', note: '24×7' },
+        { name: 'COVID-19 Helpline', nameHi: 'कोविड-19 हेल्पलाइन', num: '1075', note: 'MOHFW' },
+      ],
+    },
+    {
+      title: 'Senior Citizens & Disability / वरिष्ठ नागरिक एवं दिव्यांग', icon: '🧓',
+      helplines: [
+        { name: 'Elder Line (Senior Citizens)', nameHi: 'वरिष्ठ नागरिक हेल्पलाइन', num: '14567', note: 'Elders' },
+        { name: 'Disability Helpline (NCPEDP)', nameHi: 'दिव्यांग हेल्पलाइन', num: '011-45121609', note: 'PwD' },
+      ],
+    },
+    {
+      title: 'Citizen Services & Anti-Corruption / नागरिक सेवाएं', icon: '🏛️',
+      helplines: [
+        { name: 'PM Helpline (PMO India)', nameHi: 'प्रधानमंत्री हेल्पलाइन', num: '1800-11-7000', note: 'PMO' },
+        { name: 'Anti-Corruption (CBI)', nameHi: 'भ्रष्टाचार विरोध CBI', num: '1800-11-0180', note: 'CBI' },
+        { name: 'Consumer Helpline', nameHi: 'उपभोक्ता हेल्पलाइन', num: '1800-11-4000', note: 'NCDRC' },
+      ],
+    },
+    {
+      title: 'Road, Rail & Cyber Safety / सड़क, रेल एवं साइबर', icon: '🚔',
+      helplines: [
+        { name: 'Railway Emergency (RPF)', nameHi: 'रेलवे सुरक्षा बल', num: '182', note: 'Rail' },
+        { name: 'Road Accident Emergency', nameHi: 'सड़क दुर्घटना सहायता', num: '1073', note: 'Road' },
+        { name: 'Cyber Crime Helpline', nameHi: 'साइबर क्राइम हेल्पलाइन', num: '1930', note: 'Cyber' },
+        { name: 'Drug De-addiction', nameHi: 'नशा मुक्ति हेल्पलाइन', num: '1800-11-0031', note: 'NCORD' },
+      ],
+    },
+  ];
+
+  const catRows = cats
+    .map(
+      (cat) => `
+    <div class="cat-block">
+      <div class="cat-title">${cat.icon} ${cat.title}</div>
+      <table class="h-table">
+        <thead><tr><th>Name / नाम</th><th>Number / नंबर</th><th>Category</th></tr></thead>
+        <tbody>
+          ${cat.helplines
+            .map(
+              (h) => `<tr>
+            <td><b>${h.name}</b><br><span class="hi">${h.nameHi}</span></td>
+            <td class="num">${h.num}</td>
+            <td><span class="tag">${h.note}</span></td>
+          </tr>`
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>`
+    )
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>All India Emergency Helpline Numbers | SevaSaarthi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter','Noto Sans Devanagari',sans-serif; background: #f8fafc; color: #1e293b; padding: 24px 16px; font-size: 14px; }
+    .wrap { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); border: 1px solid #e2e8f0; overflow: hidden; }
+    .top-bar { background: linear-gradient(135deg,#dc2626,#b91c1c); color: #fff; padding: 28px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .top-bar h1 { font-size: 22px; font-weight: 800; }
+    .top-bar p { font-size: 12px; opacity: .85; margin-top: 4px; }
+    .btn-print { background: #fff; color: #dc2626; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-print:hover { background: #fee2e2; }
+    .body-pad { padding: 28px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .cat-block { break-inside: avoid; }
+    .cat-title { font-size: 13px; font-weight: 800; background: #f1f5f9; border-left: 4px solid #dc2626; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; color: #0f172a; }
+    .h-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .h-table th { background: #fef2f2; padding: 6px 10px; text-align: left; color: #991b1b; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+    .h-table td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .h-table tr:last-child td { border-bottom: none; }
+    .num { font-size: 15px; font-weight: 800; color: #dc2626; white-space: nowrap; }
+    .hi { color: #64748b; font-size: 11px; }
+    .tag { background: #fee2e2; color: #991b1b; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; }
+    .footer { padding: 16px 32px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .wrap { box-shadow: none; border: none; border-radius: 0; }
+      .btn-print { display: none !important; }
+      .body-pad { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) { .body-pad { grid-template-columns: 1fr; } .top-bar { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-bar">
+      <div>
+        <h1>📞 All India Emergency Helpline Numbers</h1>
+        <p>भारत की सम्पूर्ण हेल्पलाइन निर्देशिका · SevaSaarthi Official · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      </div>
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
+    <div class="body-pad">
+      ${catRows}
+    </div>
+    <div class="footer">
+      <span>SevaSaarthi Civic Emergency Platform · Verified Government Directory</span>
+      <span>Download date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Download all helplines as a print-ready HTML (saveable as PDF)
+ */
+export function downloadAllHelplinesPdf() {
+  const html = generateAllHelplinesHtml();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'SevaSaarthi_All_India_Helpline_Numbers.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
