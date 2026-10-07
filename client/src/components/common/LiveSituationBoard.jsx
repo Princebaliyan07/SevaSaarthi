@@ -462,37 +462,40 @@ export default function LiveSituationBoard({ className = '' }) {
             </div>
           ) : null}
 
-          {/* Quick Incidents Feed */}
-          <div className="space-y-2">
-            <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {lang === 'hi' ? 'सक्रिय चेतावनी एवं भूकंप सूची' : `Active Alerts Feed (${incidents.length + earthquakes.length})`}
-            </span>
-            <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
-              {incidents.map((inc) => (
-                <div
-                  key={inc.incidentId}
-                  onClick={() => handleSelectIncident(inc)}
-                  className={`cursor-pointer rounded-xl border p-2.5 transition-all text-xs flex items-center justify-between ${
-                    selectedIncident?.incidentId === inc.incidentId
-                      ? 'border-brand bg-teal-500/10 shadow-xs dark:bg-teal-500/15 dark:border-teal-400'
-                      : 'border-slate-200/80 bg-white/50 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${
-                        inc.severity === 'critical' ? 'bg-rose-500 animate-ping' : 'bg-emerald-500'
-                      }`}
-                    />
-                    <span className="font-bold text-slate-900 dark:text-slate-100 line-clamp-1 max-w-[200px]">
+          {/* ALERT LIST matching User Mockup Image */}
+          <div className="space-y-2.5">
+            <div className="rounded-xl bg-blue-600 dark:bg-blue-700 py-2.5 px-4 text-center font-black text-white text-base tracking-widest shadow-md">
+              ALERT LIST
+            </div>
+            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-blue-600">
+              {incidents.map((inc) => {
+                const isSelected = selectedIncident?.incidentId === inc.incidentId;
+                const isOrange = inc.colorType === 'orange' || inc.severity === 'high';
+                const isRed = inc.severity === 'critical';
+
+                const cardBg = isRed
+                  ? 'bg-rose-600 text-white border-rose-500'
+                  : isOrange
+                  ? 'bg-amber-500 text-white border-amber-400'
+                  : 'bg-yellow-400 text-slate-950 border-yellow-300';
+
+                return (
+                  <div
+                    key={inc.incidentId}
+                    onClick={() => handleSelectIncident(inc)}
+                    className={`cursor-pointer rounded-2xl p-3 text-center transition-all shadow-sm border ${cardBg} ${
+                      isSelected ? 'ring-4 ring-blue-600 scale-[1.02] shadow-lg font-black' : 'hover:scale-[1.01]'
+                    }`}
+                  >
+                    <h4 className="text-sm font-black leading-tight">
                       {inc.title}
-                    </span>
+                    </h4>
+                    <p className={`mt-0.5 text-xs font-semibold ${isRed || isOrange ? 'text-white/95' : 'text-slate-900'}`}>
+                      {inc.subLocation || inc.locationName || inc.district || inc.state}
+                    </p>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 font-mono">
-                    {inc.state}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
