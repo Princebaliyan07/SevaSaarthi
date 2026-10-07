@@ -407,36 +407,97 @@ export default function HomePage() {
 </div>
 
           {/* Important Helplines */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>📞</span>
-              <span>{t('home.importantHelplines')}</span>
-            </h3>
-            <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-5 py-1 backdrop-blur-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900/80">
-              {HELPLINES.map((h, i) => (
-                <div key={i} className="flex items-center justify-between py-3 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                      {lang === 'hi' ? h.nameHi : h.name}
-                    </span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                      {h.tag}
-                    </span>
-                  </div>
-                  <a
-                    href={`tel:${h.num}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-1 font-mono text-sm font-black text-rose-600 transition-colors hover:bg-rose-500 hover:text-white dark:bg-rose-500/20 dark:text-rose-400"
-                  >
-                    <span>📞</span>
-                    <span>{h.num}</span>
-                  </a>
-                </div>
-              ))}
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-              {t('home.verifyNumbersNote')}
-            </p>
-          </div>
+          {/* Important helplines — paste this in place of your old <div className="space-y-4"> block.
+    Uses only your existing variables: HELPLINES, lang, t. No new imports. */}
+<div className="space-y-5">
+  {/* Heading */}
+  <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 text-lg text-white shadow-lg shadow-rose-500/30">
+        <span aria-hidden="true">📞</span>
+      </div>
+      <div>
+        <h3 className="text-sm font-bold leading-tight text-slate-900 dark:text-white">
+          {t('home.importantHelplines')}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {lang === 'hi' ? 'एक टैप में कॉल करें' : 'Tap a number to call'}
+        </p>
+      </div>
+    </div>
+    <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+      {HELPLINES.length}
+    </span>
+  </div>
+
+  {/* Helpline cards */}
+  <div className="space-y-3">
+    {HELPLINES.map((h, i) => (
+      <div
+        key={h.num || i}
+        className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 p-3.5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-400/50 hover:shadow-lg hover:shadow-rose-500/10 motion-reduce:transition-none motion-reduce:hover:translate-y-0 dark:border-slate-800 dark:bg-slate-900/60"
+      >
+        {/* Accent bar slides in on hover */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-1 origin-top scale-y-0 bg-gradient-to-b from-rose-500 to-orange-400 transition-transform duration-300 group-hover:scale-y-100 motion-reduce:transition-none"
+        />
+
+        {/* Phone tile */}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 ring-1 ring-rose-100 transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none dark:bg-rose-500/10 dark:ring-rose-500/20">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+          </svg>
+        </div>
+
+        {/* Text */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
+            {lang === 'hi' ? h.nameHi : h.name}
+          </p>
+          {h.tag && (
+            <span className="mt-1 inline-block rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              {h.tag}
+            </span>
+          )}
+        </div>
+
+        {/* Call button */}
+        <a
+          href={`tel:${String(h.num).replace(/\s/g, '')}`}
+          aria-label={`${lang === 'hi' ? 'कॉल करें' : 'Call'} ${lang === 'hi' ? h.nameHi : h.name} ${h.num}`}
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-500/10 px-3.5 py-2 font-mono text-sm font-black text-rose-600 transition-all duration-200 hover:bg-rose-500 hover:text-white hover:shadow-md hover:shadow-rose-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 active:scale-95 dark:bg-rose-500/20 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus-visible:ring-offset-slate-900"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-12 motion-reduce:transition-none"
+            fill="currentColor"
+          >
+            <path d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" />
+          </svg>
+          <span>{h.num}</span>
+        </a>
+      </div>
+    ))}
+  </div>
+
+  {/* Note */}
+  <div className="flex items-start gap-2.5 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+    <span aria-hidden="true" className="text-sm leading-none">ℹ️</span>
+    <p>{t('home.verifyNumbersNote')}</p>
+  </div>
+</div>
+
         </div>
       </section>
     </div>
