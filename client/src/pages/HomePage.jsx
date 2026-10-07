@@ -214,7 +214,7 @@ export default function HomePage() {
       </section>
 
       {/* Live Alerts Across India List */}
-      <section className="glass-card p-6 sm:p-8 space-y-6">
+      {/* <section className="glass-card p-6 sm:p-8 space-y-6">
         <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <span className="flex h-3 w-3 relative">
@@ -255,7 +255,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Five Services, One Assistant Cards */}
       <section className="space-y-6">
