@@ -503,13 +503,18 @@ export default function LiveSituationBoard({ className = '' }) {
 
       {/* 4. Lower Section matching User Mockup Image 2: Recent Earthquakes & Weather Overview */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start pt-2 border-t border-slate-200/80 dark:border-slate-800">
-        {/* Left: Recent Earthquakes Component (6 cols) */}
+        {/* Left: Recent Hazards (Earthquakes, Floods, Landslides) Component (6 cols) */}
         <div className="lg:col-span-6">
           <RecentEarthquakesCard
             earthquakes={earthquakes}
             selectedEarthquake={selectedEarthquake}
             onSelectEarthquake={handleSelectEarthquake}
+            onSelectIncident={handleSelectIncident}
             loading={loadingEarthquakes}
+            activeTab={disasterFilter === 'flood' ? 'flood' : disasterFilter === 'landslide' ? 'landslide' : 'earthquake'}
+            onTabChange={(tab) => {
+              setDisasterFilter(tab);
+            }}
           />
         </div>
 
