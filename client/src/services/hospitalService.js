@@ -439,7 +439,9 @@ export async function getHospitals(params = {}) {
   const queryParams = typeof params === 'string' ? { category: params } : params;
   try {
     const res = await api.get('/hospitals', { params: queryParams });
-    if (res.data?.data) return res.data.data;
+    if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      return res.data.data;
+    }
   } catch (err) {
     console.error('Error fetching hospitals from API:', err);
   }
@@ -449,6 +451,7 @@ export async function getHospitals(params = {}) {
   const queryCity = (queryParams.city || '').toLowerCase();
   const searchCity = (queryParams.search || '').toLowerCase();
   const activeCity = queryCity || searchCity;
+  const searchKeyword = (queryParams.search || '').trim().toLowerCase();
 
   if (activeCity) {
     const isVaranasi = activeCity.includes('varanasi') || activeCity.includes('varansi') || activeCity.includes('banaras') || activeCity.includes('kashi');
@@ -492,11 +495,11 @@ export async function getHospitals(params = {}) {
     fallback = fallback.filter((h) => h.traumaCenterActive);
   }
 
-  if (search) {
+  if (searchKeyword) {
     fallback = fallback.filter(
       (h) =>
-        h.name.toLowerCase().includes(search) ||
-        (h.address && h.address.toLowerCase().includes(search))
+        (h.name || '').toLowerCase().includes(searchKeyword) ||
+        (h.address && h.address.toLowerCase().includes(searchKeyword))
     );
   }
 

@@ -20,7 +20,7 @@ const POPULAR_CITIES = [
   { name: 'Delhi NCR', lat: 28.6139, lng: 77.2090 },
   { name: 'Lucknow', lat: 26.8467, lng: 80.9462 },
   { name: 'Varanasi', lat: 25.3176, lng: 82.9739 },
-  // { name: 'Prayagraj', lat: 25.4358, lng: 81.8463 },
+  { name: 'Prayagraj', lat: 25.4358, lng: 81.8463 },
   { name: 'Kanpur', lat: 26.4499, lng: 80.3319 },
 ];
 
@@ -406,14 +406,7 @@ export default function HealthcarePage() {
         </p>
       </section>
 
-      {/* 4. Emergency Section: Nearest Hospital & Live Bed Availability */}
-      <EmergencyNearestHospital
-        hospital={selectedHospital || nearestEmergency}
-        userCoords={userLocation}
-        onRefreshLocation={handleDetectLocation}
-      />
-
-      {/* 5. Lower Section: Jan Aushadhi Medicine Analysis & Verified Duty Doctors */}
+      {/* 4. Jan Aushadhi Medicine Analysis & Verified Duty Doctors (Directly below Hospitals) */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start pt-2">
         {/* Jan Aushadhi Generic vs Branded Price Matcher (7 cols) */}
         <div className="lg:col-span-7">
@@ -483,6 +476,13 @@ export default function HealthcarePage() {
           </div>
         </div>
       </div>
+
+      {/* 5. Lower Section: Emergency Nearest Hospital & Live Bed Availability */}
+      <EmergencyNearestHospital
+        hospital={selectedHospital || nearestEmergency}
+        userCoords={userLocation}
+        onRefreshLocation={handleDetectLocation}
+      />
 
       {/* Teleconsultation & Appointment Modal */}
       <DoctorConsultModal

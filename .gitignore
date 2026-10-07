@@ -13,3 +13,5 @@ client/.env
 client/.env.local
 client/node_modules/
 client/dist/
+
+.vercel
