@@ -333,14 +333,7 @@ export default function HealthcarePage() {
         </div>
       </section>
 
-      {/* 3. Emergency Section: Nearest Hospital & Live Bed Availability (Prominent at Top) */}
-      <EmergencyNearestHospital
-        hospital={selectedHospital || nearestEmergency}
-        userCoords={userLocation}
-        onRefreshLocation={handleDetectLocation}
-      />
-
-      {/* 4. Primary Section: Nearby Hospitals (Govt & Private) List (Full Width) */}
+      {/* 3. Primary Section: Nearby Hospitals (Govt & Private) List (Full Width) */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -412,6 +405,13 @@ export default function HealthcarePage() {
           ℹ️ {lang === 'hi' ? 'अस्पताल डेटा ओपनस्ट्रीटमैप लाइव एपीआई एवं राष्ट्रीय स्वास्थ्य रजिस्ट्री द्वारा सत्यापित है।' : 'Hospital data verified via OpenStreetMap Live API and National Health Registry.'}
         </p>
       </section>
+
+      {/* 4. Emergency Section: Nearest Hospital & Live Bed Availability (now BELOW the hospital list) */}
+      <EmergencyNearestHospital
+        hospital={selectedHospital || nearestEmergency}
+        userCoords={userLocation}
+        onRefreshLocation={handleDetectLocation}
+      />
 
       {/* 5. Lower Section: Jan Aushadhi Medicine Analysis & Verified Duty Doctors */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start pt-2">

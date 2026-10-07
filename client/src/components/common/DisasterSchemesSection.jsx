@@ -1,6 +1,10 @@
 /**
  * Real Government Schemes for Natural Disaster Victims (India)
  * Sources: NDMA, PM India, MyScheme portal, Ministry of Home Affairs
+ *
+ * Design: one theme colour (orange) for every card, with a green Apply Now button.
+ * To change the theme, find-and-replace "orange" with another Tailwind colour.
+ * categoryColor is kept in the data but no longer used here.
  */
 
 export const DISASTER_SCHEMES = [
@@ -126,31 +130,20 @@ export const DISASTER_SCHEMES = [
   },
 ];
 
-const COLOR_MAP = {
-  emerald: { badge: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30', accent: 'from-emerald-500 to-teal-500', ring: 'group-hover:ring-emerald-400/50' },
-  blue: { badge: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30', accent: 'from-blue-500 to-indigo-500', ring: 'group-hover:ring-blue-400/50' },
-  orange: { badge: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30', accent: 'from-orange-500 to-amber-500', ring: 'group-hover:ring-orange-400/50' },
-  purple: { badge: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30', accent: 'from-purple-500 to-fuchsia-500', ring: 'group-hover:ring-purple-400/50' },
-  teal: { badge: 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30', accent: 'from-teal-500 to-cyan-500', ring: 'group-hover:ring-teal-400/50' },
-  rose: { badge: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30', accent: 'from-rose-500 to-pink-500', ring: 'group-hover:ring-rose-400/50' },
-  indigo: { badge: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30', accent: 'from-indigo-500 to-blue-600', ring: 'group-hover:ring-indigo-400/50' },
-  amber: { badge: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30', accent: 'from-amber-500 to-orange-500', ring: 'group-hover:ring-amber-400/50' },
-};
-
 export function DisasterSchemesSection({ lang = 'en' }) {
   return (
     <section className="space-y-6">
       {/* Section Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-bold text-orange-700 dark:text-orange-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
             {lang === 'hi' ? 'सरकारी योजनाएं' : 'Government Relief Schemes'}
           </div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            {lang === 'hi' ? '🛡️ आपदा पीड़ितों के लिए सरकारी योजनाएं' : '🛡️ Schemes for Disaster Victims'}
+          <h2 className="border-l-4 border-orange-500 pl-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+            {lang === 'hi' ? 'आपदा पीड़ितों के लिए सरकारी योजनाएं' : 'Schemes for Disaster Victims'}
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="pl-4 text-sm font-medium text-slate-500 sm:text-base dark:text-slate-400">
             {lang === 'hi'
               ? 'NDMA · PM India · राज्य सरकार की आधिकारिक योजनाएं — सीधे आवेदन करें'
               : 'Official NDMA · PM India · State Govt schemes — apply directly with one click'}
@@ -160,7 +153,7 @@ export function DisasterSchemesSection({ lang = 'en' }) {
           href="https://www.myscheme.gov.in/search/category/disaster-management"
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-300/50 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-300 dark:hover:bg-indigo-500/20"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-orange-300/60 bg-orange-50 px-4 py-2 text-xs font-bold text-orange-700 transition hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300 dark:hover:bg-orange-500/20"
         >
           View All Schemes ↗
         </a>
@@ -168,79 +161,80 @@ export function DisasterSchemesSection({ lang = 'en' }) {
 
       {/* Schemes Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {DISASTER_SCHEMES.map((scheme) => {
-          const colors = COLOR_MAP[scheme.categoryColor] || COLOR_MAP.indigo;
-          return (
-            <div
-              key={scheme.id}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80 ring-2 ring-transparent ${colors.ring}`}
-            >
-              {/* Top gradient accent bar */}
-              <div className={`h-1.5 w-full bg-gradient-to-r ${colors.accent} shrink-0`} />
+        {DISASTER_SCHEMES.map((scheme) => (
+          <div
+            key={scheme.id}
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur-sm hover:border-orange-300 dark:hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80 ring-2 ring-transparent hover:ring-orange-400/50"
+          >
+            {/* Top accent bar */}
+            <div className="h-1.5 w-full shrink-0 bg-gradient-to-r from-orange-400 to-orange-600" />
+            <div className="pointer-events-none absolute inset-x-0 top-1.5 h-28 bg-gradient-to-b from-orange-50 to-transparent dark:from-orange-500/10" />
+            <span className="pointer-events-none absolute -right-2 top-8 select-none text-7xl opacity-[0.08] grayscale">
+              {scheme.icon}
+            </span>
 
-              <div className="flex flex-1 flex-col gap-3 p-4">
-                {/* Icon + Category */}
-                <div className="flex items-start justify-between">
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${colors.accent} text-2xl shadow-md`}>
-                    {scheme.icon}
-                  </div>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${colors.badge}`}>
-                    {scheme.category}
-                  </span>
+            <div className="relative flex flex-1 flex-col gap-3 p-4">
+              {/* Icon + Category */}
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 text-2xl shadow-md">
+                  {scheme.icon}
                 </div>
+                <span className="rounded-full border border-orange-500/30 bg-orange-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700 dark:text-orange-300">
+                  {scheme.category}
+                </span>
+              </div>
 
-                {/* Title */}
-                <div>
-                  <h3 className="text-sm font-black leading-snug text-slate-900 dark:text-white">
-                    {lang === 'hi' ? scheme.titleHi : scheme.title}
-                  </h3>
-                  <p className="mt-0.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                    {scheme.ministry}
-                  </p>
-                </div>
-
-                {/* Description */}
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 line-clamp-3">
-                  {lang === 'hi' ? scheme.descHi : scheme.description}
+              {/* Title */}
+              <div>
+                <h3 className="text-sm font-black leading-snug text-slate-900 dark:text-white">
+                  {lang === 'hi' ? scheme.titleHi : scheme.title}
+                </h3>
+                <p className="mt-0.5 text-[10px] font-semibold text-orange-700/70 dark:text-orange-300/70">
+                  {scheme.ministry}
                 </p>
+              </div>
 
-                {/* Benefit pill */}
-                <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
-                  <span className="text-xs">💰</span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 line-clamp-1">
-                    {scheme.benefit}
-                  </span>
-                </div>
+              {/* Description */}
+              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 line-clamp-3">
+                {lang === 'hi' ? scheme.descHi : scheme.description}
+              </p>
 
-                {/* Eligibility */}
-                <p className="text-[11px] text-slate-500 dark:text-slate-500 flex items-center gap-1">
-                  <span>✅</span>
-                  <span>{scheme.eligibility}</span>
-                </p>
+              {/* Benefit pill */}
+              <div className="flex items-center gap-1.5 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 dark:border-orange-500/20 dark:bg-orange-500/10">
+                <span className="text-xs">💰</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-orange-100 line-clamp-1">
+                  {scheme.benefit}
+                </span>
+              </div>
 
-                {/* CTA Buttons */}
-                <div className="mt-auto flex gap-2 pt-1">
-                  <a
-                    href={scheme.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-center text-xs font-bold text-slate-700 transition hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    Learn More ↗
-                  </a>
-                  <a
-                    href={scheme.applyLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`flex-1 rounded-xl bg-gradient-to-r ${colors.accent} py-2 text-center text-xs font-black text-white shadow-sm transition hover:opacity-90 hover:shadow-md`}
-                  >
-                    Apply Now →
-                  </a>
-                </div>
+              {/* Eligibility */}
+              <p className="text-[11px] text-slate-500 dark:text-slate-500 flex items-center gap-1">
+                <span>✅</span>
+                <span>{scheme.eligibility}</span>
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="mt-auto flex gap-2 pt-1">
+                <a
+                  href={scheme.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-center text-xs font-bold text-slate-700 transition hover:border-orange-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  Learn More ↗
+                </a>
+                <a
+                  href={scheme.applyLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-2 text-center text-xs font-black text-white shadow-sm transition hover:opacity-90 hover:shadow-md"
+                >
+                  Apply Now →
+                </a>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Bottom Banner — MyScheme Portal */}
@@ -248,10 +242,10 @@ export function DisasterSchemesSection({ lang = 'en' }) {
         href="https://www.myscheme.gov.in"
         target="_blank"
         rel="noreferrer"
-        className="group flex items-center justify-between gap-4 rounded-2xl border border-indigo-200/60 bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 p-5 transition hover:shadow-lg dark:border-indigo-500/20 dark:from-indigo-950/40 dark:via-blue-950/40 dark:to-purple-950/40"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-orange-200/60 bg-gradient-to-r from-orange-50 to-orange-100/60 p-5 transition hover:shadow-lg dark:border-orange-500/20 dark:from-orange-950/40 dark:to-orange-900/30"
       >
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-2xl shadow-lg">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-2xl shadow-lg">
             🇮🇳
           </div>
           <div>
@@ -265,7 +259,7 @@ export function DisasterSchemesSection({ lang = 'en' }) {
             </p>
           </div>
         </div>
-        <span className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white transition group-hover:bg-indigo-700">
+        <span className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white transition group-hover:bg-emerald-700">
           Explore ↗
         </span>
       </a>
