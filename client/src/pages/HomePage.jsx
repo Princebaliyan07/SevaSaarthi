@@ -321,7 +321,7 @@ export default function HomePage() {
           {/* Featured downloads */}
           {/* Featured downloads — paste this in place of your old <div className="space-y-4"> block.
     Uses only your existing variables: DOWNLOADS, lang, t, downloadBilingualGuide. No new imports. */}
-<div className="space-y-5">
+        <div className="space-y-5">
   {/* Heading */}
   <div className="flex items-center justify-between gap-3">
     <div className="flex items-center gap-3">
@@ -490,12 +490,7 @@ export default function HomePage() {
       </div>
     ))}
   </div>
-
-  {/* Note */}
-  <div className="flex items-start gap-2.5 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-    <span aria-hidden="true" className="text-sm leading-none">ℹ️</span>
-    <p>{t('home.verifyNumbersNote')}</p>
-  </div>
+  
 </div>
 
         </div>
