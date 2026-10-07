@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import Badge from './Badge';
 import RecentEarthquakesCard from './RecentEarthquakesCard';
+import RecentFloodsCard from './RecentFloodsCard';
+import RecentLandslidesCard from './RecentLandslidesCard';
 import WeatherOverviewCard from './WeatherOverviewCard';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -501,27 +503,28 @@ export default function LiveSituationBoard({ className = '' }) {
         </div>
       </div>
 
-      {/* 4. Lower Section matching User Mockup Image 2: Recent Earthquakes & Weather Overview */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start pt-2 border-t border-slate-200/80 dark:border-slate-800">
-        {/* Left: Recent Hazards (Earthquakes, Floods, Landslides) Component (6 cols) */}
-        <div className="lg:col-span-6">
+      {/* 4. Lower Section: 3 Disaster Cards side by side */}
+      <div className="space-y-4 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+        {/* Row 1: Earthquakes | Floods | Landslides */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <RecentEarthquakesCard
             earthquakes={earthquakes}
             selectedEarthquake={selectedEarthquake}
             onSelectEarthquake={handleSelectEarthquake}
-            onSelectIncident={handleSelectIncident}
             loading={loadingEarthquakes}
-            activeTab={disasterFilter === 'flood' ? 'flood' : disasterFilter === 'landslide' ? 'landslide' : 'earthquake'}
-            onTabChange={(tab) => {
-              setDisasterFilter(tab);
-            }}
+          />
+          <RecentFloodsCard
+            selectedIncident={selectedIncident}
+            onSelectIncident={handleSelectIncident}
+          />
+          <RecentLandslidesCard
+            selectedIncident={selectedIncident}
+            onSelectIncident={handleSelectIncident}
           />
         </div>
 
-        {/* Right: Weather Overview Component (6 cols) */}
-        <div className="lg:col-span-6">
-          <WeatherOverviewCard defaultCity="Greater Noida, UP" />
-        </div>
+        {/* Row 2: Weather Overview full-width */}
+        <WeatherOverviewCard defaultCity="Greater Noida, UP" />
       </div>
     </div>
   );
