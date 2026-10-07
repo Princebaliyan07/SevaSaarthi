@@ -333,7 +333,14 @@ export default function HealthcarePage() {
         </div>
       </section>
 
-      {/* 3. Primary Section: Nearby Hospitals (Govt & Private) List (Full Width) */}
+      {/* 3. Emergency Section: Nearest Hospital & Live Bed Availability (Prominent at Top) */}
+      <EmergencyNearestHospital
+        hospital={selectedHospital || nearestEmergency}
+        userCoords={userLocation}
+        onRefreshLocation={handleDetectLocation}
+      />
+
+      {/* 4. Primary Section: Nearby Hospitals (Govt & Private) List (Full Width) */}
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -406,7 +413,7 @@ export default function HealthcarePage() {
         </p>
       </section>
 
-      {/* 4. Jan Aushadhi Medicine Analysis & Verified Duty Doctors (Directly below Hospitals) */}
+      {/* 5. Lower Section: Jan Aushadhi Medicine Analysis & Verified Duty Doctors */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start pt-2">
         {/* Jan Aushadhi Generic vs Branded Price Matcher (7 cols) */}
         <div className="lg:col-span-7">
@@ -476,13 +483,6 @@ export default function HealthcarePage() {
           </div>
         </div>
       </div>
-
-      {/* 5. Lower Section: Emergency Nearest Hospital & Live Bed Availability */}
-      <EmergencyNearestHospital
-        hospital={selectedHospital || nearestEmergency}
-        userCoords={userLocation}
-        onRefreshLocation={handleDetectLocation}
-      />
 
       {/* Teleconsultation & Appointment Modal */}
       <DoctorConsultModal
