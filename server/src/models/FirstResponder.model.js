@@ -17,6 +17,11 @@ const firstResponderSchema = new mongoose.Schema(
       required: [true, 'Specification is required'],
       enum: ['Doctor', 'Nurse', 'NCC/NSS Volunteer', 'Ex-Army/Defence', 'Paramedic', 'NDRF/SDRF Trained'],
     },
+    speciality: {
+      type: String,
+      trim: true,
+      default: 'General First Aid / Emergency Response',
+    },
     age: {
       type: Number,
       required: [true, 'Age is required'],
@@ -46,6 +51,33 @@ const firstResponderSchema = new mongoose.Schema(
       lowercase: true,
       index: true,
     },
+    lat: {
+      type: Number,
+      default: null,
+    },
+    lng: {
+      type: Number,
+      default: null,
+    },
+    // Aadhaar Verification details
+    aadhaarNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    isAadhaarVerified: {
+      type: Boolean,
+      default: false,
+    },
+    // Proof & Photo URLs (base64 or storage url)
+    profilePhoto: {
+      type: String,
+      default: '',
+    },
+    proofCertificate: {
+      type: String,
+      default: '',
+    },
     videoCallAllowed: {
       type: Boolean,
       default: false,
@@ -69,7 +101,7 @@ const firstResponderSchema = new mongoose.Schema(
   }
 );
 
-// Text index for full-text city/area search
-firstResponderSchema.index({ city: 'text', area: 'text' });
+// Text index for full-text city/area/speciality search
+firstResponderSchema.index({ city: 'text', area: 'text', speciality: 'text' });
 
 export default mongoose.model('FirstResponder', firstResponderSchema);
