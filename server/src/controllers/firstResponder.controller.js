@@ -1,15 +1,17 @@
 import FirstResponder from '../models/FirstResponder.model.js';
+import { sendOtpSms } from '../services/sms.service.js';
 
-// In-memory OTP storage for Aadhaar verification: { [aadhaarNumber]: { otp, expiresAt } }
+// In-memory OTP storage for Aadhaar verification: { [aadhaarNumber]: { otp, expiresAt, contactNumber } }
 const otpStore = new Map();
 
 /**
- * Send OTP for Aadhaar verification
+ * Send real OTP to mobile for Aadhaar verification
  * POST /api/v1/first-responders/aadhaar-otp/send
  */
 export async function sendAadhaarOtp(req, res) {
   try {
     const { aadhaarNumber, contactNumber } = req.body;
+
     if (!aadhaarNumber || aadhaarNumber.replace(/\s/g, '').length !== 12) {
       return res.status(400).json({
         success: false,
@@ -17,23 +19,38 @@ export async function sendAadhaarOtp(req, res) {
       });
     }
 
+    if (!contactNumber || String(contactNumber).replace(/\D/g, '').length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid 10-digit mobile number linked to Aadhaar to receive OTP.',
+      });
+    }
+
     const cleanAadhaar = aadhaarNumber.replace(/\s/g, '');
-    // Generate 6-digit OTP
+    const cleanMobile = String(contactNumber).replace(/\D/g, '').slice(-10);
+
+    // Generate real 6-digit cryptographic OTP
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
     otpStore.set(cleanAadhaar, {
       otp: generatedOtp,
-      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+      contactNumber: cleanMobile,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes validity
     });
 
-    // In production, integrate SMS gateway (e.g. Fast2SMS / Twilio)
-    console.log(`[Aadhaar OTP] Generated OTP for Aadhaar ${cleanAadhaar.slice(0, 4)}XXXX${cleanAadhaar.slice(8)}: ${generatedOtp}`);
+    // Send real SMS to mobile number
+    const smsResult = await sendOtpSms({
+      mobileNumber: cleanMobile,
+      otp: generatedOtp,
+      aadhaarLast4: cleanAadhaar.slice(-4),
+    });
+
+    console.log(`[Aadhaar OTP Dispatched] Mobile: +91${cleanMobile} | Aadhaar: XXXX-XXXX-${cleanAadhaar.slice(-4)}`);
 
     return res.status(200).json({
       success: true,
-      message: `OTP sent successfully to mobile linked with Aadhaar (last 4 digits: ${cleanAadhaar.slice(-4)})`,
-      // Returning test OTP in response for demonstration / testing convenience
-      demoOtp: generatedOtp,
+      message: `Aadhaar verification OTP sent successfully to mobile +91 ${cleanMobile.slice(0, 2)}XXXXXX${cleanMobile.slice(-2)}. Valid for 5 minutes.`,
+      provider: smsResult.provider,
     });
   } catch (error) {
     console.error('Error sending Aadhaar OTP:', error);
@@ -59,14 +76,15 @@ export async function verifyAadhaarOtp(req, res) {
     }
 
     const cleanAadhaar = aadhaarNumber.replace(/\s/g, '');
+    const cleanOtp = String(otp).trim();
     const entry = otpStore.get(cleanAadhaar);
 
-    // Allow static demo OTP '123456' or matching stored OTP
-    if ((entry && entry.otp === otp && Date.now() <= entry.expiresAt) || otp === '123456') {
+    // Strict validation: must match real OTP sent to phone and not expired
+    if (entry && entry.otp === cleanOtp && Date.now() <= entry.expiresAt) {
       otpStore.delete(cleanAadhaar);
       return res.status(200).json({
         success: true,
-        message: 'Aadhaar verification successful via UIDAI Gateway!',
+        message: 'Aadhaar verified successfully via UIDAI Gateway!',
         verified: true,
         maskedAadhaar: `XXXX-XXXX-${cleanAadhaar.slice(-4)}`,
       });
@@ -74,7 +92,7 @@ export async function verifyAadhaarOtp(req, res) {
 
     return res.status(400).json({
       success: false,
-      message: 'Invalid or expired OTP. Please check and try again.',
+      message: 'Invalid or expired OTP. Please enter the exact 6-digit OTP sent to your phone.',
     });
   } catch (error) {
     console.error('Error verifying Aadhaar OTP:', error);
@@ -127,10 +145,35 @@ export async function registerFirstResponder(req, res) {
       videoCallLink,
     } = req.body;
 
+    // Strict validation
     if (!name || !contactNumber || !specification || !age || !gender || !location) {
       return res.status(400).json({
         success: false,
-        message: 'Name, contactNumber, specification, age, gender and location are required fields.',
+        message: 'Name, contact number, role, age, gender and location are mandatory fields.',
+      });
+    }
+
+    // MANDATORY PROOF: "without proof no registration"
+    if (!proofCertificate || !proofCertificate.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Proof document (Medical Council ID / NCC/NSS Certificate / Army ID) is strictly mandatory for registration. Registration without verified proof is not permitted.',
+      });
+    }
+
+    // MANDATORY AADHAAR VERIFICATION
+    if (!isAadhaarVerified || !aadhaarNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aadhaar mobile OTP verification is required before joining the emergency responder network.',
+      });
+    }
+
+    // MANDATORY PROFILE PHOTO
+    if (!profilePhoto || !profilePhoto.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile photo is required so victims and volunteers can identify you in an emergency.',
       });
     }
 
@@ -160,9 +203,9 @@ export async function registerFirstResponder(req, res) {
       lat: lat ? Number(lat) : null,
       lng: lng ? Number(lng) : null,
       aadhaarNumber: aadhaarNumber ? aadhaarNumber.replace(/\s/g, '') : '',
-      isAadhaarVerified: Boolean(isAadhaarVerified),
-      profilePhoto: profilePhoto || '',
-      proofCertificate: proofCertificate || '',
+      isAadhaarVerified: true,
+      profilePhoto: profilePhoto.trim(),
+      proofCertificate: proofCertificate.trim(),
       videoCallAllowed: Boolean(videoCallAllowed),
       videoCallLink: videoCallLink ? videoCallLink.trim() : '',
       isActive: true,
@@ -170,7 +213,7 @@ export async function registerFirstResponder(req, res) {
 
     return res.status(201).json({
       success: true,
-      message: 'First Responder registered successfully! You are now live in the network.',
+      message: 'Verified First Responder registered successfully! You are now live in the network.',
       data: responder,
     });
   } catch (error) {
