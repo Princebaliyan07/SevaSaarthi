@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Badge from '../common/Badge';
 import { useLanguage } from '../../context/LanguageContext';
 
-const CHIPS = ['paracetamol', 'cetirizine', 'pantoprazole', 'ORS'];
+const CHIPS = ['paracetamol',  'cetirizine', 'pantoprazole', 'metformin', 'ORS','Cetirizine Hydrochloride' , 'Metformin Hydrochloride Sustained Release ' , 'Amoxicillin + Potassium Clavulanate' ];
 const RING_RADIUS = 34;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
@@ -15,6 +15,8 @@ export default function JanAushadhiMatcher({ medicines = [] }) {
 
   const [searchTerm, setSearchTerm] = useState('paracetamol');
   const [pick, setPick] = useState(0);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef(null);
 
   const query = searchTerm.trim().toLowerCase();
   const filtered = medicines.filter(
@@ -35,7 +37,17 @@ export default function JanAushadhiMatcher({ medicines = [] }) {
   const updateSearch = (value) => {
     setSearchTerm(value);
     setPick(0);
+    setShowSuggestions(value.length >= 2);
   };
+
+  // Autocomplete suggestions: all medicines matching current partial query
+  const suggestions = query.length >= 2
+    ? medicines.filter(
+        (m) =>
+          m.genericName.toLowerCase().includes(query) ||
+          m.brandName.toLowerCase().includes(query)
+      ).slice(0, 8)
+    : [];
 
   return (
     <section className="glass-card overflow-hidden">
@@ -47,15 +59,16 @@ export default function JanAushadhiMatcher({ medicines = [] }) {
           </div>
           <div>
             <h2 className="text-base font-bold leading-tight text-slate-900 dark:text-white">
-              {t('health.medicineTitle')}
+              {hi ? 'जन औषधि दवा जानकारी' : 'Jan Aushadhi Medicine Information'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {hi ? 'सस्ती जेनेरिक दवा खोजें' : 'Find the low-cost generic version'}
+              {hi ? `${medicines.length}+ दवाओं में से खोजें — सस्ती जेनेरिक दवा पाएं` : `Search ${medicines.length}+ medicines — Find low-cost Jan Aushadhi generics`}
             </p>
           </div>
         </div>
         <Badge type="official">{hi ? 'जन औषधि' : 'Jan Aushadhi'}</Badge>
       </div>
+
 
       {/* Search */}
       <div className="space-y-3 px-6 pt-5">
@@ -73,22 +86,50 @@ export default function JanAushadhiMatcher({ medicines = [] }) {
             <path d="m20 20-3.5-3.5" />
           </svg>
           <input
+            ref={inputRef}
             type="text"
             value={searchTerm}
             onChange={(e) => updateSearch(e.target.value)}
-            placeholder={t('health.medicineSearchPlaceholder')}
+            onFocus={() => setShowSuggestions(searchTerm.length >= 2)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            placeholder={hi ? 'दवा का नाम लिखें — जैसे "azi" लिखने पर Azithromycin दिखेगा...' : 'Type medicine name — e.g. "azi" shows Azithromycin...'}
             aria-label={t('health.medicineSearchPlaceholder')}
-            className="w-full rounded-2xl border border-slate-200 bg-white/80 py-3 pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm backdrop-blur-sm transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/15 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:placeholder-slate-500 dark:focus:border-emerald-400"
+            className="w-full rounded-2xl border-2 border-slate-200 bg-white/80 py-3.5 pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm backdrop-blur-sm transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/15 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:placeholder-slate-500 dark:focus:border-emerald-400"
           />
           {searchTerm && (
             <button
               type="button"
-              onClick={() => updateSearch('')}
+              onClick={() => { updateSearch(''); setShowSuggestions(false); }}
               aria-label={hi ? 'खोज साफ़ करें' : 'Clear search'}
               className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-[10px] text-slate-500 transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               ✕
             </button>
+          )}
+
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
+              {suggestions.map((m, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onMouseDown={() => {
+                    updateSearch(m.genericName);
+                    setShowSuggestions(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0 flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{m.genericName}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{m.brandName} · {m.dosage}</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    ₹{m.janAushadhiPrice}
+                  </span>
+                </button>
+              ))}
+            </div>
           )}
         </div>
 

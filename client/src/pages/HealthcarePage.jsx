@@ -4,6 +4,8 @@ import HospitalCard from '../components/healthcare/HospitalCard';
 import JanAushadhiMatcher from '../components/healthcare/JanAushadhiMatcher';
 import DoctorConsultModal from '../components/healthcare/DoctorConsultModal';
 import EmergencyNearestHospital from '../components/healthcare/EmergencyNearestHospital';
+import MedicineGuideSection from '../components/healthcare/MedicineGuideSection';
+import HospitalAppointmentSection from '../components/healthcare/HospitalAppointmentSection';
 import FirstResponderNetwork from '../components/common/FirstResponderNetwork';
 import { getHospitals, getMedicines, getDoctors, getNearestEmergencyHospital, geocodeCity } from '../services/hospitalService';
 import { useLanguage } from '../context/LanguageContext';
@@ -417,76 +419,14 @@ export default function HealthcarePage() {
       {/* 🚑 First Responder Emergency Network — Uber for First Aid (Right below Hospitals & before Medicines) */}
       <FirstResponderNetwork />
 
-      {/* 5. Lower Section: Jan Aushadhi Medicine Analysis & Verified Duty Doctors */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start pt-2">
-        {/* Jan Aushadhi Generic vs Branded Price Matcher (7 cols) */}
-        <div className="lg:col-span-7">
-          <JanAushadhiMatcher medicines={medicines} />
-        </div>
+      {/* 5. Jan Aushadhi Medicine Search — Full Width */}
+      <JanAushadhiMatcher medicines={medicines} />
 
-        {/* Verified Duty Doctors Directory (5 cols) */}
-        <div className="glass-card p-6 space-y-5 lg:col-span-5">
-          <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>🩺</span>
-                <span>{lang === 'hi' ? 'ड्यूटी पर सत्यापित डॉक्टर' : 'Verified Duty Doctors'}</span>
-              </h2>
-              <p className="text-[11px] text-slate-500">
-                {lang === 'hi' ? 'ओपीडी एवं टेलीकंसल्टेशन उपलब्ध' : 'OPD & Teleconsultation Available'}
-              </p>
-            </div>
-            <Badge type="verified" />
-          </div>
+      {/* 6. Medicine Guide by Symptom/Condition */}
+      <MedicineGuideSection />
 
-          <div className="space-y-3">
-            {doctors.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/70 p-4 transition-all hover:border-brand/50 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/60"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{doc.name}</h3>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        doc.status === 'online'
-                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      {doc.status === 'online' ? t('badge.online') : t('badge.offline')}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {doc.specialty} · <span className="font-semibold text-teal-600 dark:text-teal-400">{doc.nextSlot}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    🏥 {doc.hospitalAffiliation}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setConsultModal({ isOpen: true, doctor: doc, isVideo: false })}
-                    className="btn-outline text-xs py-1.5 px-3 font-bold"
-                  >
-                    {lang === 'hi' ? 'ओपीडी बुक करें' : 'Book OPD'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConsultModal({ isOpen: true, doctor: doc, isVideo: true })}
-                    className="rounded-xl bg-civic px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-civic-dark transition-colors"
-                  >
-                    📹 {lang === 'hi' ? 'वीडियो' : 'Video'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* 7. Govt Hospital Emergency Appointment Booking */}
+      <HospitalAppointmentSection hospitals={hospitals} />
 
       {/* Teleconsultation & Appointment Modal */}
       <DoctorConsultModal
