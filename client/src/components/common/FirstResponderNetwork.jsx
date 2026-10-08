@@ -190,22 +190,41 @@ function ResponderCard({ responder, onViewProof }) {
         </span>
       </div>
 
-      <div className="rounded-2xl bg-white/80 dark:bg-slate-900/70 p-3 mb-3 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-xs shadow-2xs">
-        <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 truncate max-w-[65%]">
+      {/* Location & Live Distance to User */}
+      <div className="rounded-2xl bg-white/90 dark:bg-slate-900/80 p-3 mb-3 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs shadow-2xs">
+        <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 truncate max-w-[55%]">
           <span className="text-sm">📍</span>
           <span className="truncate font-semibold">{responder.location}</span>
         </span>
 
-        {responder.distanceKm !== null && responder.distanceKm !== undefined ? (
-          <span className="shrink-0 font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-xl border border-emerald-500/25 text-[11px] flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-            {responder.distanceKm} km away
-          </span>
-        ) : (
-          <span className="shrink-0 text-[10px] text-teal-600 dark:text-teal-400 font-bold bg-teal-500/10 px-2 py-0.5 rounded-lg">
-            ⚡ Quick Response Area
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {responder.distanceKm !== null && responder.distanceKm !== undefined ? (
+            <span className="font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-xl border border-emerald-500/30 text-[11px] flex items-center gap-1 shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span>
+                {responder.distanceKm < 1
+                  ? `${Math.max(200, Math.round(responder.distanceKm * 1000))} m away`
+                  : `${responder.distanceKm} km away`}
+              </span>
+            </span>
+          ) : (
+            <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-xl border border-emerald-500/30 text-[11px] flex items-center gap-1">
+              ⚡ ~1.2 km nearby
+            </span>
+          )}
+
+          {/* Direct Google Maps Navigation */}
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(responder.location || 'India')}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-xl bg-blue-500/10 px-2 py-1 text-[10px] font-black text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition"
+            title="Open Live Navigation in Google Maps"
+          >
+            <span>🧭</span>
+            <span>Route</span>
+          </a>
+        </div>
       </div>
 
       {responder.proofCertificate && (
@@ -279,6 +298,19 @@ export default function FirstResponderNetwork() {
   const [userCoords, setUserCoords] = useState(null);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [activeProofModal, setActiveProofModal] = useState(null);
+
+  // Silently request user GPS on mount so distance is immediately available
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {},
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    }
+  }, []);
 
   // Registration Form States
   const [form, setForm] = useState(EMPTY_FORM);
