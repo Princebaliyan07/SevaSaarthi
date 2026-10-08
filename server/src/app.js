@@ -14,6 +14,7 @@ import volunteerRoutes from './routes/volunteer.routes.js';
 import disasterRoutes from './routes/disaster.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import commandRoutes from './routes/command.routes.js';
+import firstResponderRoutes from './routes/firstResponder.routes.js';
 
 // Controller direct delegates for direct frontend paths
 import { getDoctorsList, bookAppointment, getHospitalsList } from './controllers/hospital.controller.js';
@@ -63,6 +64,7 @@ app.use('/api/v1/volunteers', volunteerRoutes);
 app.use('/api/v1/disasters', disasterRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/command', commandRoutes);
+app.use('/api/v1/first-responders', firstResponderRoutes);
 
 // Direct top-level aliases to guarantee 100% contract compatibility with frontend client calls
 app.get('/api/v1/doctors', getDoctorsList);

@@ -4,6 +4,7 @@ import HospitalCard from '../components/healthcare/HospitalCard';
 import JanAushadhiMatcher from '../components/healthcare/JanAushadhiMatcher';
 import DoctorConsultModal from '../components/healthcare/DoctorConsultModal';
 import EmergencyNearestHospital from '../components/healthcare/EmergencyNearestHospital';
+import FirstResponderNetwork from '../components/common/FirstResponderNetwork';
 import { getHospitals, getMedicines, getDoctors, getNearestEmergencyHospital, geocodeCity } from '../services/hospitalService';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -483,6 +484,9 @@ export default function HealthcarePage() {
           </div>
         </div>
       </div>
+
+      {/* 🚑 First Responder Network — Uber for First Aid */}
+      <FirstResponderNetwork />
 
       {/* Teleconsultation & Appointment Modal */}
       <DoctorConsultModal
