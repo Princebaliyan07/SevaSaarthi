@@ -548,7 +548,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. Real Impact, Real People Stories */}
-      <section className="space-y-4">
+      {/* <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -597,7 +597,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* 5B. How SevaSaarthi Helps People (AI Powered Support Network) */}
       <section className="glass-card p-6 sm:p-8 space-y-6 shadow-sm border-slate-200/80 dark:border-slate-800">
