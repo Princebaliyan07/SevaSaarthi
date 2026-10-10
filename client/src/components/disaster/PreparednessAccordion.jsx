@@ -4,6 +4,8 @@ import { useLanguage } from '../../context/LanguageContext';
 const GUIDES = [
   {
     id: 'flood',
+    emoji: '🌊',
+    tile: 'bg-sky-100 text-sky-700',
     title: 'Flood',
     titleHi: 'बाढ़',
     before: [
@@ -33,6 +35,8 @@ const GUIDES = [
   },
   {
     id: 'landslide',
+    emoji: '⛰️',
+    tile: 'bg-amber-100 text-amber-700',
     title: 'Landslide',
     titleHi: 'भूस्खलन',
     before: [
@@ -62,6 +66,8 @@ const GUIDES = [
   },
   {
     id: 'earthquake',
+    emoji: '🏚️',
+    tile: 'bg-stone-200 text-stone-700',
     title: 'Earthquake',
     titleHi: 'भूकंप',
     before: [
@@ -91,6 +97,8 @@ const GUIDES = [
   },
   {
     id: 'cyclone',
+    emoji: '🌀',
+    tile: 'bg-indigo-100 text-indigo-700',
     title: 'Cyclone',
     titleHi: 'चक्रवात',
     before: [
@@ -120,6 +128,8 @@ const GUIDES = [
   },
   {
     id: 'heatwave',
+    emoji: '☀️',
+    tile: 'bg-orange-100 text-orange-700',
     title: 'Heatwave',
     titleHi: 'लू / ग्रीष्म लहर',
     before: [
@@ -149,83 +159,202 @@ const GUIDES = [
   },
 ];
 
-export default function PreparednessAccordion() {
+/* The three phases are a real sequence, so they get numbers.
+   "During" is the one people need under stress, so it is the visually loudest. */
+const PHASES = [
+  {
+    key: 'before',
+    num: 1,
+    card: 'bg-surface border-line',
+    badge: 'bg-brand text-white',
+    heading: 'text-brand-dark',
+    tick: 'bg-brand/10 text-brand',
+  },
+  {
+    key: 'during',
+    num: 2,
+    card: 'bg-red-50 border-red-200 shadow-sm ring-1 ring-red-100',
+    badge: 'bg-sos text-white',
+    heading: 'text-sos',
+    tick: 'bg-sos/10 text-sos',
+  },
+  {
+    key: 'after',
+    num: 3,
+    card: 'bg-surface border-line',
+    badge: 'bg-slate-600 text-white',
+    heading: 'text-ink-soft',
+    tick: 'bg-slate-200 text-slate-600',
+  },
+];
+
+function Check({ className = '' }) {
+  return (
+    <span
+      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${className}`}
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 10.5l4 4 8-9" />
+      </svg>
+    </span>
+  );
+}
+
+function Chevron({ open }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={`h-5 w-5 shrink-0 text-ink-soft transition-transform duration-300 motion-reduce:transition-none ${
+        open ? 'rotate-180' : ''
+      }`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 8l5 5 5-5" />
+    </svg>
+  );
+}
+
+export default function PreparednessAccordion({
+  title = 'Preparedness guides',
+  titleHi = 'तैयारी गाइड',
+  subtitle = 'Field-tested guidance for quick reference in low-connectivity areas.',
+  subtitleHi = 'कम नेटवर्क वाले इलाकों में त्वरित संदर्भ के लिए परखी हुई जानकारी।',
+}) {
   const { lang, t } = useLanguage();
   const [openItem, setOpenItem] = useState('flood');
+  const isHi = lang === 'hi';
 
   return (
-    <div className="space-y-4">
-      {GUIDES.map((item) => {
-        const isOpen = openItem === item.id;
-        return (
-          <div key={item.id} className="card overflow-hidden bg-white">
-            <button
-              type="button"
-              onClick={() => setOpenItem(isOpen ? null : item.id)}
-              className="flex w-full items-center justify-between p-4 text-left font-bold text-ink hover:bg-surface/50"
+    <section
+      aria-labelledby="preparedness-heading"
+      className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm"
+    >
+      {/* Section header */}
+      <header className="flex flex-col gap-3 border-b border-line bg-surface px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <div className="flex items-start gap-4">
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand text-xl text-white"
+            aria-hidden="true"
+          >
+            🛡️
+          </span>
+          <div>
+            <h2 id="preparedness-heading" className="text-xl font-bold leading-tight text-ink">
+              {isHi ? titleHi : title}
+            </h2>
+            <p className="mt-1 max-w-xl text-sm text-ink-soft">
+              {isHi ? subtitleHi : subtitle}
+            </p>
+          </div>
+        </div>
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold text-ink-soft">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
+          {GUIDES.length} {isHi ? 'आपदा गाइड' : 'hazard guides'}
+        </span>
+      </header>
+
+      {/* Rows */}
+      <div className="divide-y divide-line">
+        {GUIDES.map((item) => {
+          const isOpen = openItem === item.id;
+          const panelId = `guide-panel-${item.id}`;
+
+          return (
+            <div
+              key={item.id}
+              className={`relative transition-colors duration-300 ${isOpen ? 'bg-surface/50' : 'bg-white'}`}
             >
-              <span className="flex items-center gap-2 text-base text-brand-dark">
-                <span>{isOpen ? '▼' : '▶'}</span>
-                <span>{lang === 'hi' ? item.titleHi : item.title}</span>
-              </span>
-              <span className="text-xs font-semibold text-ink-soft">
-                {isOpen ? (lang === 'hi' ? 'छुपाएं' : 'Hide') : (lang === 'hi' ? 'देखें' : 'View checklist')}
-              </span>
-            </button>
+              {/* Accent bar marks the open row */}
+              <span
+                className={`absolute inset-y-0 left-0 w-1 bg-brand transition-opacity duration-300 ${
+                  isOpen ? 'opacity-100' : 'opacity-0'
+                }`}
+                aria-hidden="true"
+              />
 
-            {isOpen && (
-              <div className="border-t border-line p-5">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                  {/* Before */}
-                  <div className="rounded-lg bg-surface p-3.5 border border-line">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-brand-dark">
-                      {t('disaster.before')}
-                    </h4>
-                    <ul className="mt-2.5 space-y-2 text-xs text-ink leading-relaxed">
-                      {(lang === 'hi' ? item.beforeHi : item.before).map((point, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-brand font-bold">•</span>
-                          <span>{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+              <h3>
+                <button
+                  type="button"
+                  onClick={() => setOpenItem(isOpen ? null : item.id)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-surface/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand sm:px-7"
+                >
+                  <span
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl ${item.tile}`}
+                    aria-hidden="true"
+                  >
+                    {item.emoji}
+                  </span>
 
-                  {/* During */}
-                  <div className="rounded-lg bg-red-50/50 p-3.5 border border-red-100">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-sos">
-                      {t('disaster.during')}
-                    </h4>
-                    <ul className="mt-2.5 space-y-2 text-xs text-ink leading-relaxed">
-                      {(lang === 'hi' ? item.duringHi : item.during).map((point, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-sos font-bold">•</span>
-                          <span>{point}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-lg font-bold leading-tight text-ink">
+                      {isHi ? item.titleHi : item.title}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-ink-soft">
+                      {isHi ? item.title : item.titleHi}
+                    </span>
+                  </span>
 
-                  {/* After */}
-                  <div className="rounded-lg bg-surface p-3.5 border border-line">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-ink-soft">
-                      {t('disaster.after')}
-                    </h4>
-                    <ul className="mt-2.5 space-y-2 text-xs text-ink leading-relaxed">
-                      {(lang === 'hi' ? item.afterHi : item.after).map((point, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-slate-600 font-bold">•</span>
-                          <span>{point}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <span className="hidden text-sm font-semibold text-ink-soft sm:inline">
+                    {isOpen ? (isHi ? 'छुपाएं' : 'Hide') : isHi ? 'देखें' : 'View checklist'}
+                  </span>
+                  <Chevron open={isOpen} />
+                </button>
+              </h3>
+
+              <div
+                id={panelId}
+                role="region"
+                aria-label={isHi ? item.titleHi : item.title}
+                aria-hidden={!isOpen}
+                className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+                  isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="px-5 pb-6 pt-1 sm:px-7">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      {PHASES.map((phase) => {
+                        const points = isHi ? item[`${phase.key}Hi`] : item[phase.key];
+                        return (
+                          <div key={phase.key} className={`rounded-xl border p-4 ${phase.card}`}>
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${phase.badge}`}
+                                aria-hidden="true"
+                              >
+                                {phase.num}
+                              </span>
+                              <h4 className={`text-base font-bold ${phase.heading}`}>
+                                {t(`disaster.${phase.key}`)}
+                              </h4>
+                            </div>
+                            <ul className="mt-3.5 space-y-3 text-sm leading-relaxed text-ink">
+                              {points.map((point, i) => (
+                                <li key={i} className="flex items-start gap-2.5">
+                                  <Check className={phase.tick} />
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

@@ -100,19 +100,20 @@ export default function HospitalCard({ hospital, isSelected, onSelect }) {
               <button
                 type="button"
                 onClick={handleCall}
-                title={`Call ${hospital.phone}`}
-                className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300 transition-all"
+                title={lang === 'hi' ? `डेमो फोन नंबर: ${hospital.phone} (वास्तविक नहीं)` : `Demo Contact: ${hospital.phone} (Simulated)`}
+                className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-500/20 dark:text-amber-300 transition-all"
               >
-                📞 {lang === 'hi' ? 'कॉल' : 'Call'}
+                📞 {lang === 'hi' ? 'कॉल (डेमो)' : 'Call (Demo)'}
               </button>
             )}
 
             <button
               type="button"
               onClick={handleDirections}
-              className="rounded-xl border border-slate-300/80 bg-white/90 px-3 py-1 text-xs font-bold text-teal-700 shadow-xs hover:border-brand hover:bg-teal-500/10 hover:text-teal-900 transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-teal-300 dark:hover:bg-slate-700"
+              title={lang === 'hi' ? 'वास्तविक गूगल मैप्स नेविगेशन' : 'Real Google Maps Navigation'}
+              className="rounded-xl border border-teal-500/40 bg-teal-500/10 px-3 py-1 text-xs font-bold text-teal-800 shadow-xs hover:border-brand hover:bg-teal-500/20 hover:text-teal-950 transition-all dark:border-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
             >
-              🧭 {lang === 'hi' ? 'रास्ता देखें' : t('health.directions')}
+              🧭 {lang === 'hi' ? 'रास्ता देखें (रियल)' : 'Directions (Real)'}
             </button>
           </div>
         </div>

@@ -348,11 +348,16 @@ export default function HealthcarePage() {
                   : `Hospitals & Clinics in ${userLocation.name} (Govt & Private)`}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {lang === 'hi' ? 'कुल अस्पताल:' : 'Total verified facilities:'}{' '}
-              <span className="font-bold text-teal-600 dark:text-teal-400">{hospitals.length}</span> ·{' '}
+            <p className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-1.5">
+              <span>{lang === 'hi' ? 'कुल अस्पताल:' : 'Total verified facilities:'}{' '}</span>
+              <span className="font-bold text-teal-600 dark:text-teal-400">{hospitals.length}</span>
+              <span>·</span>
               <span className="italic">
                 {lang === 'hi' ? `केवल इस क्षेत्र के अस्पताल प्रदर्शित` : `Showing facilities strictly within this district/region`}
+              </span>
+              <span>·</span>
+              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 border border-amber-300/50 px-2 py-0.5 rounded-md">
+                ⚠️ {lang === 'hi' ? 'अस्पताल व मैप्स वास्तविक · फोन नंबर डेमो' : 'Hospitals & Directions Real · Call numbers Demo'}
               </span>
             </p>
           </div>
@@ -404,8 +409,13 @@ export default function HealthcarePage() {
           </div>
         )}
 
-        <p className="text-xs text-slate-400 dark:text-slate-500 italic pt-1">
-          ℹ️ {lang === 'hi' ? 'अस्पताल डेटा ओपनस्ट्रीटमैप लाइव एपीआई एवं राष्ट्रीय स्वास्थ्य रजिस्ट्री द्वारा सत्यापित है।' : 'Hospital data verified via OpenStreetMap Live API and National Health Registry.'}
+        <p className="text-xs text-slate-500 dark:text-slate-400 italic pt-1 flex items-center gap-2">
+          <span>ℹ️</span>
+          <span>
+            {lang === 'hi'
+              ? 'अस्पताल के नाम, स्थान और गूगल मैप्स दिशा-निर्देश वास्तविक हैं। अस्पताल के फोन/कॉल नंबर और लाइव बेड डेटा प्रोटोटाइप डेमो के लिए हैं।'
+              : 'Hospital facilities and Google Maps directions are authentic. Hospital contact phone numbers and live bed telemetry are simulated demo data.'}
+          </span>
         </p>
       </section>
 
