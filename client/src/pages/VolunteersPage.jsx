@@ -42,11 +42,11 @@ export default function VolunteersPage() {
 
   // Location State
   const [userLocation, setUserLocation] = useState(null);
-  const [locationStatus, setLocationStatus] = useState('prompt'); // 'prompt' | 'granted' | 'denied'
-  const [locationName, setLocationName] = useState('Prayagraj, Uttar Pradesh');
-  const [manualCity, setManualCity] = useState('Prayagraj');
-  const [manualState, setManualState] = useState('Uttar Pradesh');
-  const [manualPincode, setManualPincode] = useState('211001');
+  const [locationStatus, setLocationStatus] = useState('unprompted'); // 'unprompted' | 'granted' | 'ip' | 'manual' | 'denied'
+  const [locationName, setLocationName] = useState('Location Not Detected');
+  const [manualCity, setManualCity] = useState('');
+  const [manualState, setManualState] = useState('');
+  const [manualPincode, setManualPincode] = useState('');
   const [isChangingLocation, setIsChangingLocation] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -239,9 +239,9 @@ export default function VolunteersPage() {
     }
   };
 
-  // Initial detection on mount
+  // Initial load on mount without auto-detecting location (detection happens on user click)
   useEffect(() => {
-    detectLocation();
+    loadData();
   }, []);
 
   // Filter re-query without resetting location
@@ -397,20 +397,32 @@ export default function VolunteersPage() {
 
             <button
               type="button"
-              onClick={() => setIsChangingLocation(!isChangingLocation)}
-              className="px-3 py-1.5 rounded-xl border border-teal-500/30 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
+              disabled={isLocating}
+              onClick={detectLocation}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                locationStatus === 'unprompted'
+                  ? 'bg-teal-600 text-white hover:bg-teal-500 shadow-md shadow-teal-600/20'
+                  : 'border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+              }`}
             >
-              {isChangingLocation ? `✕ ${t('volunteers.cancelLocation') || 'Cancel'}` : `📍 ${t('volunteers.changeLocation') || 'Change Location'}`}
+              <span className={isLocating ? 'inline-block animate-spin' : ''}>
+                {isLocating ? '🔄' : '🎯'}
+              </span>
+              <span>
+                {isLocating
+                  ? 'Detecting & Searching...'
+                  : locationStatus === 'unprompted'
+                  ? 'Detect Location & Search'
+                  : (t('volunteers.refreshCoords') || 'Refresh Location')}
+              </span>
             </button>
 
             <button
               type="button"
-              disabled={isLocating}
-              onClick={detectLocation}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              onClick={() => setIsChangingLocation(!isChangingLocation)}
+              className="px-3 py-1.5 rounded-xl border border-teal-500/30 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
             >
-              <span className={isLocating ? 'inline-block animate-spin' : ''}>🔄</span>
-              <span>{isLocating ? 'Detecting...' : (t('volunteers.refreshCoords') || 'Refresh Coordinates')}</span>
+              {isChangingLocation ? `✕ ${t('volunteers.cancelLocation') || 'Cancel'}` : `📍 ${t('volunteers.changeLocation') || 'Change Location'}`}
             </button>
           </div>
 
@@ -481,7 +493,18 @@ export default function VolunteersPage() {
         {/* Filter Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('volunteers.searchLabel')}</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('volunteers.searchLabel')}</label>
+              <button
+                type="button"
+                onClick={detectLocation}
+                disabled={isLocating}
+                className="text-[10px] font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                <span>{isLocating ? '⏳' : '🎯'}</span>
+                <span>{isLocating ? 'Detecting...' : 'Detect & Search'}</span>
+              </button>
+            </div>
             <div className="relative">
               <input
                 type="text"
