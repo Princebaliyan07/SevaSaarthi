@@ -151,14 +151,18 @@ export default function VolunteersPage() {
         setUserLocation(ipResult.coords);
         setLocationStatus('ip');
         setLocationName(ipResult.displayName);
-        if (ipResult.city) setManualCity(ipResult.city);
+        const searchCity = ipResult.city || '';
+        if (searchCity) {
+          setManualCity(searchCity);
+          setSearchQuery(searchCity);
+        }
         if (ipResult.state) setManualState(ipResult.state);
         if (ipResult.pincode) setManualPincode(ipResult.pincode);
-        await loadData(ipResult.coords);
+        await loadData(ipResult.coords, searchCity);
       } else {
         setLocationStatus('denied');
         setLocationName('Prayagraj, Uttar Pradesh (Default)');
-        await loadData(null);
+        await loadData(null, '');
       }
       setIsLocating(false);
     };
@@ -175,10 +179,14 @@ export default function VolunteersPage() {
         setLocationStatus('granted');
         const geoInfo = await reverseGeocode(coords.lat, coords.lng);
         setLocationName(geoInfo.displayName);
-        if (geoInfo.city) setManualCity(geoInfo.city);
+        const searchCity = geoInfo.city || '';
+        if (searchCity) {
+          setManualCity(searchCity);
+          setSearchQuery(searchCity);
+        }
         if (geoInfo.state) setManualState(geoInfo.state);
         if (geoInfo.pincode) setManualPincode(geoInfo.pincode);
-        await loadData(coords);
+        await loadData(coords, searchCity);
         setIsLocating(false);
       },
       async (err) => {
@@ -474,14 +482,29 @@ export default function VolunteersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('volunteers.searchLabel')}</label>
-            <input
-              type="text"
-              placeholder={t('volunteers.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadData()}
-              className="w-full p-2.5 rounded-xl text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t('volunteers.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadData(userLocation, searchQuery)}
+                className="w-full p-2.5 pr-8 rounded-xl text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    loadData(userLocation, '');
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                  title="Clear location search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -519,7 +542,7 @@ export default function VolunteersPage() {
           <div className="flex items-end">
             <button
               type="button"
-              onClick={() => loadData()}
+              onClick={() => loadData(userLocation, searchQuery)}
               className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs transition-all shadow-sm"
             >
               {t('volunteers.applyFilter')}

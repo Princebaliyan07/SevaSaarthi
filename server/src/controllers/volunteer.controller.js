@@ -102,6 +102,52 @@ const BASELINE_VOLUNTEER_TEAMS = [
     currentMission: '24x7 River safety surveillance and bathing ghat barricading',
     completedMissions: 14,
   },
+  {
+    teamId: 'VOL-TEAM-04',
+    name: 'NDRF Community Disaster Response Unit - Gautam Budh Nagar',
+    description: 'Rapid emergency rescue, flood & waterlogging evacuation, and mass trauma triage squad.',
+    teamCategory: 'NDRF/SDRF Affiliate',
+    supportedDisasters: ['Floods', 'Severe Storms', 'General Emergency'],
+    location: 'Knowledge Park III, Greater Noida, Gautam Budh Nagar',
+    city: 'Gautam Budh Nagar',
+    district: 'Gautam Budh Nagar',
+    state: 'Uttar Pradesh',
+    serviceArea: 'Greater Noida, Pari Chowk, Yamuna Expressway Corridor',
+    coords: { lat: 28.4744, lng: 77.4937 },
+    leaderName: 'Inspector Rajesh Bhati',
+    leaderPhone: '+91 98765 22001',
+    capacity: 50,
+    activeMembers: 28,
+    skills: ['Boat Rescue', 'Flood Evacuation', 'First Aid Trauma Support', 'Search & Rescue'],
+    isVerified: true,
+    verificationStatus: 'Verified',
+    operationalStatus: 'Accepting Members',
+    currentMission: 'Urban waterlogging readiness and rapid medical assistance',
+    completedMissions: 12,
+  },
+  {
+    teamId: 'VOL-TEAM-05',
+    name: 'Noida Civil Defence & Red Cross Emergency Corps',
+    description: 'Emergency medicines doorstep distribution, trauma care, and vulnerable citizen transport.',
+    teamCategory: 'Red Cross / Medical Corps',
+    supportedDisasters: ['Floods', 'Heatwaves', 'General Emergency'],
+    location: 'Sector 62, Noida, Gautam Budh Nagar',
+    city: 'Noida',
+    district: 'Gautam Budh Nagar',
+    state: 'Uttar Pradesh',
+    serviceArea: 'Noida City, Sector 18 to Sector 137 Metro Corridor',
+    coords: { lat: 28.6258, lng: 77.3688 },
+    leaderName: 'Dr. Amit Sharma',
+    leaderPhone: '+91 98765 22002',
+    capacity: 45,
+    activeMembers: 30,
+    skills: ['Triage First Aid', 'Medicine Doorstep Delivery', 'Lost Child Care', 'Elderly Escort'],
+    isVerified: true,
+    verificationStatus: 'Verified',
+    operationalStatus: 'Accepting Members',
+    currentMission: 'Medicine and water kit distribution in suburban clusters',
+    completedMissions: 25,
+  },
 ];
 
 // Baseline Initial Seed Campaigns
@@ -206,13 +252,16 @@ const BASELINE_SUPPLIERS = [
   },
 ];
 
-// Helper: Seed initial records in MongoDB if collection is empty
+// Helper: Seed initial records in MongoDB if collection is empty or missing teams
 async function ensureSeedData() {
   if (mongoose.connection.readyState !== 1) return;
   try {
-    const teamCount = await VolunteerTeam.countDocuments();
-    if (teamCount === 0) {
-      await VolunteerTeam.insertMany(BASELINE_VOLUNTEER_TEAMS);
+    for (const team of BASELINE_VOLUNTEER_TEAMS) {
+      await VolunteerTeam.updateOne(
+        { teamId: team.teamId },
+        { $setOnInsert: team },
+        { upsert: true }
+      );
     }
     const campCount = await ReliefCampaign.countDocuments();
     if (campCount === 0) {
@@ -259,8 +308,20 @@ export const getVolunteerTeams = asyncHandler(async (req, res) => {
     }
   }
 
-  if (teams.length === 0 && !search && (!status || status === 'all')) {
-    teams = BASELINE_VOLUNTEER_TEAMS;
+  // Fallback to BASELINE_VOLUNTEER_TEAMS if database query returned no results
+  if (teams.length === 0 && (!status || status === 'all')) {
+    if (search) {
+      const q = search.trim().toLowerCase();
+      teams = BASELINE_VOLUNTEER_TEAMS.filter((t) =>
+        t.name?.toLowerCase().includes(q) ||
+        t.city?.toLowerCase().includes(q) ||
+        t.district?.toLowerCase().includes(q) ||
+        t.location?.toLowerCase().includes(q)
+      );
+    }
+    if (teams.length === 0 && !search) {
+      teams = BASELINE_VOLUNTEER_TEAMS;
+    }
   }
 
   // Calculate distance from user coords if provided
