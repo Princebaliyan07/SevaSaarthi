@@ -42,6 +42,8 @@ export default function CommandReliefAdminTab() {
     targetAmount: 250000,
     recipientAgency: 'District Disaster Relief Fund',
     needsText: 'Clean Drinking Water (2000 Litres), Ready-to-eat Food Packets (1500 Packs), ORS Packets (3000 Sachets)',
+    qrCodePhoto: '',
+    upiId: '',
   });
 
   // Full-size ID Proof Photo Preview Modal State
@@ -159,6 +161,8 @@ export default function CommandReliefAdminTab() {
         description: newCampaign.description,
         targetAmount: Number(newCampaign.targetAmount) || 200000,
         recipientAgency: newCampaign.recipientAgency,
+        qrCodePhoto: newCampaign.qrCodePhoto || '',
+        upiId: newCampaign.upiId || '',
         verifiedNeeds: verifiedNeeds.length ? verifiedNeeds : [{ item: 'Emergency Kits', requestedQty: 500, fundedQty: 0, deliveredQty: 0, unit: 'kits', unitCost: 100 }],
       });
 
@@ -171,6 +175,8 @@ export default function CommandReliefAdminTab() {
         targetAmount: 250000,
         recipientAgency: 'District Disaster Relief Fund',
         needsText: '',
+        qrCodePhoto: '',
+        upiId: '',
       });
       await loadData();
     } catch (err) {
@@ -1112,6 +1118,42 @@ export default function CommandReliefAdminTab() {
                 />
               </div>
 
+              {/* QR Code Upload */}
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Payment QR Code <span className="text-slate-400 font-normal text-xs">(optional — shown to donors)</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewCampaign(prev => ({ ...prev, qrCodePhoto: reader.result }));
+                    reader.readAsDataURL(file);
+                  }}
+                  className="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-teal-50 file:text-teal-700 file:font-semibold hover:file:bg-teal-100"
+                />
+                {newCampaign.qrCodePhoto && (
+                  <img src={newCampaign.qrCodePhoto} alt="QR Preview" className="mt-2 h-28 w-28 object-contain rounded-xl border border-slate-300" />
+                )}
+              </div>
+
+              {/* UPI ID */}
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  UPI ID <span className="text-slate-400 font-normal text-xs">(optional — shown to donors)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. sevasaarthi@upi"
+                  value={newCampaign.upiId || ''}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, upiId: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -1127,6 +1169,7 @@ export default function CommandReliefAdminTab() {
                   Publish Campaign
                 </button>
               </div>
+
             </form>
           </div>
         </div>

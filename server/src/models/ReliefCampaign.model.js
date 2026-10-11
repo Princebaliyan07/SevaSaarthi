@@ -66,6 +66,14 @@ const reliefCampaignSchema = new mongoose.Schema(
       type: String,
       default: 'Official Government Treasury Account / Registered NGO Escrow',
     },
+    qrCodePhoto: {
+      type: String, // Base64 data URI or image URL
+      default: '',
+    },
+    upiId: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['Active', 'Urgent', 'Target Reached', 'Closed', 'Paused'],

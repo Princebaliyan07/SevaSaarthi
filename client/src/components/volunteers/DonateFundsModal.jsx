@@ -3,6 +3,69 @@ import { useLanguage } from '../../context/LanguageContext';
 
 const PRESET_AMOUNTS = [100, 250, 500, 1000];
 
+// Helper: generate a downloadable HTML receipt blob and trigger download
+function downloadReceipt({ receipt, campaign, amount, donorName, donorPhone }) {
+  const date = new Date().toLocaleString('en-IN', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kolkata',
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Donation Receipt – ${receipt.receiptNumber}</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background:#f4f7fb; margin:0; padding:32px; }
+    .card { max-width:540px; margin:auto; background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,.1); overflow:hidden; }
+    .header { background:linear-gradient(135deg,#0d9488,#0891b2); color:#fff; padding:28px 32px; }
+    .header h1 { margin:0 0 4px; font-size:22px; letter-spacing:.5px; }
+    .header p { margin:0; font-size:13px; opacity:.85; }
+    .body { padding:28px 32px; }
+    .row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9; font-size:14px; }
+    .row:last-child { border-bottom:none; }
+    .label { color:#64748b; }
+    .value { font-weight:700; color:#0f172a; text-align:right; }
+    .amount { font-size:22px; color:#0d9488; font-weight:900; }
+    .footer { background:#f8fafc; text-align:center; padding:16px; font-size:12px; color:#94a3b8; }
+    .badge { display:inline-block; background:#dcfce7; color:#15803d; padding:4px 14px; border-radius:99px; font-weight:700; font-size:12px; margin-top:6px; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>🧾 SevaSaarthi — Donation Receipt</h1>
+    <p>Official contribution acknowledgement</p>
+  </div>
+  <div class="body">
+    <div class="row"><span class="label">Receipt No.</span><span class="value" style="font-family:monospace">${receipt.receiptNumber}</span></div>
+    <div class="row"><span class="label">Date &amp; Time</span><span class="value">${date}</span></div>
+    <div class="row"><span class="label">Donor Name</span><span class="value">${donorName}</span></div>
+    ${donorPhone ? `<div class="row"><span class="label">Mobile</span><span class="value">${donorPhone}</span></div>` : ''}
+    <div class="row"><span class="label">Campaign</span><span class="value">${campaign.title}</span></div>
+    <div class="row"><span class="label">Recipient Agency</span><span class="value">${campaign.recipientAgency}</span></div>
+    <div class="row"><span class="label">Disaster Type</span><span class="value">${campaign.disasterType || '—'}</span></div>
+    <div class="row"><span class="label">Contribution Amount</span><span class="value amount">₹${amount}</span></div>
+    <div class="row"><span class="label">Status</span><span class="value"><span class="badge">✓ Confirmed &amp; Registered</span></span></div>
+  </div>
+  <div class="footer">
+    Thank you for your generous contribution to disaster relief.<br/>
+    SevaSaarthi — Connecting Communities in Crisis &nbsp;|&nbsp; sevasaarthiindia.vercel.app
+  </div>
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Receipt_${receipt.receiptNumber}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmDonation }) {
   const { lang } = useLanguage();
   const [amount, setAmount] = useState(500);
@@ -76,10 +139,11 @@ export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmD
         )}
 
         {receipt ? (
+          /* ────────────── SUCCESS / RECEIPT SCREEN ────────────── */
           <div className="py-6 text-center space-y-4">
             <div className="text-5xl">🧾</div>
             <h4 className="text-xl font-black text-slate-900 dark:text-white">
-              Donation Confirmed & Receipt Issued!
+              Donation Confirmed &amp; Receipt Issued!
             </h4>
             <div className="p-4 rounded-2xl bg-teal-50/60 dark:bg-teal-950/30 border border-teal-500/30 text-left text-xs space-y-2">
               <div className="flex justify-between">
@@ -89,6 +153,10 @@ export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmD
               <div className="flex justify-between">
                 <span className="text-slate-500">Amount Paid:</span>
                 <strong className="text-slate-900 dark:text-white font-bold">₹{amount}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Donor:</span>
+                <strong className="text-slate-900 dark:text-white">{isAnonymous ? 'Anonymous Citizen' : donorName}</strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Recipient Agency:</span>
@@ -102,15 +170,33 @@ export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmD
             <p className="text-[11px] text-slate-500">
               Your contribution has been counted into the verified campaign total and allocated toward emergency procurement.
             </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white"
-            >
-              Done
-            </button>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  downloadReceipt({
+                    receipt,
+                    campaign,
+                    amount,
+                    donorName: isAnonymous ? 'Anonymous Citizen' : donorName,
+                    donorPhone,
+                  })
+                }
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+              >
+                📄 Download Receipt
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white"
+              >
+                Done
+              </button>
+            </div>
           </div>
         ) : (
+          /* ────────────── DONATION FORM ────────────── */
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Recipient Details & Transparency */}
             <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-500/30 text-xs space-y-1">
@@ -122,6 +208,40 @@ export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmD
                 {campaign.recipientAgency} ({campaign.recipientAccountType || 'Official Treasury Escrow'})
               </p>
             </div>
+
+            {/* QR Code & UPI Payment Section */}
+            {(campaign.qrCodePhoto || campaign.upiId) && (
+              <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-400/40 space-y-3">
+                <p className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                  <span>📲</span> Scan QR or Pay via UPI
+                </p>
+                {campaign.qrCodePhoto && (
+                  <div className="flex justify-center">
+                    <img
+                      src={campaign.qrCodePhoto}
+                      alt="Payment QR Code"
+                      className="h-44 w-44 object-contain rounded-2xl border-2 border-amber-300 bg-white p-2 shadow"
+                    />
+                  </div>
+                )}
+                {campaign.upiId && (
+                  <div className="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-800">
+                    <span className="text-xs text-slate-500">UPI ID:</span>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard?.writeText(campaign.upiId)}
+                      className="font-mono text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline"
+                      title="Click to copy"
+                    >
+                      {campaign.upiId} 📋
+                    </button>
+                  </div>
+                )}
+                <p className="text-[10px] text-amber-700/70 dark:text-amber-300/60 text-center">
+                  After scanning &amp; paying, click <strong>Confirm Payment</strong> below to record your contribution.
+                </p>
+              </div>
+            )}
 
             {/* Choose Amount */}
             <div className="space-y-2">
@@ -216,7 +336,7 @@ export default function DonateFundsModal({ campaign, isOpen, onClose, onConfirmD
                 disabled={submitting}
                 className="px-6 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-60 shadow-md shadow-teal-600/20"
               >
-                {submitting ? 'Confirming Payment...' : `Contribute ₹${amount} Now →`}
+                {submitting ? 'Confirming Payment...' : `Confirm ₹${amount} Contribution →`}
               </button>
             </div>
           </form>

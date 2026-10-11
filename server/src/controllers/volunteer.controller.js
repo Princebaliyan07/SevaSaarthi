@@ -937,6 +937,8 @@ export const createReliefCampaign = asyncHandler(async (req, res) => {
     isGovernmentFund = false,
     recipientAgency = 'District Disaster Relief Escrow',
     verifiedNeeds = [],
+    qrCodePhoto = '',
+    upiId = '',
   } = req.body;
 
   if (!title || !recipientAgency) {
@@ -961,6 +963,8 @@ export const createReliefCampaign = asyncHandler(async (req, res) => {
     isGovernmentFund: Boolean(isGovernmentFund),
     recipientAgency: recipientAgency.trim(),
     recipientAccountType: 'Verified Public Relief Escrow Account',
+    qrCodePhoto: qrCodePhoto || '',
+    upiId: upiId ? upiId.trim() : '',
     status: 'Active',
     isVerified: true,
     verifiedNeeds: Array.isArray(verifiedNeeds) ? verifiedNeeds : [],
@@ -995,10 +999,19 @@ export const deleteReliefCampaign = asyncHandler(async (req, res) => {
 
   if (mongoose.connection.readyState === 1) {
     const isObjectId = mongoose.Types.ObjectId.isValid(campaignId);
-    const campaign = await ReliefCampaign.findOneAndDelete(
+    let campaign = await ReliefCampaign.findOneAndDelete(
       isObjectId ? { $or: [{ _id: campaignId }, { campaignId }] } : { campaignId }
     );
-    if (!campaign) throw new ApiError(404, 'Relief campaign not found');
+
+    // If not found in DB (e.g. baseline campaign before explicit insert), remove from memory baseline or create tombstone
+    if (!campaign) {
+      const bIndex = BASELINE_CAMPAIGNS.findIndex((c) => c.campaignId === campaignId || c._id === campaignId);
+      if (bIndex !== -1) {
+        const removed = BASELINE_CAMPAIGNS.splice(bIndex, 1)[0];
+        return res.status(200).json(new ApiResponse(200, { campaignId: removed.campaignId }, 'Baseline campaign deleted successfully'));
+      }
+      throw new ApiError(404, 'Relief campaign not found');
+    }
 
     await ReliefAuditLog.create({
       logId: `LOG-${Date.now()}`,
@@ -1012,6 +1025,10 @@ export const deleteReliefCampaign = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { deletedId: campaign._id, campaignId: campaign.campaignId }, 'Campaign deleted successfully'));
   }
 
+  const bIndex = BASELINE_CAMPAIGNS.findIndex((c) => c.campaignId === campaignId || c._id === campaignId);
+  if (bIndex !== -1) {
+    BASELINE_CAMPAIGNS.splice(bIndex, 1);
+  }
   return res.status(200).json(new ApiResponse(200, { campaignId }, 'Campaign deleted (memory fallback)'));
 });
 
