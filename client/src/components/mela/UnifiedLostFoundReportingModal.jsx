@@ -4,6 +4,8 @@ export default function UnifiedLostFoundReportingModal({
   isOpen,
   onClose,
   onReportCreated,
+  currentMapName = '',
+  selectedMapId = 'prayagraj_kumbh',
   lang = 'en',
 }) {
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +40,11 @@ export default function UnifiedLostFoundReportingModal({
     setSubmitting(true);
     setError(null);
     try {
-      const payload = { ...form, reportType: 'missing_person' };
+      const payload = {
+        ...form,
+        reportType: 'missing_person',
+        mapId: selectedMapId || 'prayagraj_kumbh',
+      };
       const res = await onReportCreated(payload);
       setSuccessInfo(res);
     } catch (err) {

@@ -15,6 +15,13 @@ const lostFoundReportSchema = new mongoose.Schema(
       default: 'missing_person',
       index: true,
     },
+    // Associated Ground Layout Map ID (e.g., prayagraj_kumbh, haridwar_kumbh)
+    mapId: {
+      type: String,
+      default: 'prayagraj_kumbh',
+      trim: true,
+      index: true,
+    },
     // Person Details
     personName: {
       type: String,

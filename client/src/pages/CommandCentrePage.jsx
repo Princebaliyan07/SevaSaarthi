@@ -125,8 +125,12 @@ export default function CommandCentrePage() {
     }
   };
 
-  const handleSaveAlert = async (formData) => {
-    await createMelaAlert(formData);
+  const handleSaveAlert = async (formData, id) => {
+    if (id) {
+      await updateMelaAlert(id, formData);
+    } else {
+      await createMelaAlert({ ...formData, mapId: selectedMapId || 'prayagraj_kumbh' });
+    }
     await loadData();
   };
 
@@ -253,7 +257,7 @@ export default function CommandCentrePage() {
               await loadData();
             }}
             onCreateCrowdZone={async (data) => {
-              await createCrowdZone(data);
+              await createCrowdZone({ ...data, mapId: selectedMapId || 'prayagraj_kumbh' });
               await loadData();
             }}
             onUpdateCrowdZone={async (id, data) => {

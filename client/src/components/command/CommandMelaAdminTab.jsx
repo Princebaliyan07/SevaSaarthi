@@ -36,6 +36,28 @@ export default function CommandMelaAdminTab({
   const [newZone, setNewZone] = useState({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
   const [savingZone, setSavingZone] = useState(false);
 
+  const isMatchMap = (itemMapId) => {
+    if (!itemMapId) return selectedMapId === 'prayagraj_kumbh';
+    return itemMapId === selectedMapId;
+  };
+
+  const defaultMaps = [
+    {
+      mapId: 'prayagraj_kumbh',
+      name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
+      imageUrl: '/mela-blueprint-map.jpg',
+      description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
+      isDefault: true,
+    },
+  ];
+  const allMaps = maps && maps.length > 0 ? maps : defaultMaps;
+  const activeMap = allMaps.find((m) => m.mapId === selectedMapId) || allMaps[0] || defaultMaps[0];
+
+  const scopedReports = reports.filter((r) => isMatchMap(r.mapId));
+  const scopedFacilities = facilities.filter((f) => isMatchMap(f.mapId));
+  const scopedAlerts = alerts.filter((a) => isMatchMap(a.mapId));
+  const scopedCrowdZones = crowdZones.filter((z) => isMatchMap(z.mapId));
+
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setLoggingIn(true);
@@ -54,19 +76,19 @@ export default function CommandMelaAdminTab({
 
   return (
     <div className="space-y-6">
-      {/* HIGHLIGHTED HEADER WITH ADMIN AUTHENTICATION */}
+      {/* HIGHLIGHTED HEADER WITH ADMIN AUTHENTICATION & ACTIVE MAP SELECTOR */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 text-white shadow-2xl border-2 border-teal-500/40 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
               <span className="h-2 w-2 rounded-full bg-teal-400 animate-ping" />
-              <span>COMMAND CENTRE · MAHA KUMBH OPERATIONS</span>
+              <span>COMMAND CENTRE · MELA MANAGEMENT SYSTEM</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white">
               Official Mela Layout & Pilgrim Reunification Command
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl">
-              Direct administrative authorization to update the 2D layout map, manage markers (toilets, drinking water, medical camps), verify missing persons via dual photo comparison, and broadcast crowd safety alerts.
+              Currently operating: <strong className="text-amber-300">{activeMap?.name}</strong>. All facility markers, missing persons, crowd zones, and alerts below belong strictly to this selected Mela.
             </p>
           </div>
 
@@ -129,58 +151,109 @@ export default function CommandMelaAdminTab({
           </div>
         </div>
 
-        {/* 3 Quick Navigation Pill Tabs */}
-        <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+        {/* Multi-Map Ground Selector Bar for entire Command Center */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider shrink-0 flex items-center gap-1">
+              <span>📍 Active Fair / Map:</span>
+            </span>
+            {allMaps.map((m) => {
+              const isSelected = activeMap?.mapId === m.mapId;
+              return (
+                <div key={m.mapId} className="flex items-center gap-0.5 group">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSelectMap) onSelectMap(m.mapId);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap border flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md ring-2 ring-white/50'
+                        : 'bg-white/10 text-slate-200 border-white/20 hover:bg-white/20'
+                    }`}
+                  >
+                    <span>{isSelected ? '🎯' : '🗺️'}</span>
+                    <span>{m.name}</span>
+                  </button>
+                  {isAdmin && onDeleteMap && m.mapId !== 'prayagraj_kumbh' && (
+                    <button
+                      type="button"
+                      title={`Delete map: ${m.name}`}
+                      onClick={() => onDeleteMap(m.mapId)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 h-6 w-6 rounded-lg flex items-center justify-center bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] shrink-0"
+                    >
+                      🗑
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {isAdmin && onOpenAddMap && (
+            <button
+              type="button"
+              onClick={onOpenAddMap}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 shadow-sm transition-all whitespace-nowrap flex items-center gap-1"
+            >
+              <span>➕</span>
+              <span>Add New Ground Map</span>
+            </button>
+          )}
+        </div>
+
+        {/* 4 Quick Navigation Pill Tabs with scoped counts */}
+        <div className="flex items-center gap-2 pt-2 border-t border-white/10 overflow-x-auto pb-1 scrollbar-none">
           <button
             type="button"
             onClick={() => setActiveSubTab('verification')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'verification'
                 ? 'bg-rose-500 text-white shadow-lg'
                 : 'bg-white/10 text-slate-300 hover:bg-white/20'
             }`}
           >
             <span>📸</span>
-            <span>Photo Verification Queue ({reports.filter((r) => r.status === 'Possible Match').length})</span>
+            <span>Photo Verification ({scopedReports.filter((r) => r.status === 'Possible Match').length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSubTab('facilities')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'facilities'
                 ? 'bg-teal-500 text-slate-950 shadow-lg'
                 : 'bg-white/10 text-slate-300 hover:bg-white/20'
             }`}
           >
             <span>🗺️</span>
-            <span>Mela Map & Facility Markers ({facilities.length})</span>
+            <span>Map & Facilities ({scopedFacilities.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSubTab('alerts')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'alerts'
                 ? 'bg-amber-500 text-slate-950 shadow-lg'
                 : 'bg-white/10 text-slate-300 hover:bg-white/20'
             }`}
           >
             <span>🚨</span>
-            <span>Crowd Safety Alerts ({alerts.filter((a) => a.status === 'Active').length})</span>
+            <span>Safety Alerts ({scopedAlerts.filter((a) => a.status === 'Active').length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSubTab('crowd_zones')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'crowd_zones'
                 ? 'bg-indigo-500 text-white shadow-lg'
                 : 'bg-white/10 text-slate-300 hover:bg-white/20'
             }`}
           >
             <span>👥</span>
-            <span>Crowd Zones Desk ({crowdZones.length || 6})</span>
+            <span>Crowd Zones ({scopedCrowdZones.length})</span>
           </button>
         </div>
       </div>
@@ -192,19 +265,24 @@ export default function CommandMelaAdminTab({
             <div>
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <span>📸</span>
-                <span>Missing Persons Dual Photo Verification & Matching Desk</span>
+                <span>Missing Persons Verification Desk — {activeMap?.name}</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Compare photos provided when reported missing with photos uploaded by finders, verify matching facial details, review found location, and mark Verified Match.
               </p>
             </div>
             <span className="text-xs font-bold font-mono px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-              Total Cases: {reports.length}
+              Total Cases ({activeMap?.name}): {scopedReports.length}
             </span>
           </div>
 
-          <div className="space-y-4">
-            {reports.map((rep) => {
+          {scopedReports.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400">
+              No missing persons reported for {activeMap?.name}.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {scopedReports.map((rep) => {
               const isMatchCandidate = rep.status === 'Possible Match';
               const isVerified = rep.status === 'Verified Match' || rep.status === 'Resolved';
 
@@ -367,8 +445,9 @@ export default function CommandMelaAdminTab({
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
       {/* SUBTAB 2: FACILITIES MANAGEMENT */}
       {activeSubTab === 'facilities' && (
@@ -491,10 +570,10 @@ export default function CommandMelaAdminTab({
           <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
             <div>
               <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Official Crowd Safety Directives
+                Official Crowd Safety Directives — {activeMap?.name}
               </h3>
               <p className="text-xs text-slate-500">
-                Broadcast warnings for high crowd surges, bridge closures, and safety protocols.
+                Broadcast warnings for high crowd surges, bridge closures, and safety protocols for {activeMap?.name}.
               </p>
             </div>
             {isAdmin && (
@@ -521,31 +600,39 @@ export default function CommandMelaAdminTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {alerts.map((a) => (
-                  <tr key={a.alertId || a._id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
-                    <td className="p-3">
-                      <span className="font-bold text-slate-900 dark:text-white block">{a.title}</span>
-                      <span className="text-[11px] text-slate-500">{a.recommendedAction}</span>
-                    </td>
-                    <td className="p-3">{a.alertType}</td>
-                    <td className="p-3 font-bold">{a.severity}</td>
-                    <td className="p-3">{a.affectedLocation}</td>
-                    <td className="p-3 font-bold">{a.status}</td>
-                    <td className="p-3 text-right">
-                      {isAdmin && a.status === 'Active' ? (
-                        <button
-                          type="button"
-                          onClick={() => onResolveAlert(a.alertId || a._id)}
-                          className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs"
-                        >
-                          Resolve
-                        </button>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
+                {scopedAlerts.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="p-6 text-center text-xs text-slate-400">
+                      No active alerts for {activeMap?.name}. Click "Broadcast New Alert" to create one.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  scopedAlerts.map((a) => (
+                    <tr key={a.alertId || a._id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
+                      <td className="p-3">
+                        <span className="font-bold text-slate-900 dark:text-white block">{a.title}</span>
+                        <span className="text-[11px] text-slate-500">{a.recommendedAction}</span>
+                      </td>
+                      <td className="p-3">{a.alertType}</td>
+                      <td className="p-3 font-bold">{a.severity}</td>
+                      <td className="p-3">{a.affectedLocation}</td>
+                      <td className="p-3 font-bold">{a.status}</td>
+                      <td className="p-3 text-right">
+                        {isAdmin && a.status === 'Active' ? (
+                          <button
+                            type="button"
+                            onClick={() => onResolveAlert(a.alertId || a._id)}
+                            className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs"
+                          >
+                            Resolve
+                          </button>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -560,19 +647,19 @@ export default function CommandMelaAdminTab({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Mela Crowd Zones Management Desk
+                  Mela Crowd Zones Management Desk — {activeMap?.name}
                 </h3>
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
                   ⚡ Live Sync to Citizen /mela Page
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Add and manage crowd zones. These appear live on the citizen Mela page with flash alerts.
+                Add and manage crowd zones for {activeMap?.name}. These appear live on the citizen Mela page with flash alerts.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-                {crowdZones.length} Zone{crowdZones.length !== 1 ? 's' : ''}
+                {scopedCrowdZones.length} Zone{scopedCrowdZones.length !== 1 ? 's' : ''}
               </span>
               {onCreateCrowdZone && (
                 <button
@@ -661,7 +748,7 @@ export default function CommandMelaAdminTab({
                     if (!newZone.name.trim()) return;
                     setSavingZone(true);
                     try {
-                      await onCreateCrowdZone({ ...newZone });
+                      await onCreateCrowdZone({ ...newZone, mapId: selectedMapId });
                       setShowAddZoneForm(false);
                       setNewZone({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
                     } catch (err) {
@@ -679,18 +766,18 @@ export default function CommandMelaAdminTab({
           )}
 
           {/* Empty State */}
-          {crowdZones.length === 0 && !showAddZoneForm && (
+          {scopedCrowdZones.length === 0 && !showAddZoneForm && (
             <div className="py-12 text-center space-y-3">
               <div className="text-4xl">👥</div>
-              <p className="text-sm font-semibold text-slate-500">No crowd zones added yet.</p>
-              <p className="text-xs text-slate-400">Click <strong>+ Add Zone</strong> above to create your first crowd monitoring zone.</p>
+              <p className="text-sm font-semibold text-slate-500">No crowd zones added yet for {activeMap?.name}.</p>
+              <p className="text-xs text-slate-400">Click <strong>+ Add Zone</strong> above to create a crowd monitoring zone for this Mela.</p>
             </div>
           )}
 
           {/* Zone Cards Grid */}
-          {crowdZones.length > 0 && (
+          {scopedCrowdZones.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {crowdZones.map((zone) => {
+              {scopedCrowdZones.map((zone) => {
                 const STATUS_COLORS = {
                   Normal: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
                   Moderate: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40',

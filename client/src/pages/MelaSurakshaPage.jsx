@@ -160,12 +160,34 @@ export default function MelaSurakshaPage() {
     );
   }
 
+  const isMatchMap = (itemMapId) => {
+    if (!itemMapId) return selectedMapId === 'prayagraj_kumbh';
+    return itemMapId === selectedMapId;
+  };
+
+  const defaultMaps = [
+    {
+      mapId: 'prayagraj_kumbh',
+      name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
+      imageUrl: '/mela-blueprint-map.jpg',
+      description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
+      isDefault: true,
+    },
+  ];
+  const allMaps = maps && maps.length > 0 ? maps : defaultMaps;
+  const currentMap = allMaps.find((m) => m.mapId === selectedMapId) || allMaps[0] || defaultMaps[0];
+
+  const scopedFacilities = facilities.filter((f) => isMatchMap(f.mapId));
+  const scopedAlerts = alerts.filter((a) => isMatchMap(a.mapId));
+  const scopedReports = reportsData.reports.filter((r) => isMatchMap(r.mapId));
+  const scopedCrowdZones = crowdZones.filter((z) => isMatchMap(z.mapId));
+
   const counters = [
-    { label: t('mela.crowdStatus'), val: data?.crowdStatus || 'Moderate', isStatus: true, color: 'from-amber-500 to-orange-600' },
-    { label: 'Active Facilities', val: facilities.length, color: 'from-teal-500 to-emerald-600' },
-    { label: 'Official Alerts', val: alerts.filter((a) => a.status === 'Active').length, color: 'from-rose-500 to-red-600' },
-    { label: 'Lost & Found Cases', val: reportsData.pagination?.total || reportsData.reports.length, color: 'from-indigo-500 to-blue-600' },
-    { label: t('mela.helpDesks'), val: data?.helpDesks || 22, color: 'from-cyan-500 to-teal-600' },
+    { label: `${currentMap?.name ? currentMap.name.split(' ')[0] : 'Mela'} Status`, val: data?.crowdStatus || 'Normal', isStatus: true, color: 'from-amber-500 to-orange-600' },
+    { label: 'Active Facilities', val: scopedFacilities.length, color: 'from-teal-500 to-emerald-600' },
+    { label: 'Official Alerts', val: scopedAlerts.filter((a) => a.status === 'Active').length, color: 'from-rose-500 to-red-600' },
+    { label: 'Missing Cases', val: scopedReports.length, color: 'from-indigo-500 to-blue-600' },
+    { label: 'Monitored Zones', val: scopedCrowdZones.length, color: 'from-cyan-500 to-teal-600' },
   ];
 
   return (
@@ -177,7 +199,9 @@ export default function MelaSurakshaPage() {
             <span className="gradient-title">{t('mela.title')}</span>
           </h1>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t('mela.subtitle')}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Viewing fair & layout: <strong className="text-teal-600 dark:text-teal-400">{currentMap?.name}</strong>
+            </p>
             <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               MongoDB Atlas Live
@@ -221,7 +245,7 @@ export default function MelaSurakshaPage() {
       <section className="space-y-4">
         <InteractiveMelaMap
           facilities={facilities}
-          alerts={alerts}
+          alerts={scopedAlerts}
           maps={maps}
           selectedMapId={selectedMapId}
           onSelectMap={(id) => setSelectedMapId(id)}
@@ -234,7 +258,7 @@ export default function MelaSurakshaPage() {
       {/* FEATURE 3: MELA CROWD SAFETY & OFFICIAL ALERTS (Citizen View) */}
       <section className="space-y-4">
         <MelaCrowdSafetyAlertsSection
-          alerts={alerts}
+          alerts={scopedAlerts}
           isAdmin={false}
           onViewOnMap={handleViewAlertOnMap}
           lang={lang}
@@ -244,7 +268,7 @@ export default function MelaSurakshaPage() {
       {/* FEATURE 2: UNIFIED MISSING PERSONS DIRECTORY (Citizen View) */}
       <section className="space-y-4">
         <UnifiedLostFoundDirectory
-          reports={reportsData.reports}
+          reports={scopedReports}
           pagination={reportsData.pagination}
           loading={reportsLoading}
           isAdmin={false}
@@ -260,11 +284,16 @@ export default function MelaSurakshaPage() {
 
       {/* Bottom Crowd Density Reference Grid */}
       <section className="glass-card p-6 space-y-4 border-slate-200/80 dark:border-slate-800">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span>👥</span>
-          <span>{t('mela.crowdZones')}</span>
-        </h2>
-        <CrowdDensityGrid zones={crowdZones.length > 0 ? crowdZones : (data?.zones || [])} />
+        <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>👥</span>
+            <span>{t('mela.crowdZones')} — {currentMap?.name}</span>
+          </h2>
+          <span className="text-xs font-mono text-slate-400">
+            {scopedCrowdZones.length} Zone{scopedCrowdZones.length !== 1 ? 's' : ''} Monitored
+          </span>
+        </div>
+        <CrowdDensityGrid zones={scopedCrowdZones} />
       </section>
 
       {/* CITIZEN MODALS */}
@@ -273,6 +302,8 @@ export default function MelaSurakshaPage() {
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
         onReportCreated={handleReportCreated}
+        currentMapName={currentMap?.name}
+        selectedMapId={selectedMapId}
         lang={lang}
       />
 

@@ -341,7 +341,7 @@ export function sanitizeReportForPublic(report) {
 // ==========================================
 
 export const getMelaFacilities = asyncHandler(async (req, res) => {
-  const { category, status, includeUnpublished } = req.query;
+  const { category, status, includeUnpublished, mapId } = req.query;
   const filter = {};
 
   if (!includeUnpublished || includeUnpublished === 'false') {
@@ -352,6 +352,13 @@ export const getMelaFacilities = asyncHandler(async (req, res) => {
   }
   if (status && status !== 'all') {
     filter.status = status;
+  }
+  if (mapId && mapId !== 'all') {
+    if (mapId === 'prayagraj_kumbh') {
+      filter.$or = [{ mapId: 'prayagraj_kumbh' }, { mapId: { $exists: false } }, { mapId: '' }, { mapId: null }];
+    } else {
+      filter.mapId = mapId;
+    }
   }
 
   if (mongoose.connection.readyState === 1) {
@@ -382,6 +389,9 @@ export const getMelaFacilities = asyncHandler(async (req, res) => {
   if (status && status !== 'all') {
     list = list.filter((f) => f.status === status);
   }
+  if (mapId && mapId !== 'all') {
+    list = list.filter((f) => !f.mapId || f.mapId === mapId || (mapId === 'prayagraj_kumbh' && !f.mapId));
+  }
   return res.status(200).json(new ApiResponse(200, list, 'Mela facilities loaded (memory)'));
 });
 
@@ -390,6 +400,7 @@ export const createMelaFacility = asyncHandler(async (req, res) => {
     name,
     category,
     description = '',
+    mapId = 'prayagraj_kumbh',
     mapX = 50,
     mapY = 50,
     latitude = 25.4285,
@@ -410,6 +421,7 @@ export const createMelaFacility = asyncHandler(async (req, res) => {
     name: name.trim(),
     category,
     description: description.trim(),
+    mapId: mapId ? mapId.trim() : 'prayagraj_kumbh',
     mapX: Math.min(100, Math.max(0, Number(mapX))),
     mapY: Math.min(100, Math.max(0, Number(mapY))),
     latitude: Number(latitude),
@@ -503,6 +515,7 @@ export const createLostFoundReport = asyncHandler(async (req, res) => {
     location,
     dateTimeApprox,
     photoUrl = '',
+    mapId = 'prayagraj_kumbh',
     reporterName,
     reporterPhone,
     reporterEmail = '',
@@ -518,6 +531,7 @@ export const createLostFoundReport = asyncHandler(async (req, res) => {
   const payload = {
     reportRefId,
     reportType: 'missing_person',
+    mapId: mapId ? mapId.trim() : 'prayagraj_kumbh',
     personName: personName.trim(),
     personAge: personAge ? Number(personAge) : null,
     personGender,
@@ -582,11 +596,18 @@ export const createLostFoundReport = asyncHandler(async (req, res) => {
 });
 
 export const getLostFoundReports = asyncHandler(async (req, res) => {
-  const { status, search, page = 1, limit = 20 } = req.query;
+  const { status, search, mapId, page = 1, limit = 20 } = req.query;
   const filter = { isPublicApproved: true };
 
   if (status && status !== 'all') {
     filter.status = status;
+  }
+  if (mapId && mapId !== 'all') {
+    if (mapId === 'prayagraj_kumbh') {
+      filter.$or = [{ mapId: 'prayagraj_kumbh' }, { mapId: { $exists: false } }, { mapId: '' }, { mapId: null }];
+    } else {
+      filter.mapId = mapId;
+    }
   }
   if (search) {
     const q = search.trim();
@@ -894,7 +915,7 @@ export const sendReportMessage = asyncHandler(async (req, res) => {
 // ==========================================
 
 export const getMelaAlerts = asyncHandler(async (req, res) => {
-  const { includeInactive } = req.query;
+  const { includeInactive, mapId } = req.query;
   const now = new Date();
   const filter = {};
 
@@ -902,6 +923,14 @@ export const getMelaAlerts = asyncHandler(async (req, res) => {
     filter.status = 'Active';
     filter.isPublished = true;
     filter.$or = [{ expiresAt: { $exists: false } }, { expiresAt: null }, { expiresAt: { $gt: now } }];
+  }
+
+  if (mapId && mapId !== 'all') {
+    if (mapId === 'prayagraj_kumbh') {
+      filter.$or = [{ mapId: 'prayagraj_kumbh' }, { mapId: { $exists: false } }, { mapId: '' }, { mapId: null }];
+    } else {
+      filter.mapId = mapId;
+    }
   }
 
   if (mongoose.connection.readyState === 1) {
@@ -926,6 +955,9 @@ export const getMelaAlerts = asyncHandler(async (req, res) => {
   if (!includeInactive || includeInactive === 'false') {
     list = list.filter((a) => a.status === 'Active' && a.isPublished && (!a.expiresAt || new Date(a.expiresAt) > now));
   }
+  if (mapId && mapId !== 'all') {
+    list = list.filter((a) => !a.mapId || a.mapId === mapId || (mapId === 'prayagraj_kumbh' && !a.mapId));
+  }
   return res.status(200).json(new ApiResponse(200, list, 'Active Mela alerts retrieved (memory)'));
 });
 
@@ -937,6 +969,7 @@ export const createMelaAlert = asyncHandler(async (req, res) => {
     affectedLocation,
     recommendedAction,
     issuingAuthority = 'Mela Administration & Police Command',
+    mapId = 'prayagraj_kumbh',
     mapX = 50,
     mapY = 50,
     latitude = 25.4284,
@@ -961,6 +994,7 @@ export const createMelaAlert = asyncHandler(async (req, res) => {
     affectedLocation: affectedLocation.trim(),
     recommendedAction: recommendedAction.trim(),
     issuingAuthority: issuingAuthority.trim(),
+    mapId: mapId ? mapId.trim() : 'prayagraj_kumbh',
     mapX: Math.min(100, Math.max(0, Number(mapX))),
     mapY: Math.min(100, Math.max(0, Number(mapY))),
     latitude: Number(latitude),
