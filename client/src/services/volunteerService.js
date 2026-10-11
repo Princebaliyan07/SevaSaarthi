@@ -49,6 +49,11 @@ export async function reviewVolunteerTeam(teamId, data) {
   return res.data?.data;
 }
 
+export async function deleteVolunteerTeam(teamId) {
+  const res = await api.delete(`/volunteer/teams/${teamId}`);
+  return res.data?.data;
+}
+
 // ==========================================
 // 2. VOLUNTEER REGISTRATION (MULTI-STEP)
 // ==========================================
@@ -89,6 +94,11 @@ export async function getReliefCampaigns(params = {}) {
 
 export async function createReliefCampaign(data) {
   const res = await api.post('/volunteer/campaigns', data);
+  return res.data?.data;
+}
+
+export async function deleteReliefCampaign(campaignId) {
+  const res = await api.delete(`/volunteer/campaigns/${campaignId}`);
   return res.data?.data;
 }
 

@@ -8,6 +8,7 @@ import {
   getTeamJoinRequests,
   reviewTeamJoinRequest,
   reviewVolunteerTeam,
+  deleteVolunteerTeam,
   // Volunteer Registration
   registerVolunteer,
   getVolunteerApplications,
@@ -15,6 +16,7 @@ import {
   // Campaigns & Donations
   getReliefCampaigns,
   createReliefCampaign,
+  deleteReliefCampaign,
   donateToCampaign,
   getCampaignDonations,
   // Suppliers
@@ -42,6 +44,7 @@ const router = Router();
 router.get('/teams', getVolunteerTeams);
 router.get('/teams/:teamId', getVolunteerTeamDetails);
 router.post('/teams', createVolunteerTeam);
+router.delete('/teams/:teamId', deleteVolunteerTeam);
 router.post('/teams/:teamId/join', requestJoinTeam);
 router.get('/team-requests', getTeamJoinRequests);
 router.patch('/team-requests/:requestId', reviewTeamJoinRequest);
@@ -55,6 +58,7 @@ router.patch('/applications/:regId/review', reviewVolunteerApplication);
 // 3. Disaster Relief Campaigns & Donations
 router.get('/campaigns', getReliefCampaigns);
 router.post('/campaigns', createReliefCampaign);
+router.delete('/campaigns/:campaignId', deleteReliefCampaign);
 router.post('/campaigns/:campaignId/donate', donateToCampaign);
 router.get('/donations', getCampaignDonations);
 

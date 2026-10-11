@@ -564,6 +564,34 @@ export const reviewVolunteerTeam = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, null, 'Team updated (memory fallback)'));
 });
 
+export const deleteVolunteerTeam = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+
+  if (mongoose.connection.readyState === 1) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(teamId);
+    const team = await VolunteerTeam.findOneAndDelete(
+      isObjectId ? { $or: [{ _id: teamId }, { teamId }] } : { teamId }
+    );
+    if (!team) throw new ApiError(404, 'Volunteer team not found');
+
+    // Also clean up pending join requests for this team
+    await TeamJoinRequest.deleteMany({ teamId: team.teamId || teamId });
+
+    await ReliefAuditLog.create({
+      logId: `LOG-${Date.now()}`,
+      action: 'TEAM_DELETED',
+      category: 'Team',
+      performedBy: req.user?.name || 'Admin',
+      targetRef: team.teamId || teamId,
+      details: `Team "${team.name}" was permanently removed by administrator.`,
+    });
+
+    return res.status(200).json(new ApiResponse(200, { deletedId: team._id, teamId: team.teamId }, 'Team deleted successfully'));
+  }
+
+  return res.status(200).json(new ApiResponse(200, { teamId }, 'Team deleted (memory fallback)'));
+});
+
 // ==========================================
 // 2. VOLUNTEER REGISTRATION (MULTI-STEP)
 // ==========================================
@@ -793,6 +821,31 @@ export const createReliefCampaign = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json(new ApiResponse(201, saved, 'Relief campaign published successfully'));
+});
+
+export const deleteReliefCampaign = asyncHandler(async (req, res) => {
+  const { campaignId } = req.params;
+
+  if (mongoose.connection.readyState === 1) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(campaignId);
+    const campaign = await ReliefCampaign.findOneAndDelete(
+      isObjectId ? { $or: [{ _id: campaignId }, { campaignId }] } : { campaignId }
+    );
+    if (!campaign) throw new ApiError(404, 'Relief campaign not found');
+
+    await ReliefAuditLog.create({
+      logId: `LOG-${Date.now()}`,
+      action: 'CAMPAIGN_DELETED',
+      category: 'Campaign',
+      performedBy: req.user?.name || 'Admin',
+      targetRef: campaign.campaignId || campaignId,
+      details: `Relief campaign "${campaign.title}" was permanently removed by administrator.`,
+    });
+
+    return res.status(200).json(new ApiResponse(200, { deletedId: campaign._id, campaignId: campaign.campaignId }, 'Campaign deleted successfully'));
+  }
+
+  return res.status(200).json(new ApiResponse(200, { campaignId }, 'Campaign deleted (memory fallback)'));
 });
 
 export const donateToCampaign = asyncHandler(async (req, res) => {

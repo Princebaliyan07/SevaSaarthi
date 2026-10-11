@@ -5,10 +5,12 @@ import {
   reviewVolunteerApplication,
   getVolunteerTeams,
   reviewVolunteerTeam,
+  deleteVolunteerTeam,
   getTeamJoinRequests,
   reviewTeamJoinRequest,
   getReliefCampaigns,
   createReliefCampaign,
+  deleteReliefCampaign,
   getReliefSuppliers,
   reviewSupplier,
   getSupplyOrders,
@@ -170,6 +172,28 @@ export default function CommandReliefAdminTab() {
       await loadData();
     } catch (err) {
       alert('Failed to launch campaign: ' + err.message);
+    }
+  };
+
+  // Handler for Deleting Team
+  const handleDeleteTeam = async (teamId, teamName) => {
+    if (!window.confirm(`Are you sure you want to permanently delete team "${teamName || teamId}"?\nThis will remove the team and any pending join requests.`)) return;
+    try {
+      await deleteVolunteerTeam(teamId);
+      await loadData();
+    } catch (err) {
+      alert('Error deleting team: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Handler for Deleting Campaign
+  const handleDeleteCampaign = async (campaignId, campaignTitle) => {
+    if (!window.confirm(`Are you sure you want to permanently delete relief campaign "${campaignTitle || campaignId}"?\nThis cannot be undone.`)) return;
+    try {
+      await deleteReliefCampaign(campaignId);
+      await loadData();
+    } catch (err) {
+      alert('Error deleting campaign: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -539,23 +563,33 @@ export default function CommandReliefAdminTab() {
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        {t.verificationStatus !== 'Verified' ? (
+                        <div className="flex items-center justify-end gap-1.5">
+                          {t.verificationStatus !== 'Verified' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleTeamReview(t.teamId || t._id, 'Verified')}
+                              className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px]"
+                            >
+                              Verify Team
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleTeamReview(t.teamId || t._id, 'Rejected')}
+                              className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:text-rose-600 text-[10px] font-bold"
+                            >
+                              Revoke
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleTeamReview(t.teamId || t._id, 'Verified')}
-                            className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px]"
+                            onClick={() => handleDeleteTeam(t.teamId || t._id, t.name)}
+                            className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-bold transition-all"
+                            title="Permanently Delete Team"
                           >
-                            Verify Team
+                            🗑️ Delete
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleTeamReview(t.teamId || t._id, 'Rejected')}
-                            className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:text-rose-600 text-[10px] font-bold"
-                          >
-                            Revoke
-                          </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -692,9 +726,20 @@ export default function CommandReliefAdminTab() {
                     ))}
                   </div>
 
-                  <p className="text-[10px] text-slate-400 pt-1">
-                    Agency: <strong>{camp.recipientAgency}</strong>
-                  </p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] text-slate-400">
+                      Agency: <strong>{camp.recipientAgency}</strong>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCampaign(camp.campaignId || camp._id, camp.title)}
+                      className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-bold transition-all flex items-center gap-1"
+                      title="Permanently Delete Campaign"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
