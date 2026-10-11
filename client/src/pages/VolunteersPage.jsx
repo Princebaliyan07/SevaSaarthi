@@ -80,6 +80,7 @@ export default function VolunteersPage() {
   const [selectedOrderForDispatch, setSelectedOrderForDispatch] = useState(null);
   const [isMyDonationsOpen, setIsMyDonationsOpen] = useState(false);
   const [isJoinDeliveryFleetOpen, setIsJoinDeliveryFleetOpen] = useState(false);
+  const [comingSoonModal, setComingSoonModal] = useState(null); // 'shop' | 'fleet' | null
 
 
   // Geolocation Detection with explicit manual fallback
@@ -592,7 +593,7 @@ export default function VolunteersPage() {
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               type="button"
-              onClick={() => setIsRegisterSupplierOpen(true)}
+              onClick={() => setComingSoonModal('shop')}
               className="px-4 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5"
             >
               <span>🏪</span>
@@ -600,7 +601,7 @@ export default function VolunteersPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsJoinDeliveryFleetOpen(true)}
+              onClick={() => setComingSoonModal('fleet')}
               className="px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all"
             >
               🚚 Join Delivery Volunteer Fleet
@@ -889,6 +890,63 @@ export default function VolunteersPage() {
         isOpen={isJoinDeliveryFleetOpen}
         onClose={() => setIsJoinDeliveryFleetOpen(false)}
       />
+
+      {/* Coming Soon Modal */}
+      {comingSoonModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4"
+          onClick={() => setComingSoonModal(null)}
+        >
+          <div
+            className="glass-card w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-8 flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-16 w-16 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-3xl shadow-inner">
+              🚧
+            </div>
+            <div>
+              <p className="text-[11px] font-mono font-bold uppercase tracking-widest text-amber-500 mb-1">
+                Coming Soon
+              </p>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                {comingSoonModal === 'shop'
+                  ? 'Register Medical / Food Shop'
+                  : 'Join Delivery Volunteer Fleet'}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                {comingSoonModal === 'shop'
+                  ? 'Shop & supplier registration is not open yet. We are onboarding certified medical stores and food suppliers. Check back soon!'
+                  : 'Delivery fleet registration is not started yet. We are building our volunteer logistics network. Stay tuned for updates!'}
+              </p>
+            </div>
+            <div className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 space-y-1 text-left">
+              <p className="font-bold text-slate-700 dark:text-slate-300">What to expect:</p>
+              {comingSoonModal === 'shop' ? (
+                <>
+                  <p>✦ Verified medical store & pharmacy onboarding</p>
+                  <p>✦ Grocery & ration shop partnership program</p>
+                  <p>✦ FSSAI / Drug License verification process</p>
+                  <p>✦ Real-time inventory sync with SevaSaarthi</p>
+                </>
+              ) : (
+                <>
+                  <p>✦ Delivery volunteer sign-up & background check</p>
+                  <p>✦ Vehicle registration & capacity profiling</p>
+                  <p>✦ Mission notification system via SMS / app</p>
+                  <p>✦ Digital delivery proof & photo upload</p>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setComingSoonModal(null)}
+              className="px-6 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm transition-all shadow-md w-full"
+            >
+              Got It!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
