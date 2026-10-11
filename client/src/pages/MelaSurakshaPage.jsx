@@ -1,23 +1,72 @@
 import { useEffect, useState, useCallback } from 'react';
 import Badge from '../components/common/Badge';
+import InteractiveMelaMap from '../components/mela/InteractiveMelaMap';
+import FacilityAdminModal from '../components/mela/FacilityAdminModal';
+import UnifiedLostFoundReportingModal from '../components/mela/UnifiedLostFoundReportingModal';
+import UnifiedLostFoundDirectory from '../components/mela/UnifiedLostFoundDirectory';
+import ReportDetailModal from '../components/mela/ReportDetailModal';
+import MelaCrowdSafetyAlertsSection from '../components/mela/MelaCrowdSafetyAlertsSection';
+import CrowdAlertAdminModal from '../components/mela/CrowdAlertAdminModal';
 import CrowdDensityGrid from '../components/mela/CrowdDensityGrid';
-import MissingPersonForm from '../components/mela/MissingPersonForm';
-import ReunificationLog from '../components/mela/ReunificationLog';
-import { getMelaOverview, reunitePerson } from '../services/melaService';
+
+import {
+  getMelaOverview,
+  getMelaFacilities,
+  createMelaFacility,
+  updateMelaFacility,
+  deleteMelaFacility,
+  getLostFoundReports,
+  createLostFoundReport,
+  updateReportStatus,
+  getMelaAlerts,
+  createMelaAlert,
+  resolveMelaAlert,
+} from '../services/melaService';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function MelaSurakshaPage() {
   const { lang, t } = useLanguage();
+  const { user, isAdmin, loginAs } = useAuth();
+
+  // Data states
   const [data, setData] = useState(null);
+  const [facilities, setFacilities] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [reportsData, setReportsData] = useState({ reports: [], pagination: {} });
+
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [reunitingId, setReunitingId] = useState(null);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
 
-  const fetchLiveMelaData = useCallback(async () => {
+  // Map focus interaction
+  const [focusedLocation, setFocusedLocation] = useState(null);
+
+  // Modals
+  const [facilityModalOpen, setFacilityModalOpen] = useState(false);
+  const [editingFacility, setEditingFacility] = useState(null);
+  const [pickedCoords, setPickedCoords] = useState(null);
+
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
+
+  // Load all live Mela data from MongoDB
+  const fetchAllData = useCallback(async () => {
     try {
-      const res = await getMelaOverview();
-      setData(res);
+      const [overviewRes, facilitiesRes, alertsRes, reportsRes] = await Promise.all([
+        getMelaOverview(),
+        getMelaFacilities(),
+        getMelaAlerts(),
+        getLostFoundReports({ limit: 12 }),
+      ]);
+
+      if (overviewRes) setData(overviewRes);
+      setFacilities(facilitiesRes || []);
+      setAlerts(alertsRes || []);
+      setReportsData(reportsRes || { reports: [], pagination: {} });
       setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err) {
       console.error('Error fetching Mela data:', err);
@@ -27,57 +76,87 @@ export default function MelaSurakshaPage() {
   }, []);
 
   useEffect(() => {
-    fetchLiveMelaData();
-    // Auto-refresh every 12 seconds so MongoDB changes reflect automatically
-    const interval = setInterval(fetchLiveMelaData, 12000);
+    fetchAllData();
+    // Auto-refresh every 15 seconds so MongoDB updates reflect automatically
+    const interval = setInterval(fetchAllData, 15000);
     return () => clearInterval(interval);
-  }, [fetchLiveMelaData]);
+  }, [fetchAllData]);
 
-  const handleReunite = async (caseId) => {
-    try {
-      setReunitingId(caseId);
-      await reunitePerson(caseId);
-      await fetchLiveMelaData();
-    } catch (err) {
-      alert(`Could not update status: ${err.message}`);
-    } finally {
-      setReunitingId(null);
+  // Facility handlers
+  const handleSaveFacility = async (formData, id) => {
+    if (id) {
+      await updateMelaFacility(id, formData);
+    } else {
+      await createMelaFacility(formData);
+    }
+    await fetchAllData();
+  };
+
+  const handleDeleteFacility = async (id) => {
+    if (window.confirm('Are you sure you want to delete this facility from the live map?')) {
+      await deleteMelaFacility(id);
+      await fetchAllData();
     }
   };
 
-  const handleReportCreated = async (newCase) => {
-    // Immediately reload data from MongoDB Atlas
-    await fetchLiveMelaData();
+  // Report filters handler
+  const handleReportFilterChange = async (filters) => {
+    setReportsLoading(true);
+    try {
+      const res = await getLostFoundReports(filters);
+      setReportsData(res);
+    } catch (err) {
+      console.error('Error filtering reports:', err);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  // Report creation handler
+  const handleReportCreated = async (payload) => {
+    const res = await createLostFoundReport(payload);
+    await fetchAllData();
+    return res;
+  };
+
+  // Update report review status
+  const handleUpdateReportStatus = async (id, status) => {
+    await updateReportStatus(id, { status });
+    await fetchAllData();
+  };
+
+  // Alert handlers
+  const handleSaveAlert = async (formData) => {
+    await createMelaAlert(formData);
+    await fetchAllData();
+  };
+
+  const handleResolveAlert = async (id) => {
+    await resolveMelaAlert(id);
+    await fetchAllData();
+  };
+
+  // Focus on map from an alert
+  const handleViewAlertOnMap = (coords) => {
+    setFocusedLocation(coords);
+    window.scrollTo({ top: 380, behavior: 'smooth' });
   };
 
   if (loading && !data) {
     return (
       <div className="container-page py-20 text-center space-y-3">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent" />
-        <p className="text-sm font-semibold text-slate-500">Loading live Mela telemetry from MongoDB...</p>
+        <p className="text-sm font-semibold text-slate-500">Loading live Mela GIS telemetry & database...</p>
       </div>
     );
   }
 
-  const missingCases = data?.missingCases || [];
-  const filteredCases = missingCases.filter((c) => {
-    if (!searchTerm.trim()) return true;
-    const q = searchTerm.toLowerCase();
-    return (
-      c.name?.toLowerCase().includes(q) ||
-      c.caseId?.toLowerCase().includes(q) ||
-      c.lastSeenLocation?.toLowerCase().includes(q)
-    );
-  });
-
-  const activeCase = missingCases[0] || null;
-
   const counters = [
-    { label: t('mela.crowdStatus'), val: data.crowdStatus, isStatus: true, color: 'from-amber-500 to-orange-600' },
-    { label: t('mela.medicalCamps'), val: data.medicalCamps, color: 'from-teal-500 to-emerald-600' },
-    { label: t('mela.openIncidents'), val: data.openIncidents, color: 'from-rose-500 to-red-600' },
-    { label: t('mela.missingReports'), val: missingCases.length, color: 'from-indigo-500 to-blue-600' },
-    { label: t('mela.helpDesks'), val: data.helpDesks, color: 'from-cyan-500 to-teal-600' },
+    { label: t('mela.crowdStatus'), val: data?.crowdStatus || 'Moderate', isStatus: true, color: 'from-amber-500 to-orange-600' },
+    { label: 'Active Facilities', val: facilities.length, color: 'from-teal-500 to-emerald-600' },
+    { label: 'Official Alerts', val: alerts.filter((a) => a.status === 'Active').length, color: 'from-rose-500 to-red-600' },
+    { label: 'Lost & Found Cases', val: reportsData.pagination?.total || reportsData.reports.length, color: 'from-indigo-500 to-blue-600' },
+    { label: t('mela.helpDesks'), val: data?.helpDesks || 22, color: 'from-cyan-500 to-teal-600' },
   ];
 
   return (
@@ -100,14 +179,34 @@ export default function MelaSurakshaPage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchLiveMelaData}
-          className="btn-outline text-xs py-2 px-3.5 font-bold flex items-center gap-2"
-        >
-          <span>🔄</span>
-          <span>{lang === 'hi' ? 'लाइव डेटा रीफ्रेश करें' : 'Refresh from MongoDB'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Admin Role Badge & Switcher */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-xs">
+            <span className="text-slate-500 font-semibold px-2">
+              Role: <strong className="text-slate-900 dark:text-white capitalize">{user?.role || 'citizen'}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => loginAs(isAdmin ? 'citizen' : 'admin')}
+              className={`px-3 py-1 rounded-xl font-bold transition-all ${
+                isAdmin
+                  ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                  : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/20'
+              }`}
+            >
+              {isAdmin ? 'Exit Admin Mode' : '🛡️ Switch to Admin'}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchAllData}
+            className="btn-outline text-xs py-2 px-3.5 font-bold flex items-center gap-2"
+          >
+            <span>🔄</span>
+            <span>{lang === 'hi' ? 'रीफ्रेश' : 'Refresh Data'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 5 Metric Counters */}
@@ -127,134 +226,109 @@ export default function MelaSurakshaPage() {
         ))}
       </div>
 
-      {/* Main Two Column Layout */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Left Column: Crowd Zones & Dynamic Missing Persons List */}
-        <div className="space-y-8 lg:col-span-7">
-          {/* Crowd Zones */}
-          <section className="glass-card p-6 space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>👥</span>
-              <span>{t('mela.crowdZones')}</span>
-            </h2>
-            <CrowdDensityGrid zones={data.zones} />
-          </section>
+      {/* FEATURE 1: INTERACTIVE MELA MAP */}
+      <section className="space-y-4">
+        <InteractiveMelaMap
+          facilities={facilities}
+          alerts={alerts}
+          focusedLocation={focusedLocation}
+          isAdmin={isAdmin}
+          onAddFacility={(coords) => {
+            setEditingFacility(null);
+            setPickedCoords(coords || null);
+            setFacilityModalOpen(true);
+          }}
+          onEditFacility={(fac) => {
+            setEditingFacility(fac);
+            setFacilityModalOpen(true);
+          }}
+          onDeleteFacility={handleDeleteFacility}
+          lang={lang}
+        />
+      </section>
 
-          {/* Dynamic Missing Persons Registry from MongoDB */}
-          <section className="glass-card p-6 space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4 dark:border-slate-800">
-              <div className="space-y-0.5">
-                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📋</span>
-                  <span>{lang === 'hi' ? 'लापता व्यक्तियों की लाइव सूची (MongoDB)' : 'Live Missing Persons Registry (MongoDB)'}</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {lang === 'hi' ? 'कुल दर्ज मामले:' : 'Total Active Cases:'}{' '}
-                  <span className="font-bold text-rose-600 dark:text-rose-400">{missingCases.length}</span>
-                </p>
-              </div>
+      {/* FEATURE 3: MELA CROWD SAFETY & OFFICIAL ALERTS */}
+      <section className="space-y-4">
+        <MelaCrowdSafetyAlertsSection
+          alerts={alerts}
+          isAdmin={isAdmin}
+          onOpenCreateAlert={() => setAlertModalOpen(true)}
+          onResolveAlert={handleResolveAlert}
+          onViewOnMap={handleViewAlertOnMap}
+          lang={lang}
+        />
+      </section>
 
-              {/* Search filter */}
-              <input
-                type="text"
-                placeholder={lang === 'hi' ? 'नाम या केस ID खोजें...' : 'Search name or Case ID...'}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white/90 px-3 py-1.5 text-xs text-slate-900 shadow-xs focus:border-brand focus:outline-none dark:border-slate-800 dark:bg-slate-900/90 dark:text-white"
-              />
-            </div>
+      {/* FEATURE 2: UNIFIED MISSING PERSONS AND LOST & FOUND DIRECTORY */}
+      <section className="space-y-4">
+        <UnifiedLostFoundDirectory
+          reports={reportsData.reports}
+          pagination={reportsData.pagination}
+          loading={reportsLoading}
+          isAdmin={isAdmin}
+          onOpenReportModal={(id) => {
+            setSelectedReportId(id);
+            setDetailModalOpen(true);
+          }}
+          onOpenNewReport={() => setReportModalOpen(true)}
+          onFilterChange={handleReportFilterChange}
+          onUpdateStatus={handleUpdateReportStatus}
+          lang={lang}
+        />
+      </section>
 
-            {filteredCases.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400">
-                {searchTerm
-                  ? lang === 'hi'
-                    ? 'कोई परिणाम नहीं मिला।'
-                    : 'No matching missing persons found.'
-                  : lang === 'hi'
-                  ? 'वर्तमान में कोई लापता मामला दर्ज नहीं है।'
-                  : 'No missing person reports currently registered in MongoDB.'}
-              </div>
-            ) : (
-              <div className="space-y-3.5">
-                {filteredCases.map((caseItem) => {
-                  const isReunited = caseItem.status === 'Located' || caseItem.status === 'reunited' || caseItem.rawStatus === 'reunited';
-                  return (
-                    <div
-                      key={caseItem.caseId || caseItem.id}
-                      className={`rounded-2xl border p-4.5 transition-all duration-200 ${
-                        isReunited
-                          ? 'border-emerald-500/30 bg-emerald-50/40 dark:border-emerald-500/20 dark:bg-emerald-950/20'
-                          : 'border-rose-500/30 bg-white/90 hover:border-rose-500/50 hover:shadow-md dark:border-rose-500/20 dark:bg-slate-900/90'
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-black text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                              {caseItem.caseId}
-                            </span>
-                            <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                              {caseItem.name}
-                            </h3>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              ({caseItem.gender || 'Other'}, {caseItem.age} yrs)
-                            </span>
-                          </div>
+      {/* Bottom Crowd Density Reference Grid */}
+      <section className="glass-card p-6 space-y-4 border-slate-200/80 dark:border-slate-800">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>👥</span>
+          <span>{t('mela.crowdZones')}</span>
+        </h2>
+        <CrowdDensityGrid zones={data?.zones || []} />
+      </section>
 
-                          <p className="text-xs text-slate-600 dark:text-slate-300">
-                            📍 <span className="font-semibold">{lang === 'hi' ? 'स्थान:' : 'Last Seen:'}</span> {caseItem.lastSeenLocation} · {caseItem.lastSeenTime || 'Recent'}
-                          </p>
+      {/* MODALS */}
+      {/* 1. Facility Admin Modal */}
+      <FacilityAdminModal
+        facility={editingFacility}
+        initialCoords={pickedCoords}
+        isOpen={facilityModalOpen}
+        onClose={() => {
+          setFacilityModalOpen(false);
+          setEditingFacility(null);
+          setPickedCoords(null);
+        }}
+        onSave={handleSaveFacility}
+        lang={lang}
+      />
 
-                          {caseItem.clothing && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              👕 <span className="font-semibold">{lang === 'hi' ? 'पहचान / कपड़े:' : 'Attire:'}</span> {caseItem.clothing}
-                            </p>
-                          )}
+      {/* 2. Unified Lost & Found Report Filing Modal */}
+      <UnifiedLostFoundReportingModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        onReportCreated={handleReportCreated}
+        lang={lang}
+      />
 
-                          {caseItem.reportedBy && (
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                              👤 {lang === 'hi' ? 'दर्जकर्ता:' : 'Reported By:'} {caseItem.reportedBy} {caseItem.contactPhone ? `· 📞 ${caseItem.contactPhone}` : ''}
-                            </p>
-                          )}
-                        </div>
+      {/* 3. Report Detail, Match Claim & Private Chat Modal */}
+      <ReportDetailModal
+        reportId={selectedReportId}
+        isOpen={detailModalOpen}
+        isAdmin={isAdmin}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedReportId(null);
+        }}
+        onStatusUpdated={fetchAllData}
+        lang={lang}
+      />
 
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                          <Badge type={isReunited ? 'verified' : 'high'}>
-                            {isReunited ? (lang === 'hi' ? 'मिल गए' : 'Located') : (lang === 'hi' ? 'लापता' : 'Missing')}
-                          </Badge>
-
-                          {!isReunited && (
-                            <button
-                              type="button"
-                              disabled={reunitingId === caseItem.caseId}
-                              onClick={() => handleReunite(caseItem.caseId)}
-                              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50"
-                            >
-                              {reunitingId === caseItem.caseId
-                                ? lang === 'hi' ? 'अपडेट हो रहा है...' : 'Updating...'
-                                : `✅ ${lang === 'hi' ? 'पुनर्मिलन मार्क करें' : 'Mark Reunited'}`}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        </div>
-
-        {/* Right Column: Report missing person form & help points */}
-        <div className="space-y-6 lg:col-span-5">
-          <MissingPersonForm onReportCreated={handleReportCreated} />
-          <ReunificationLog
-            helpPoints={data.helpPoints}
-            activeCase={activeCase}
-            onReunite={handleReunite}
-          />
-        </div>
-      </div>
+      {/* 4. Crowd Safety Alert Admin Modal */}
+      <CrowdAlertAdminModal
+        isOpen={alertModalOpen}
+        onClose={() => setAlertModalOpen(false)}
+        onSave={handleSaveAlert}
+        lang={lang}
+      />
     </div>
   );
 }
