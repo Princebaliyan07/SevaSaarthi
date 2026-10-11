@@ -158,9 +158,9 @@ export default function VolunteersPage() {
 
   // Handle Join Team
   const handleJoinTeamSubmit = async (teamId, formData) => {
-    await requestJoinTeam(teamId, formData);
-    alert('Membership request submitted successfully! Team member count will update upon administrator or team leader approval.');
+    const res = await requestJoinTeam(teamId, formData);
     loadData();
+    return res;
   };
 
   // Handle Volunteer Registration

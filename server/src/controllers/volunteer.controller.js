@@ -472,6 +472,9 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
   }
 
   const requestId = `TJR-${Date.now().toString().slice(-6)}`;
+  // Assign secret key immediately upon joining
+  const secretKey = `SEC-${Math.floor(100000 + Math.random() * 900000)}`;
+
   const payload = {
     requestId,
     teamId: team?.teamId || teamId,
@@ -489,6 +492,7 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
     qualifications: qualifications.trim(),
     reason: reason.trim(),
     safetyGuidelinesAgreed: true,
+    secretKey,
     status: 'Pending Review',
   };
 
@@ -498,7 +502,11 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json(
-    new ApiResponse(201, saved, 'Membership request submitted successfully. The team leader or administrator will review it.')
+    new ApiResponse(
+      201,
+      saved,
+      `Membership request submitted successfully! Your assigned Secret Key is ${secretKey}. Note: This key will be activated once verified and approved by the Administrator.`
+    )
   );
 });
 
@@ -632,19 +640,24 @@ export const unlockTeamContacts = asyncHandler(async (req, res) => {
   }
 
   // 2. Also check in TeamJoinRequest records
+  let isPendingApproval = false;
   if (!isKeyValid && mongoose.connection.readyState === 1) {
     const matchedRequest = await TeamJoinRequest.findOne({
       $or: [{ teamId: team.teamId }, { teamId: team._id?.toString() }],
       secretKey: cleanKey,
-      status: 'Approved',
     }).lean();
+
     if (matchedRequest) {
-      isKeyValid = true;
-      matchingMember = {
-        fullName: matchedRequest.fullName,
-        phone: matchedRequest.phone,
-        role: 'Field Volunteer',
-      };
+      if (matchedRequest.status === 'Approved') {
+        isKeyValid = true;
+        matchingMember = {
+          fullName: matchedRequest.fullName,
+          phone: matchedRequest.phone,
+          role: 'Field Volunteer',
+        };
+      } else if (matchedRequest.status === 'Pending Review' || matchedRequest.status === 'Pending') {
+        isPendingApproval = true;
+      }
     }
   }
 
@@ -654,8 +667,12 @@ export const unlockTeamContacts = asyncHandler(async (req, res) => {
     matchingMember = { fullName: 'Command Center Lead', role: 'HQ Supervisor' };
   }
 
+  if (isPendingApproval) {
+    throw new ApiError(403, 'Your Secret Key is pending Administrator verification. You will be able to unlock team contact details once your ID proof and membership are approved by the Admin.');
+  }
+
   if (!isKeyValid) {
-    throw new ApiError(403, 'Invalid or unverified Secret Key. Access to volunteer contact numbers is restricted to approved members only.');
+    throw new ApiError(403, 'Invalid Secret Key. Please check the key provided to you, or wait until your join request has been verified by the Admin.');
   }
 
   return res.status(200).json(

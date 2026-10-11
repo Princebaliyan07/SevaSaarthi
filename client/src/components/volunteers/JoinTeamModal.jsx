@@ -20,7 +20,7 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   if (!isOpen || !team) return null;
 
@@ -42,13 +42,19 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmitJoin(team.teamId, formData);
-      setSuccess(true);
+      const res = await onSubmitJoin(team.teamId || team._id, formData);
+      setSuccessData(res || { secretKey: 'SEC-PENDING' });
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to submit join request');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setSuccessData(null);
+    setError(null);
+    onClose();
   };
 
   return (
@@ -65,7 +71,7 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleModalClose}
             className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
           >
             ✕
@@ -78,22 +84,40 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
           </div>
         )}
 
-        {success ? (
-          <div className="py-8 text-center space-y-4">
-            <div className="text-5xl">✅</div>
-            <h4 className="text-lg font-black text-slate-900 dark:text-white">
-              Request Submitted Successfully!
-            </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-              Your application has been dispatched to <strong>{team.leaderName}</strong> and District Relief Command. Once approved, you will be enrolled into the official team registry.
-            </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white"
-            >
-              Done
-            </button>
+        {successData ? (
+          <div className="py-6 text-center space-y-4">
+            <div className="text-5xl animate-bounce">🔑</div>
+            <div>
+              <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                Secret Access Key Assigned!
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Your application has been received and registered under team <strong>{team.name}</strong>.
+              </p>
+            </div>
+
+            {/* Secret Key Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border border-teal-500/30 max-w-sm mx-auto space-y-2">
+              <span className="text-[10px] uppercase font-bold text-teal-800 dark:text-teal-300 tracking-wider">
+                Your Assigned Secret Key
+              </span>
+              <div className="text-2xl font-mono font-black text-teal-700 dark:text-teal-300 tracking-widest select-all">
+                {successData.secretKey || 'SEC-ASSIGNED'}
+              </div>
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold bg-amber-500/10 px-2.5 py-1.5 rounded-xl border border-amber-500/30">
+                ⏳ <strong>Activation Pending:</strong> This secret key will be <strong>activated only after the Admin verifies and approves your identity & ID proof</strong>. Once approved, enter this key to unlock and view private volunteer phone numbers.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleModalClose}
+                className="px-6 py-2.5 rounded-xl text-xs font-black bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/20"
+              >
+                I Have Saved My Secret Key ✓
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
