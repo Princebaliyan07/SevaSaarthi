@@ -61,6 +61,7 @@ app.use('/api/v1/hospitals', hospitalRoutes);
 app.use('/api/v1/medicines', medicineRoutes);
 app.use('/api/v1/mela', melaRoutes);
 app.use('/api/v1/volunteers', volunteerRoutes);
+app.use('/api/v1/volunteer', volunteerRoutes);
 app.use('/api/v1/disasters', disasterRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/command', commandRoutes);
