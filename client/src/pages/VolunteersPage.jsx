@@ -48,6 +48,7 @@ export default function VolunteersPage() {
   const [manualState, setManualState] = useState('Uttar Pradesh');
   const [manualPincode, setManualPincode] = useState('211001');
   const [isChangingLocation, setIsChangingLocation] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,37 +90,116 @@ export default function VolunteersPage() {
     }
   };
 
-  // Geolocation Detection with explicit manual fallback
-  const detectLocation = () => {
+  // Helper: Reverse Geocode latitude/longitude to readable city & state
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const city = data.locality || data.city || data.principalSubdivision || '';
+        const state = data.principalSubdivision || '';
+        const pincode = data.postcode || '';
+        const displayName = city && state ? `${city}, ${state}` : (city || state || `${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E`);
+        return { city, state, pincode, displayName };
+      }
+    } catch (e) {
+      console.warn('Reverse geocode error:', e);
+    }
+    return {
+      city: '',
+      state: '',
+      pincode: '',
+      displayName: `${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E`,
+    };
+  };
+
+  // Helper: Detect location via IP when GPS is unavailable/denied
+  const detectIpLocation = async () => {
+    try {
+      const res = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.latitude && data.longitude) {
+          const city = data.locality || data.city || data.principalSubdivision || '';
+          const state = data.principalSubdivision || '';
+          const coords = { lat: Number(data.latitude), lng: Number(data.longitude) };
+          const displayName = city && state ? `${city}, ${state}` : (city || state || 'Current Region');
+          return {
+            coords,
+            city,
+            state,
+            pincode: data.postcode || '',
+            displayName,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('IP geolocation error:', e);
+    }
+    return null;
+  };
+
+  // Primary Location Detection: Tries high-accuracy GPS, falls back gracefully to IP location
+  const detectLocation = async () => {
+    setIsLocating(true);
+
+    const tryIpFallback = async () => {
+      const ipResult = await detectIpLocation();
+      if (ipResult) {
+        setUserLocation(ipResult.coords);
+        setLocationStatus('ip');
+        setLocationName(ipResult.displayName);
+        if (ipResult.city) setManualCity(ipResult.city);
+        if (ipResult.state) setManualState(ipResult.state);
+        if (ipResult.pincode) setManualPincode(ipResult.pincode);
+        await loadData(ipResult.coords);
+      } else {
+        setLocationStatus('denied');
+        setLocationName('Prayagraj, Uttar Pradesh (Default)');
+        await loadData(null);
+      }
+      setIsLocating(false);
+    };
+
     if (!navigator.geolocation) {
-      setLocationStatus('denied');
+      await tryIpFallback();
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserLocation(coords);
         setLocationStatus('granted');
-        setLocationName('Current Detected Coordinates (GPS Active)');
-        loadData(coords);
+        const geoInfo = await reverseGeocode(coords.lat, coords.lng);
+        setLocationName(geoInfo.displayName);
+        if (geoInfo.city) setManualCity(geoInfo.city);
+        if (geoInfo.state) setManualState(geoInfo.state);
+        if (geoInfo.pincode) setManualPincode(geoInfo.pincode);
+        await loadData(coords);
+        setIsLocating(false);
       },
-      (err) => {
-        console.warn('Geolocation permission not granted or unavailable:', err.message);
-        setLocationStatus('denied');
-        loadData();
+      async (err) => {
+        console.warn('GPS unavailable or permission denied:', err.message);
+        await tryIpFallback();
       },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
     );
   };
 
   const handleApplyManualLocation = (e) => {
     e.preventDefault();
-    setLocationName(`${manualCity}, ${manualState} (PIN: ${manualPincode})`);
+    const displayName = `${manualCity}${manualState ? ', ' + manualState : ''}${manualPincode ? ' (PIN: ' + manualPincode + ')' : ''}`;
+    setLocationName(displayName);
+    setLocationStatus('manual');
     setIsChangingLocation(false);
-    loadData();
+    setUserLocation(null);
+    loadData(null, manualCity);
   };
 
-  const loadData = async (coords = userLocation) => {
+  const loadData = async (coords = userLocation, searchOverride = searchQuery) => {
     setLoading(true);
     try {
       const params = {};
@@ -129,7 +209,7 @@ export default function VolunteersPage() {
       }
       if (selectedDisaster !== 'all') params.disaster = selectedDisaster;
       if (selectedSpecialization !== 'all') params.skill = selectedSpecialization;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (searchOverride && searchOverride.trim()) params.search = searchOverride.trim();
 
       const [teamsList, campsList, supsList, ordsList, ovData] = await Promise.all([
         getVolunteerTeams(params),
@@ -151,8 +231,14 @@ export default function VolunteersPage() {
     }
   };
 
+  // Initial detection on mount
   useEffect(() => {
     detectLocation();
+  }, []);
+
+  // Filter re-query without resetting location
+  useEffect(() => {
+    loadData();
   }, [selectedDisaster, selectedSpecialization]);
 
   // Handle Team Creation
@@ -276,12 +362,27 @@ export default function VolunteersPage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Location Status & Selector */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-teal-500/10 text-teal-800 dark:text-teal-200 border border-teal-500/30 text-xs font-bold">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-teal-500/10 text-teal-800 dark:text-teal-200 border border-teal-500/30 text-xs font-bold transition-all">
               <span>📍</span>
-              <span>{locationName}</span>
+              <span>{isLocating ? 'Detecting real-time location...' : locationName}</span>
               {locationStatus === 'granted' && (
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500 text-white font-mono">
-                  GPS Active
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-mono flex items-center gap-1 shadow-xs">
+                  <span>🛰️</span> GPS Active
+                </span>
+              )}
+              {locationStatus === 'ip' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-mono flex items-center gap-1 shadow-xs">
+                  <span>🌐</span> IP Detected
+                </span>
+              )}
+              {locationStatus === 'manual' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-600 text-white font-mono shadow-xs">
+                  Manual
+                </span>
+              )}
+              {locationStatus === 'denied' && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-mono shadow-xs">
+                  Default Area
                 </span>
               )}
             </div>
@@ -291,15 +392,17 @@ export default function VolunteersPage() {
               onClick={() => setIsChangingLocation(!isChangingLocation)}
               className="px-3 py-1.5 rounded-xl border border-teal-500/30 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
             >
-              {isChangingLocation ? `✕ ${t('volunteers.cancelLocation')}` : `📍 ${t('volunteers.changeLocation')}`}
+              {isChangingLocation ? `✕ ${t('volunteers.cancelLocation') || 'Cancel'}` : `📍 ${t('volunteers.changeLocation') || 'Change Location'}`}
             </button>
 
             <button
               type="button"
+              disabled={isLocating}
               onClick={detectLocation}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
-              🔄 {t('volunteers.refreshCoords')}
+              <span className={isLocating ? 'inline-block animate-spin' : ''}>🔄</span>
+              <span>{isLocating ? 'Detecting...' : (t('volunteers.refreshCoords') || 'Refresh Coordinates')}</span>
             </button>
           </div>
 
