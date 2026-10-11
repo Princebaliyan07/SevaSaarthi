@@ -22,6 +22,7 @@ import {
   updateReportStatus,
   getMelaMaps,
   createMelaMap,
+  deleteMelaMap,
   getCrowdZones,
   createCrowdZone,
   updateCrowdZone,
@@ -108,8 +109,12 @@ export default function CommandCentrePage() {
 
   // Mela Ops Handlers
   const handleSaveFacility = async (formData, id) => {
-    if (id) await updateMelaFacility(id, formData);
-    else await createMelaFacility(formData);
+    if (id) {
+      await updateMelaFacility(id, formData);
+    } else {
+      // Always stamp the currently selected map so facilities don't bleed across maps
+      await createMelaFacility({ ...formData, mapId: selectedMapId || 'prayagraj_kumbh' });
+    }
     await loadData();
   };
 
@@ -237,6 +242,16 @@ export default function CommandCentrePage() {
             selectedMapId={selectedMapId}
             onSelectMap={(mapId) => setSelectedMapId(mapId)}
             onOpenAddMap={() => setAddMapModalOpen(true)}
+            onDeleteMap={async (mapId) => {
+              if (!window.confirm('Delete this ground map? All its facilities will remain in the database but will be unlinked.')) return;
+              await deleteMelaMap(mapId);
+              // If deleted map was active, switch to first remaining
+              if (selectedMapId === mapId) {
+                const remaining = maps.filter((m) => m.mapId !== mapId);
+                setSelectedMapId(remaining[0]?.mapId || 'prayagraj_kumbh');
+              }
+              await loadData();
+            }}
             onCreateCrowdZone={async (data) => {
               await createCrowdZone(data);
               await loadData();

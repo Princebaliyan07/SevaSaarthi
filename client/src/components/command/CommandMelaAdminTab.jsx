@@ -11,6 +11,7 @@ export default function CommandMelaAdminTab({
   selectedMapId = 'prayagraj_kumbh',
   onSelectMap = null,
   onOpenAddMap = null,
+  onDeleteMap = null,
   onCreateCrowdZone = null,
   onUpdateCrowdZone = null,
   onDeleteCrowdZone = null,
@@ -406,6 +407,7 @@ export default function CommandMelaAdminTab({
               selectedMapId={selectedMapId}
               onSelectMap={onSelectMap}
               onOpenAddMap={onOpenAddMap}
+              onDeleteMap={onDeleteMap}
               isAdmin={isAdmin}
               onAddFacility={onOpenAddFacility}
               onEditFacility={onOpenEditFacility}
@@ -427,7 +429,9 @@ export default function CommandMelaAdminTab({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {facilities.map((fac) => {
+                {facilities
+                  .filter((f) => !f.mapId || f.mapId === selectedMapId || (selectedMapId === 'prayagraj_kumbh' && !f.mapId))
+                  .map((fac) => {
                   const cat = FACILITY_CATEGORIES[fac.category] || FACILITY_CATEGORIES.help_desk;
                   return (
                     <tr key={fac.facilityId || fac._id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
