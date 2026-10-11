@@ -1101,9 +1101,20 @@ export const createMelaMap = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Map name and image URL are required');
   }
 
-  const cleanMapId = mapId
+  let cleanMapId = mapId
     ? mapId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_')
     : `map_${Date.now().toString().slice(-6)}`;
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const existing = await MelaMap.findOne({ mapId: cleanMapId });
+      if (existing) {
+        cleanMapId = `${cleanMapId}_${Date.now().toString().slice(-4)}`;
+      }
+    } catch {
+      // ignore check error
+    }
+  }
 
   const payload = {
     mapId: cleanMapId,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function AddGroundMapModal({ isOpen, onClose, onSave, lang = 'en' }) {
+export default function AddGroundMapModal({ isOpen, onClose, onSave, onSaveMap, lang = 'en' }) {
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -8,6 +8,8 @@ export default function AddGroundMapModal({ isOpen, onClose, onSave, lang = 'en'
   const [error, setError] = useState(null);
 
   if (!isOpen) return null;
+
+  const saveCallback = onSave || onSaveMap;
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -30,10 +32,22 @@ export default function AddGroundMapModal({ isOpen, onClose, onSave, lang = 'en'
       return;
     }
 
+    if (typeof saveCallback !== 'function') {
+      setError('Save handler is not configured.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
-      await onSave({
+      const generatedMapId = name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '_')
+        .replace(/_+/g, '_');
+
+      await saveCallback({
+        mapId: generatedMapId || `map_${Date.now().toString().slice(-6)}`,
         name: name.trim(),
         imageUrl: imageUrl.trim(),
         description: description.trim(),
@@ -43,7 +57,7 @@ export default function AddGroundMapModal({ isOpen, onClose, onSave, lang = 'en'
       setDescription('');
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to add ground map');
+      setError(err?.response?.data?.message || err.message || 'Failed to add ground map');
     } finally {
       setSubmitting(false);
     }

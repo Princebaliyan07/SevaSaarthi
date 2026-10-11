@@ -500,10 +500,11 @@ export default function CommandCentrePage() {
       <AddGroundMapModal
         isOpen={addMapModalOpen}
         onClose={() => setAddMapModalOpen(false)}
-        onSaveMap={async (mapData) => {
-          await createMelaMap(mapData);
+        onSave={async (mapData) => {
+          const res = await createMelaMap(mapData);
           await loadData();
-          if (mapData.mapId) setSelectedMapId(mapData.mapId);
+          const targetId = res?.mapId || mapData?.mapId;
+          if (targetId) setSelectedMapId(targetId);
         }}
         lang={lang}
       />
