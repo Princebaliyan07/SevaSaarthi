@@ -232,7 +232,7 @@ export default function VolunteersPage() {
         <div className="relative z-10 max-w-4xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
             <span>🛡️</span>
-            <span>National Disaster Relief & Verified Volunteer Grid</span>
+            <span>{t('volunteers.badge')}</span>
           </div>
 
           <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
@@ -240,7 +240,7 @@ export default function VolunteersPage() {
           </h1>
 
           <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Real-time disaster relief grid connecting on-ground citizen volunteers, specialized medical & rescue teams, certified local suppliers, and direct disaster relief campaigns with 100% transparent audit trails.
+            {t('volunteers.subtitle')}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -250,7 +250,7 @@ export default function VolunteersPage() {
               className="px-5 py-2.5 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg flex items-center gap-2"
             >
               <span>🙋</span>
-              <span>Register as Volunteer</span>
+              <span>{t('volunteers.registerBtn')}</span>
             </button>
             <button
               type="button"
@@ -258,23 +258,7 @@ export default function VolunteersPage() {
               className="px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all border border-white/20 flex items-center gap-2"
             >
               <span>👥</span>
-              <span>Create Volunteer Team</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsRegisterSupplierOpen(true)}
-              className="px-5 py-2.5 rounded-2xl bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 font-bold text-xs transition-all border border-emerald-500/30 flex items-center gap-2"
-            >
-              <span>🏪</span>
-              <span>Register as a Local Supplier</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsMyDonationsOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-bold text-xs transition-all border border-slate-700 flex items-center gap-2"
-            >
-              <span>📜</span>
-              <span>View Contribution Receipts</span>
+              <span>{t('volunteers.createTeamBtn')}</span>
             </button>
           </div>
         </div>
@@ -300,7 +284,7 @@ export default function VolunteersPage() {
               onClick={() => setIsChangingLocation(!isChangingLocation)}
               className="px-3 py-1.5 rounded-xl border border-teal-500/30 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-all"
             >
-              {isChangingLocation ? '✕ Cancel' : '📍 Change Location'}
+              {isChangingLocation ? `✕ ${t('volunteers.cancelLocation')}` : `📍 ${t('volunteers.changeLocation')}`}
             </button>
 
             <button
@@ -308,26 +292,26 @@ export default function VolunteersPage() {
               onClick={detectLocation}
               className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
             >
-              🔄 Refresh Coordinates
+              🔄 {t('volunteers.refreshCoords')}
             </button>
           </div>
 
           {/* Real Database Metrics Counters */}
           <div className="flex items-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-300 flex-wrap">
             <span>
-              Nearby Teams: <strong className="text-teal-600">{overviewStats?.teams?.verified || teams.length}</strong>
+              {t('volunteers.nearbyTeams')}: <strong className="text-teal-600">{overviewStats?.teams?.verified || teams.length}</strong>
             </span>
             <span>·</span>
             <span>
-              Volunteers: <strong className="text-emerald-600">{overviewStats?.volunteers?.total || 140}</strong>
+              {t('volunteers.volunteersCount')}: <strong className="text-emerald-600">{overviewStats?.volunteers?.total || 140}</strong>
             </span>
             <span>·</span>
             <span>
-              Relief Campaigns: <strong className="text-blue-600">{campaigns.length}</strong>
+              {t('volunteers.reliefCampaignsCount')}: <strong className="text-blue-600">{campaigns.length}</strong>
             </span>
             <span>·</span>
             <span>
-              Supply Pipeline: <strong className="text-amber-600">{supplyOrders.length}</strong>
+              {t('volunteers.supplyPipelineCount')}: <strong className="text-amber-600">{supplyOrders.length}</strong>
             </span>
           </div>
         </div>
@@ -336,7 +320,7 @@ export default function VolunteersPage() {
         {isChangingLocation && (
           <form onSubmit={handleApplyManualLocation} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs animate-in fade-in">
             <div>
-              <label className="block font-bold text-slate-500 mb-1">City</label>
+              <label className="block font-bold text-slate-500 mb-1">{t('volunteers.city')}</label>
               <input
                 type="text"
                 required
@@ -346,7 +330,7 @@ export default function VolunteersPage() {
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-500 mb-1">State</label>
+              <label className="block font-bold text-slate-500 mb-1">{t('volunteers.state')}</label>
               <input
                 type="text"
                 required
@@ -356,7 +340,7 @@ export default function VolunteersPage() {
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-500 mb-1">PIN Code</label>
+              <label className="block font-bold text-slate-500 mb-1">{t('volunteers.pincode')}</label>
               <input
                 type="text"
                 required
@@ -370,7 +354,7 @@ export default function VolunteersPage() {
                 type="submit"
                 className="w-full py-2 rounded-xl bg-teal-600 text-white font-bold text-xs hover:bg-teal-500 transition-all"
               >
-                Set Location Coordinates
+                {t('volunteers.setLocationCoords')}
               </button>
             </div>
           </form>
@@ -379,10 +363,10 @@ export default function VolunteersPage() {
         {/* Filter Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Search City / District / Area</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('volunteers.searchLabel')}</label>
             <input
               type="text"
-              placeholder="e.g. Prayagraj, Haridwar, Naini..."
+              placeholder={t('volunteers.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && loadData()}
@@ -391,13 +375,13 @@ export default function VolunteersPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Disaster Scenario</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('volunteers.disasterScenario')}</label>
             <select
               value={selectedDisaster}
               onChange={(e) => setSelectedDisaster(e.target.value)}
               className="w-full p-2.5 rounded-xl text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
             >
-              <option value="all">All Disasters</option>
+              <option value="all">{t('volunteers.allDisasters')}</option>
               <option value="Floods">Monsoon Flood Relief</option>
               <option value="Heatwaves">Heatwave & Sunstroke Emergency</option>
               <option value="Severe Storms">Cyclone & Thunderstorm</option>
@@ -406,13 +390,13 @@ export default function VolunteersPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Skill Specialization</label>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t('volunteers.skillSpecialization')}</label>
             <select
               value={selectedSpecialization}
               onChange={(e) => setSelectedSpecialization(e.target.value)}
               className="w-full p-2.5 rounded-xl text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
             >
-              <option value="all">All Specializations</option>
+              <option value="all">{t('volunteers.allSpecializations')}</option>
               <option value="Triage First Aid">Triage & First Aid</option>
               <option value="Inflatable Boat Operations">Boat Rescue & Aquatic Evacuation</option>
               <option value="Deep Water Diving">Deep Water Diving</option>
@@ -428,7 +412,7 @@ export default function VolunteersPage() {
               onClick={() => loadData()}
               className="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-xs transition-all shadow-sm"
             >
-              Apply Filter Grid
+              {t('volunteers.applyFilter')}
             </button>
           </div>
         </div>
@@ -446,7 +430,7 @@ export default function VolunteersPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 dark:text-teal-300 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/20">
-                  Section 1
+                  {t('volunteers.section1')}
                 </span>
                 <span className="font-mono text-xs font-bold text-slate-500">
                   {teams.length} Verified Teams Nearby
@@ -456,7 +440,7 @@ export default function VolunteersPage() {
                 {t('volunteers.teamsNearYou') || 'Nearby Volunteer Teams'}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Proximity-sorted disaster units & squads calculated by real GPS coordinates. Member counts update upon approval.
+                {t('volunteers.section1Desc')}
               </p>
             </div>
           </div>
@@ -466,29 +450,29 @@ export default function VolunteersPage() {
             className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black transition-all shadow-sm shrink-0 flex items-center gap-1.5"
           >
             <span>+</span>
-            <span>Create a Team for This Area</span>
+            <span>{t('volunteers.createTeamForArea')}</span>
           </button>
         </div>
 
         {loading ? (
           <div className="p-10 text-center text-xs text-slate-400 font-bold">
-            Scanning real-time MongoDB volunteer team coordinates...
+            {t('volunteers.scanningTeams')}
           </div>
         ) : teams.length === 0 ? (
           <div className="p-10 text-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 space-y-3">
             <span className="text-3xl">🛡️</span>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              No verified volunteer teams found near your location.
+              {t('volunteers.noTeamsFound')}
             </h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Be the first to step up. Create a verified volunteer team or register yourself as an independent disaster volunteer.
+              {t('volunteers.noTeamsHint')}
             </p>
             <button
               type="button"
               onClick={() => setIsCreateTeamOpen(true)}
               className="mt-2 px-5 py-2.5 rounded-xl bg-teal-600 text-white text-xs font-bold"
             >
-              Create a Team for This Area
+              {t('volunteers.createTeamForArea')}
             </button>
           </div>
         ) : (
@@ -517,17 +501,17 @@ export default function VolunteersPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
-                  Section 2
+                  {t('volunteers.section2')}
                 </span>
                 <span className="font-mono text-xs font-bold text-slate-500">
                   {campaigns.length} Active Campaigns
                 </span>
               </div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white mt-1">
-                Support Disaster Victims — Official Government Relief Funds
+                {t('volunteers.section2Title')}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                100% verified disaster relief campaigns administered by District Disaster Management Authorities (DDMA) and designated relief escrow accounts.
+                {t('volunteers.section2Desc')}
               </p>
             </div>
           </div>
@@ -536,13 +520,13 @@ export default function VolunteersPage() {
             onClick={() => setIsMyDonationsOpen(true)}
             className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-slate-100 transition-all shrink-0"
           >
-            View Confirmed Receipts →
+            {t('volunteers.viewReceipts')}
           </button>
         </div>
 
         {campaigns.length === 0 ? (
           <div className="p-10 text-center text-xs text-slate-400 font-semibold">
-            No active disaster campaigns found for this district filter.
+            {t('volunteers.noCampaigns')}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -574,18 +558,18 @@ export default function VolunteersPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-200 bg-teal-500/20 px-3 py-0.5 rounded-full border border-teal-500/30">
-                  Future Scope · Currently Working
+                  {t('volunteers.futureScopeBadge')}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  In Active Deployment
+                  {t('volunteers.activeDeployment')}
                 </span>
               </div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mt-1.5">
-                Direct Essential Aid & Victim Sponsorship System
+                {t('volunteers.futureScopeTitle')}
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-                Don't just donate money to general funds. Choose the exact essential items disaster victims need — buy directly from registered local medical stores and food shops, and our volunteer teams deliver them straight to ground relief camps!
+                {t('volunteers.futureScopeDesc')}
               </p>
             </div>
           </div>
@@ -597,14 +581,14 @@ export default function VolunteersPage() {
               className="px-4 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5"
             >
               <span>🏪</span>
-              <span>Register Medical / Food Shop</span>
+              <span>{t('volunteers.regShop')}</span>
             </button>
             <button
               type="button"
               onClick={() => setComingSoonModal('fleet')}
               className="px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all"
             >
-              🚚 Join Delivery Volunteer Fleet
+              🚚 {t('volunteers.joinFleet')}
             </button>
           </div>
         </div>
@@ -622,10 +606,10 @@ export default function VolunteersPage() {
               </span>
             </div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Sponsor Specific Medicines
+              {t('volunteers.step1Title')}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Select verified medicines such as <strong>1,000 tabs of Azithromycin</strong>, ORS rehydration packets, or paracetamol strips according to real-time ground demand lists.
+              {t('volunteers.step1Desc')}
             </p>
           </div>
 
@@ -640,10 +624,10 @@ export default function VolunteersPage() {
               </span>
             </div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Registered Medical & Food Stores
+              {t('volunteers.step2Title')}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              We partner directly with certified local pharmacies and grocery stores near the affected disaster location. Zero inflated middleman transit delays or black marketing.
+              {t('volunteers.step2Desc')}
             </p>
           </div>
 
@@ -658,10 +642,10 @@ export default function VolunteersPage() {
               </span>
             </div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Transparent Direct Payment
+              {t('volunteers.step3Title')}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Your donation payment goes directly toward purchasing the verified goods from the registered store, generating an immutable audit receipt and instant stock order.
+              {t('volunteers.step3Desc')}
             </p>
           </div>
 
@@ -676,10 +660,10 @@ export default function VolunteersPage() {
               </span>
             </div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Direct Handover to Victims
+              {t('volunteers.step4Title')}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Our verified local volunteer team picks up the packaged medicines or food directly from the store and delivers them by hand to victim camps with digital proof.
+              {t('volunteers.step4Desc')}
             </p>
           </div>
         </div>
@@ -697,7 +681,7 @@ export default function VolunteersPage() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              💊 Example 1 — Medicine Aid
+              {t('volunteers.example1Tab')}
             </button>
             <button
               type="button"
@@ -708,17 +692,17 @@ export default function VolunteersPage() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              🍞 Example 2 — Food Aid
+              {t('volunteers.example2Tab')}
             </button>
           </div>
 
           <div className="p-5 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-teal-400">
-                Live Example Simulation Workflow
+                {t('volunteers.liveWorkflow')}
               </span>
               <span className="text-[11px] text-slate-400 font-mono">
-                {activeSection === 'food-example' ? 'Food & Ration Distribution Protocol' : 'Medical & Ration Distribution Protocol'}
+                {t('volunteers.protocolTitle')}
               </span>
             </div>
 
