@@ -125,6 +125,10 @@ const volunteerTeamSchema = new mongoose.Schema(
       default: 'Aadhaar Card',
       enum: ['Aadhaar Card', 'Voter ID', 'Driving License', 'PAN Card', 'Government Service ID', 'Other Valid Govt ID'],
     },
+    idProofPhoto: {
+      type: String, // Base64 data URI or image URL
+      default: '',
+    },
     registrationDocRef: {
       type: String,
       default: '',

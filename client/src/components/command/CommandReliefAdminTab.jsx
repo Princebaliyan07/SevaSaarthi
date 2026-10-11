@@ -44,6 +44,9 @@ export default function CommandReliefAdminTab() {
     needsText: 'Clean Drinking Water (2000 Litres), Ready-to-eat Food Packets (1500 Packs), ORS Packets (3000 Sachets)',
   });
 
+  // Full-size ID Proof Photo Preview Modal State
+  const [previewImageModal, setPreviewImageModal] = useState(null); // { title, url, name, idNumber, idType }
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -542,6 +545,22 @@ export default function CommandReliefAdminTab() {
                             🆔 {t.idProofType || 'Aadhaar'}: {t.aadhaarNumber}
                           </span>
                         )}
+                        {t.idProofPhoto && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImageModal({
+                              title: `Leader ID Proof — ${t.name}`,
+                              url: t.idProofPhoto,
+                              name: t.leaderName,
+                              idType: t.idProofType || 'Aadhaar Card',
+                              idNumber: t.aadhaarNumber,
+                            })}
+                            className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[10px] font-bold hover:bg-teal-100 transition-all cursor-pointer"
+                          >
+                            <span>🖼️</span>
+                            <span>View ID Photo</span>
+                          </button>
+                        )}
                         {t.registrationDocRef && (
                           <span className="text-[10px] text-slate-400 block font-mono">
                             Ref: {t.registrationDocRef}
@@ -612,6 +631,7 @@ export default function CommandReliefAdminTab() {
                     <tr>
                       <th className="p-2.5">Applicant</th>
                       <th className="p-2.5">Requested Team</th>
+                      <th className="p-2.5">Identity Proof & Verification</th>
                       <th className="p-2.5">Skills</th>
                       <th className="p-2.5">Reason</th>
                       <th className="p-2.5">Status</th>
@@ -621,10 +641,44 @@ export default function CommandReliefAdminTab() {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {teamRequests.map((req) => (
                       <tr key={req._id}>
-                        <td className="p-2.5 font-bold text-slate-900 dark:text-white">{req.fullName}</td>
-                        <td className="p-2.5">{req.teamId?.name || 'Selected Team'}</td>
+                        <td className="p-2.5">
+                          <strong className="font-bold text-slate-900 dark:text-white block">{req.fullName}</strong>
+                          <span className="text-[10px] text-slate-400">{req.phone}</span>
+                        </td>
+                        <td className="p-2.5">{req.teamName || req.teamId?.name || 'Selected Team'}</td>
+                        <td className="p-2.5">
+                          {req.aadhaarNumber && (
+                            <span className="font-mono text-[10px] font-bold text-teal-700 dark:text-teal-300 block">
+                              🆔 {req.idProofType || 'Aadhaar'}: {req.aadhaarNumber}
+                            </span>
+                          )}
+                          {req.idProofPhoto && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImageModal({
+                                title: `Applicant ID Proof — ${req.fullName}`,
+                                url: req.idProofPhoto,
+                                name: req.fullName,
+                                idType: req.idProofType || 'Aadhaar Card',
+                                idNumber: req.aadhaarNumber,
+                              })}
+                              className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[10px] font-bold hover:bg-teal-100 cursor-pointer"
+                            >
+                              <span>🖼️</span>
+                              <span>View ID Photo</span>
+                            </button>
+                          )}
+                          {req.idProofRef && (
+                            <span className="text-[10px] text-slate-400 block font-mono">
+                              Ref: {req.idProofRef}
+                            </span>
+                          )}
+                          {!req.aadhaarNumber && !req.idProofPhoto && (
+                            <span className="text-[10px] text-slate-400">ID Verification Pending</span>
+                          )}
+                        </td>
                         <td className="p-2.5">{req.skills?.slice(0, 2).join(', ')}</td>
-                        <td className="p-2.5 max-w-xs truncate">{req.reasonForJoining || 'Ready to serve'}</td>
+                        <td className="p-2.5 max-w-xs truncate">{req.reason || req.reasonForJoining || 'Ready to serve'}</td>
                         <td className="p-2.5">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             req.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
@@ -1046,6 +1100,56 @@ export default function CommandReliefAdminTab() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ID Proof Full-Size Inspection Modal */}
+      {previewImageModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-in fade-in"
+          onClick={() => setPreviewImageModal(null)}
+        >
+          <div
+            className="glass-card w-full max-w-xl rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  {previewImageModal.title}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Applicant / Leader: <strong>{previewImageModal.name}</strong> · {previewImageModal.idType}: <strong className="font-mono text-teal-600">{previewImageModal.idNumber || 'Masked Proof'}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewImageModal(null)}
+                className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center hover:bg-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-950 flex items-center justify-center max-h-[70vh]">
+              <img
+                src={previewImageModal.url}
+                alt={previewImageModal.title}
+                className="max-h-[68vh] w-auto max-w-full object-contain"
+              />
+            </div>
+
+            <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
+              <span>Verified encrypted document uploaded for administrative KYC.</span>
+              <button
+                type="button"
+                onClick={() => setPreviewImageModal(null)}
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

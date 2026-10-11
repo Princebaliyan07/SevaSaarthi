@@ -308,10 +308,25 @@ export const getVolunteerTeamDetails = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Volunteer team not found');
   }
 
-  // Protect private phone from public API
+  // Check if caller is an approved team member, team creator, or admin
+  const callerPhone = req.query.userPhone || req.user?.phone;
+  const callerEmail = req.query.userEmail || req.user?.email;
+  const isApprovedMember = Boolean(
+    req.user?.role === 'admin' ||
+    (callerPhone && (
+      team.leaderPhone === callerPhone ||
+      team.approvedMembers?.some((m) => m.phone === callerPhone || m.phoneMasked?.endsWith(callerPhone.slice(-4)))
+    )) ||
+    (callerEmail && team.approvedMembers?.some((m) => m.email === callerEmail))
+  );
+
+  // If approved member, return full unmasked contact details
   const sanitizedTeam = {
     ...team,
-    leaderPhone: team.leaderPhone ? team.leaderPhone.replace(/(\+?\d{2}\s?\d{2})\d{4}(\d{4})/, '$1****$2') : '',
+    isCallerApprovedMember: isApprovedMember,
+    leaderPhone: isApprovedMember
+      ? team.leaderPhone
+      : (team.leaderPhone ? team.leaderPhone.replace(/(\+?\d{2}\s?\d{2})\d{4}(\d{4})/, '$1****$2') : ''),
   };
 
   return res.status(200).json(new ApiResponse(200, sanitizedTeam, 'Team details retrieved'));
@@ -337,6 +352,7 @@ export const createVolunteerTeam = asyncHandler(async (req, res) => {
     skills = [],
     aadhaarNumber = '',
     idProofType = 'Aadhaar Card',
+    idProofPhoto = '',
     registrationDocRef = '',
   } = req.body;
 
@@ -365,6 +381,7 @@ export const createVolunteerTeam = asyncHandler(async (req, res) => {
     leaderPhone: leaderPhone.trim(),
     aadhaarNumber: aadhaarNumber ? aadhaarNumber.trim() : '',
     idProofType: idProofType || 'Aadhaar Card',
+    idProofPhoto: idProofPhoto || '',
     capacity: Number(capacity) || 50,
     activeMembers: 1,
     approvedMembers: [
@@ -410,7 +427,20 @@ export const createVolunteerTeam = asyncHandler(async (req, res) => {
 
 export const requestJoinTeam = asyncHandler(async (req, res) => {
   const { teamId } = req.params;
-  const { fullName, phone, email = '', currentLocation = '', skills = [], availability = '', qualifications = '', reason } = req.body;
+  const {
+    fullName,
+    phone,
+    email = '',
+    currentLocation = '',
+    skills = [],
+    availability = '',
+    qualifications = '',
+    reason,
+    aadhaarNumber = '',
+    idProofType = 'Aadhaar Card',
+    idProofPhoto = '',
+    idProofRef = '',
+  } = req.body;
 
   if (!fullName || !phone || !reason) {
     throw new ApiError(400, 'Full name, mobile number, and reason for joining are required');
@@ -419,7 +449,10 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
   // Check team capacity and status
   let team = null;
   if (mongoose.connection.readyState === 1) {
-    team = await VolunteerTeam.findOne({ teamId });
+    const isObjectId = mongoose.Types.ObjectId.isValid(teamId);
+    team = await VolunteerTeam.findOne(
+      isObjectId ? { $or: [{ _id: teamId }, { teamId }] } : { teamId }
+    );
   }
 
   if (team && team.operationalStatus === 'At Capacity') {
@@ -428,7 +461,11 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
 
   // Prevent duplicate requests
   if (mongoose.connection.readyState === 1) {
-    const existing = await TeamJoinRequest.findOne({ teamId, phone: phone.trim(), status: 'Pending Review' });
+    const existing = await TeamJoinRequest.findOne({
+      $or: [{ teamId }, { teamId: team?.teamId || '' }],
+      phone: phone.trim(),
+      status: 'Pending Review',
+    });
     if (existing) {
       throw new ApiError(409, 'You already have a pending membership request for this team.');
     }
@@ -437,13 +474,17 @@ export const requestJoinTeam = asyncHandler(async (req, res) => {
   const requestId = `TJR-${Date.now().toString().slice(-6)}`;
   const payload = {
     requestId,
-    teamId,
+    teamId: team?.teamId || teamId,
     teamName: team?.name || teamId,
     fullName: fullName.trim(),
     phone: phone.trim(),
     email: email.trim(),
     currentLocation: currentLocation.trim(),
     skills: Array.isArray(skills) ? skills : [skills],
+    aadhaarNumber: aadhaarNumber ? aadhaarNumber.trim() : '',
+    idProofType: idProofType || 'Aadhaar Card',
+    idProofPhoto: idProofPhoto || '',
+    idProofRef: idProofRef ? idProofRef.trim() : '',
     availability: availability.trim() || 'Flexible',
     qualifications: qualifications.trim(),
     reason: reason.trim(),

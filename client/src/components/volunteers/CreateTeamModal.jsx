@@ -18,6 +18,7 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
     leaderPhone: '',
     aadhaarNumber: '',
     idProofType: 'Aadhaar Card',
+    idProofPhoto: '',
     capacity: 50,
     skills: ['First Aid', 'Food Distribution'],
     registrationDocRef: '',
@@ -189,6 +190,51 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
                 <option value="Government Service ID">Government Service ID</option>
                 <option value="Other Valid Govt ID">Other Valid Govt ID</option>
               </select>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Upload Photo of ID Proof * (Aadhaar / Voter ID / Govt Card)
+              </label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-teal-500/40 bg-teal-50/30 dark:bg-teal-950/20">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        alert('Image must be smaller than 5MB');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setFormData((p) => ({ ...p, idProofPhoto: ev.target.result }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-600 file:text-white hover:file:bg-teal-500 cursor-pointer"
+                />
+                {formData.idProofPhoto && (
+                  <div className="relative group shrink-0">
+                    <img
+                      src={formData.idProofPhoto}
+                      alt="ID Proof Preview"
+                      className="h-12 w-20 object-cover rounded-lg border border-teal-500 shadow-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, idProofPhoto: '' }))}
+                      className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-rose-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold"
+                      title="Remove image"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+              <span className="text-[10px] text-slate-400">Photo will be saved for admin identity verification.</span>
             </div>
 
             <div className="space-y-1 sm:col-span-2">

@@ -124,19 +124,26 @@ export default function TeamDetailsModal({ team, isOpen, onClose, onJoinRequest 
           </div>
         </div>
 
-        {/* Public Contact & Leader */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Team Leader / Commander:
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-white">
-              {team.leaderName}
-            </p>
+        {/* Public Contact & Leader with Privacy Gate */}
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Team Leader / Commander:
+              </p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                {team.leaderName}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300 block">
+                📞 {team.leaderPhone || 'Contact Masked'}
+              </span>
+              <span className="text-[10px] text-slate-400 block">
+                {team.isCallerApprovedMember ? '✓ Full contact unmasked for enrolled member' : '🔒 Masked for public privacy. Unmasked once approved.'}
+              </span>
+            </div>
           </div>
-          <span className="text-xs font-mono text-slate-400">
-            {team.leaderPhone ? team.leaderPhone : 'Contact verified by Admin'}
-          </span>
         </div>
 
         {/* Modal Actions */}

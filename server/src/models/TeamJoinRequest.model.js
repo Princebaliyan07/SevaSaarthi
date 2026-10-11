@@ -36,6 +36,23 @@ const teamJoinRequestSchema = new mongoose.Schema(
       default: '',
     },
     skills: [String],
+    aadhaarNumber: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    idProofType: {
+      type: String,
+      default: 'Aadhaar Card',
+    },
+    idProofPhoto: {
+      type: String, // Base64 data URI or image URL
+      default: '',
+    },
+    idProofRef: {
+      type: String,
+      default: '',
+    },
     availability: {
       type: String,
       default: 'Flexible / On-Call',

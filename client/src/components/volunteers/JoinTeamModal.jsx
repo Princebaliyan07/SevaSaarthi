@@ -9,6 +9,10 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
     email: '',
     currentLocation: '',
     skills: ['First Aid'],
+    aadhaarNumber: '',
+    idProofType: 'Aadhaar Card',
+    idProofPhoto: '',
+    idProofRef: '',
     availability: 'Flexible / On-Call',
     qualifications: '',
     reason: '',
@@ -24,6 +28,10 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
     e.preventDefault();
     if (!formData.fullName.trim() || !formData.phone.trim() || !formData.reason.trim()) {
       setError('Please provide your full name, phone number, and reason for joining.');
+      return;
+    }
+    if (!formData.aadhaarNumber.trim() && !formData.idProofRef.trim()) {
+      setError('Please enter your Aadhaar number or ID proof reference number.');
       return;
     }
     if (!formData.safetyGuidelinesAgreed) {
@@ -142,6 +150,84 @@ export default function JoinTeamModal({ team, isOpen, onClose, onSubmitJoin }) {
                   onChange={(e) => setFormData((p) => ({ ...p, currentLocation: e.target.value }))}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Aadhaar Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={14}
+                  placeholder="XXXX-XXXX-XXXX"
+                  value={formData.aadhaarNumber}
+                  onChange={(e) => setFormData((p) => ({ ...p, aadhaarNumber: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  ID Proof Type *
+                </label>
+                <select
+                  value={formData.idProofType}
+                  onChange={(e) => setFormData((p) => ({ ...p, idProofType: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
+                >
+                  <option value="Aadhaar Card">Aadhaar Card</option>
+                  <option value="Voter ID">Voter ID</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Government Service ID">Government Service ID</option>
+                  <option value="Other Valid Govt ID">Other Valid Govt ID</option>
+                </select>
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Upload Photo of ID Proof * (Aadhaar / Voter ID / Driving License)
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-teal-500/40 bg-teal-50/30 dark:bg-teal-950/20">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('Image must be smaller than 5MB');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setFormData((p) => ({ ...p, idProofPhoto: ev.target.result }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="text-xs text-slate-600 dark:text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-600 file:text-white hover:file:bg-teal-500 cursor-pointer"
+                  />
+                  {formData.idProofPhoto && (
+                    <div className="relative group shrink-0">
+                      <img
+                        src={formData.idProofPhoto}
+                        alt="Applicant ID Preview"
+                        className="h-12 w-20 object-cover rounded-lg border border-teal-500 shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData((p) => ({ ...p, idProofPhoto: '' }))}
+                        className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-rose-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] text-slate-400">Required for official identity verification by disaster administrator.</span>
               </div>
             </div>
 
