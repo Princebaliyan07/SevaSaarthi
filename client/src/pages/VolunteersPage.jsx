@@ -246,11 +246,11 @@ export default function VolunteersPage() {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setIsRegisterVolunteerOpen(true)}
-              className="px-5 py-2.5 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg flex items-center gap-2"
+              onClick={() => setActiveSection('teams')}
+              className="px-5 py-2.5 rounded-2xl bg-emerald-400/90 hover:bg-emerald-300 text-emerald-950 font-black text-xs transition-all shadow-lg flex items-center gap-2"
             >
-              <span>🙋</span>
-              <span>{t('volunteers.registerBtn')}</span>
+              <span>🤝</span>
+              <span>Join a Team</span>
             </button>
             <button
               type="button"
@@ -261,6 +261,7 @@ export default function VolunteersPage() {
               <span>{t('volunteers.createTeamBtn')}</span>
             </button>
           </div>
+
         </div>
       </div>
 
