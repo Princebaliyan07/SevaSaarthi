@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 
-export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
+export default function CreateTeamModal({
+  isOpen,
+  onClose,
+  onCreateTeam,
+  initialCity = '',
+  initialDistrict = '',
+  initialState = '',
+}) {
   const { lang } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
@@ -9,9 +16,9 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
     teamCategory: 'Citizen Action Group',
     supportedDisasters: ['Floods', 'General Emergency'],
     location: '',
-    city: 'Prayagraj',
-    district: 'Prayagraj',
-    state: 'Uttar Pradesh',
+    city: initialCity || 'Prayagraj',
+    district: initialDistrict || initialCity || 'Prayagraj',
+    state: initialState || 'Uttar Pradesh',
     pincode: '',
     serviceArea: 'Within 25 km radius',
     leaderName: '',
@@ -22,9 +29,83 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
     capacity: 50,
     skills: ['First Aid', 'Food Distribution'],
     registrationDocRef: '',
+    lat: null,
+    lng: null,
   });
+  const [detectingLoc, setDetectingLoc] = useState(false);
+  const [locDetectedMsg, setLocDetectedMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && initialCity) {
+      setFormData((p) => ({
+        ...p,
+        city: initialCity,
+        district: initialDistrict || initialCity,
+        state: initialState || p.state,
+      }));
+    }
+  }, [isOpen, initialCity, initialDistrict, initialState]);
+
+  const handleDetectModalLocation = async () => {
+    setDetectingLoc(true);
+    setLocDetectedMsg('');
+    try {
+      const getGps = () =>
+        new Promise((resolve, reject) => {
+          if (!navigator.geolocation) return reject(new Error('No GPS'));
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 6000,
+            maximumAge: 60000,
+          });
+        });
+
+      let lat = null;
+      let lng = null;
+      try {
+        const pos = await getGps();
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch (gpsErr) {
+        console.warn('GPS failed in modal, falling back to IP...', gpsErr);
+      }
+
+      const url =
+        lat && lng
+          ? `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+          : 'https://api.bigdatacloud.net/data/reverse-geocode-client';
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const city = data.locality || data.city || data.principalSubdivision || '';
+        const district = data.city || data.locality || data.principalSubdivision || '';
+        const state = data.principalSubdivision || '';
+        const coords = {
+          lat: data.latitude ? Number(data.latitude) : lat,
+          lng: data.longitude ? Number(data.longitude) : lng,
+        };
+
+        setFormData((p) => ({
+          ...p,
+          city: city || p.city,
+          district: district || p.district,
+          state: state || p.state,
+          location: p.location || (city ? `${city} Base` : p.location),
+          lat: coords.lat,
+          lng: coords.lng,
+        }));
+        setLocDetectedMsg(`✓ Detected: ${city || district}${state ? ', ' + state : ''}`);
+      }
+    } catch (err) {
+      console.warn('Modal location detection error:', err);
+      setLocDetectedMsg('⚠️ Could not auto-detect location. Please type manually.');
+    } finally {
+      setDetectingLoc(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -115,25 +196,70 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Headquarters / Location *</label>
+            {/* Headquarters / Location */}
+            <div className="space-y-1 sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Headquarters / Base Location *</label>
+                <button
+                  type="button"
+                  disabled={detectingLoc}
+                  onClick={handleDetectModalLocation}
+                  className="text-[11px] font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <span>{detectingLoc ? '⏳' : '🎯'}</span>
+                  <span>{detectingLoc ? 'Detecting Location...' : 'Auto-Detect City & District'}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 required
-                placeholder="e.g. Sector 3, Sangam Ghat"
+                placeholder="e.g. Sector 3, Relief Base"
                 value={formData.location}
                 onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
               />
+              {locDetectedMsg && (
+                <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  {locDetectedMsg}
+                </p>
+              )}
             </div>
 
+            {/* City Field */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">City *</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">City / Town *</label>
               <input
                 type="text"
                 required
+                placeholder="e.g. Greater Noida, Prayagraj"
                 value={formData.city}
                 onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+              />
+            </div>
+
+            {/* District Field */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">District *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Gautam Budh Nagar, Prayagraj"
+                value={formData.district}
+                onChange={(e) => setFormData((p) => ({ ...p, district: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+              />
+            </div>
+
+            {/* State Field */}
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">State *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Uttar Pradesh, Bihar"
+                value={formData.state}
+                onChange={(e) => setFormData((p) => ({ ...p, state: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
               />
             </div>

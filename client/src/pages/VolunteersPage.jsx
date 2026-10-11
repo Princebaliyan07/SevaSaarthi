@@ -960,6 +960,9 @@ export default function VolunteersPage() {
         isOpen={isCreateTeamOpen}
         onClose={() => setIsCreateTeamOpen(false)}
         onCreateTeam={handleCreateTeamSubmit}
+        initialCity={manualCity || searchQuery}
+        initialDistrict={manualCity || searchQuery}
+        initialState={manualState}
       />
 
       {/* Donate Funds to Campaign Modal */}
