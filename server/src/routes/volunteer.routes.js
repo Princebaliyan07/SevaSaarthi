@@ -9,6 +9,7 @@ import {
   reviewTeamJoinRequest,
   reviewVolunteerTeam,
   deleteVolunteerTeam,
+  unlockTeamContacts,
   // Volunteer Registration
   registerVolunteer,
   getVolunteerApplications,
@@ -46,6 +47,7 @@ router.get('/teams/:teamId', getVolunteerTeamDetails);
 router.post('/teams', createVolunteerTeam);
 router.delete('/teams/:teamId', deleteVolunteerTeam);
 router.post('/teams/:teamId/join', requestJoinTeam);
+router.post('/teams/:teamId/unlock', unlockTeamContacts);
 router.get('/team-requests', getTeamJoinRequests);
 router.patch('/team-requests/:requestId', reviewTeamJoinRequest);
 router.patch('/teams/:teamId/review', reviewVolunteerTeam);

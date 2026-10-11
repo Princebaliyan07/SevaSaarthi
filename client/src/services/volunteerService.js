@@ -49,6 +49,11 @@ export async function reviewVolunteerTeam(teamId, data) {
   return res.data?.data;
 }
 
+export async function unlockTeamContacts(teamId, secretKey) {
+  const res = await api.post(`/volunteer/teams/${teamId}/unlock`, { secretKey });
+  return res.data?.data;
+}
+
 export async function deleteVolunteerTeam(teamId) {
   const res = await api.delete(`/volunteer/teams/${teamId}`);
   return res.data?.data;

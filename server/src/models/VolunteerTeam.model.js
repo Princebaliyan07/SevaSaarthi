@@ -79,7 +79,9 @@ const volunteerTeamSchema = new mongoose.Schema(
       {
         memberId: String,
         fullName: String,
+        phone: String,
         phoneMasked: String,
+        secretKey: { type: String, default: '' },
         role: { type: String, default: 'Volunteer' },
         joinedAt: { type: Date, default: Date.now },
       },

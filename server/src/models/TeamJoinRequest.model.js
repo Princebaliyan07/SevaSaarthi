@@ -71,6 +71,11 @@ const teamJoinRequestSchema = new mongoose.Schema(
       required: true,
       default: true,
     },
+    secretKey: {
+      type: String,
+      default: '',
+      index: true,
+    },
     status: {
       type: String,
       enum: ['Pending Review', 'Approved', 'Rejected', 'Waitlisted'],

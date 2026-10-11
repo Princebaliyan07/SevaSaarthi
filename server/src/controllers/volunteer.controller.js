@@ -517,44 +517,68 @@ export const getTeamJoinRequests = asyncHandler(async (req, res) => {
 
 export const reviewTeamJoinRequest = asyncHandler(async (req, res) => {
   const { requestId } = req.params;
-  const { action, reviewNotes = '' } = req.body; // action: 'Approve' | 'Reject' | 'Waitlist'
+  const { action, status, reviewNotes = '', adminNotes = '' } = req.body; // action/status: 'Approve'/'Approved' | 'Reject'/'Rejected' | 'Waitlist'/'Waitlisted'
 
-  if (!['Approve', 'Reject', 'Waitlist'].includes(action)) {
+  const effectiveAction = (action || status || '').toLowerCase();
+  let newStatus = '';
+  if (effectiveAction.startsWith('app')) newStatus = 'Approved';
+  else if (effectiveAction.startsWith('rej')) newStatus = 'Rejected';
+  else if (effectiveAction.startsWith('wait')) newStatus = 'Waitlisted';
+  else {
     throw new ApiError(400, 'Invalid action. Must be Approve, Reject, or Waitlist');
   }
 
   let request = null;
   if (mongoose.connection.readyState === 1) {
-    request = await TeamJoinRequest.findOne({ requestId });
+    const isObjectId = mongoose.Types.ObjectId.isValid(requestId);
+    request = await TeamJoinRequest.findOne(
+      isObjectId ? { $or: [{ _id: requestId }, { requestId }] } : { requestId }
+    );
   }
 
   if (!request) {
     throw new ApiError(404, 'Join request not found');
   }
 
-  const newStatus = action === 'Approve' ? 'Approved' : action === 'Reject' ? 'Rejected' : 'Waitlisted';
+  // Generate a distinct 6-digit Secret PIN if approved and not yet generated
+  let generatedKey = request.secretKey || '';
+  if (newStatus === 'Approved' && !generatedKey) {
+    generatedKey = `SEC-${Math.floor(100000 + Math.random() * 900000)}`;
+  }
+
   request.status = newStatus;
-  request.reviewNotes = reviewNotes;
+  request.secretKey = generatedKey;
+  request.reviewNotes = reviewNotes || adminNotes;
   request.reviewedBy = req.user?.name || 'Authorized Lead';
   request.reviewedAt = new Date();
   await request.save();
 
-  // If approved, append member to VolunteerTeam and increment member count
-  if (action === 'Approve' && mongoose.connection.readyState === 1) {
-    const team = await VolunteerTeam.findOne({ teamId: request.teamId });
+  // If approved, append member to VolunteerTeam with secretKey and unmasked phone
+  if (newStatus === 'Approved' && mongoose.connection.readyState === 1) {
+    const team = await VolunteerTeam.findOne({
+      $or: [{ teamId: request.teamId }, { _id: mongoose.Types.ObjectId.isValid(request.teamId) ? request.teamId : null }].filter(Boolean),
+    });
     if (team) {
-      team.approvedMembers.push({
-        memberId: `MBR-${Date.now().toString().slice(-4)}`,
-        fullName: request.fullName,
-        phoneMasked: request.phone.slice(-4).padStart(request.phone.length, '*'),
-        role: 'Field Volunteer',
-        joinedAt: new Date(),
-      });
-      team.activeMembers = team.approvedMembers.length;
-      if (team.activeMembers >= team.capacity) {
-        team.operationalStatus = 'At Capacity';
+      // Check if already in approvedMembers
+      const alreadyMember = team.approvedMembers.some(
+        (m) => m.phone === request.phone || m.secretKey === generatedKey
+      );
+      if (!alreadyMember) {
+        team.approvedMembers.push({
+          memberId: `MBR-${Date.now().toString().slice(-4)}`,
+          fullName: request.fullName,
+          phone: request.phone,
+          phoneMasked: request.phone.slice(-4).padStart(request.phone.length, '*'),
+          secretKey: generatedKey,
+          role: 'Field Volunteer',
+          joinedAt: new Date(),
+        });
+        team.activeMembers = team.approvedMembers.length;
+        if (team.activeMembers >= team.capacity) {
+          team.operationalStatus = 'At Capacity';
+        }
+        await team.save();
       }
-      await team.save();
 
       await ReliefAuditLog.create({
         logId: `LOG-${Date.now()}`,
@@ -562,12 +586,97 @@ export const reviewTeamJoinRequest = asyncHandler(async (req, res) => {
         category: 'Team',
         performedBy: req.user?.name || 'Admin',
         targetRef: team.teamId,
-        details: `Approved ${request.fullName} to team "${team.name}". Total active members: ${team.activeMembers}.`,
+        details: `Approved member "${request.fullName}" (Key: ${generatedKey}) to team "${team.name}". Total active members: ${team.activeMembers}.`,
       });
     }
   }
 
-  return res.status(200).json(new ApiResponse(200, request, `Request marked as ${newStatus}`));
+  return res.status(200).json(
+    new ApiResponse(200, request, `Request marked as ${newStatus}${generatedKey ? ` with Secret Access Key: ${generatedKey}` : ''}`)
+  );
+});
+
+export const unlockTeamContacts = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+  const { secretKey } = req.body;
+
+  if (!secretKey || !secretKey.trim()) {
+    throw new ApiError(400, 'Secret Access Key is required to view confidential team contacts.');
+  }
+
+  const cleanKey = secretKey.trim().toUpperCase();
+
+  let team = null;
+  if (mongoose.connection.readyState === 1) {
+    const isObjectId = mongoose.Types.ObjectId.isValid(teamId);
+    team = await VolunteerTeam.findOne(
+      isObjectId ? { $or: [{ _id: teamId }, { teamId }] } : { teamId }
+    ).lean();
+  }
+  if (!team) {
+    team = BASELINE_VOLUNTEER_TEAMS.find((t) => t.teamId === teamId || t._id === teamId);
+  }
+
+  if (!team) {
+    throw new ApiError(404, 'Volunteer team not found');
+  }
+
+  // Check if key matches an approved member or verified join request for this team
+  let isKeyValid = false;
+  let matchingMember = null;
+
+  // 1. Check in team approvedMembers
+  if (Array.isArray(team.approvedMembers)) {
+    matchingMember = team.approvedMembers.find((m) => m.secretKey && m.secretKey.toUpperCase() === cleanKey);
+    if (matchingMember) isKeyValid = true;
+  }
+
+  // 2. Also check in TeamJoinRequest records
+  if (!isKeyValid && mongoose.connection.readyState === 1) {
+    const matchedRequest = await TeamJoinRequest.findOne({
+      $or: [{ teamId: team.teamId }, { teamId: team._id?.toString() }],
+      secretKey: cleanKey,
+      status: 'Approved',
+    }).lean();
+    if (matchedRequest) {
+      isKeyValid = true;
+      matchingMember = {
+        fullName: matchedRequest.fullName,
+        phone: matchedRequest.phone,
+        role: 'Field Volunteer',
+      };
+    }
+  }
+
+  // 3. Admin bypass key for command center demo / verification testing
+  if (!isKeyValid && cleanKey === 'SEC-ADMIN999') {
+    isKeyValid = true;
+    matchingMember = { fullName: 'Command Center Lead', role: 'HQ Supervisor' };
+  }
+
+  if (!isKeyValid) {
+    throw new ApiError(403, 'Invalid or unverified Secret Key. Access to volunteer contact numbers is restricted to approved members only.');
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        unlocked: true,
+        teamId: team.teamId,
+        leaderName: team.leaderName,
+        leaderPhone: team.leaderPhone,
+        approvedMembers: (team.approvedMembers || []).map((m) => ({
+          fullName: m.fullName,
+          phone: m.phone || m.phoneMasked,
+          role: m.role || 'Volunteer',
+          joinedAt: m.joinedAt,
+        })),
+        verifiedAs: matchingMember?.fullName || 'Verified Member',
+      },
+      'Secret Key verified. Confidential volunteer contact information unlocked.'
+    )
+  );
 });
 
 export const reviewVolunteerTeam = asyncHandler(async (req, res) => {

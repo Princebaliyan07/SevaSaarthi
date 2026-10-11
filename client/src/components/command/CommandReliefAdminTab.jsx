@@ -619,9 +619,14 @@ export default function CommandReliefAdminTab() {
 
           {/* Team Join Requests Queue */}
           <div className="glass-card p-5 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Team Membership Join Requests ({teamRequests.filter(r => r.status === 'Pending').length} Pending)
-            </h3>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                Team Membership Join Requests ({teamRequests.filter(r => r.status === 'Pending' || r.status === 'Pending Review').length} Pending Review)
+              </h3>
+              <span className="text-[10px] text-slate-400 font-mono">
+                🔒 Admin approval generates Secret Access Key for volunteer contact lookup
+              </span>
+            </div>
             {teamRequests.length === 0 ? (
               <p className="text-xs text-slate-400">No pending team membership requests.</p>
             ) : (
@@ -634,80 +639,103 @@ export default function CommandReliefAdminTab() {
                       <th className="p-2.5">Identity Proof & Verification</th>
                       <th className="p-2.5">Skills</th>
                       <th className="p-2.5">Reason</th>
-                      <th className="p-2.5">Status</th>
+                      <th className="p-2.5">Status & Secret Key</th>
                       <th className="p-2.5 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {teamRequests.map((req) => (
-                      <tr key={req._id}>
-                        <td className="p-2.5">
-                          <strong className="font-bold text-slate-900 dark:text-white block">{req.fullName}</strong>
-                          <span className="text-[10px] text-slate-400">{req.phone}</span>
-                        </td>
-                        <td className="p-2.5">{req.teamName || req.teamId?.name || 'Selected Team'}</td>
-                        <td className="p-2.5">
-                          {req.aadhaarNumber && (
-                            <span className="font-mono text-[10px] font-bold text-teal-700 dark:text-teal-300 block">
-                              🆔 {req.idProofType || 'Aadhaar'}: {req.aadhaarNumber}
-                            </span>
-                          )}
-                          {req.idProofPhoto && (
-                            <button
-                              type="button"
-                              onClick={() => setPreviewImageModal({
-                                title: `Applicant ID Proof — ${req.fullName}`,
-                                url: req.idProofPhoto,
-                                name: req.fullName,
-                                idType: req.idProofType || 'Aadhaar Card',
-                                idNumber: req.aadhaarNumber,
-                              })}
-                              className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[10px] font-bold hover:bg-teal-100 cursor-pointer"
-                            >
-                              <span>🖼️</span>
-                              <span>View ID Photo</span>
-                            </button>
-                          )}
-                          {req.idProofRef && (
-                            <span className="text-[10px] text-slate-400 block font-mono">
-                              Ref: {req.idProofRef}
-                            </span>
-                          )}
-                          {!req.aadhaarNumber && !req.idProofPhoto && (
-                            <span className="text-[10px] text-slate-400">ID Verification Pending</span>
-                          )}
-                        </td>
-                        <td className="p-2.5">{req.skills?.slice(0, 2).join(', ')}</td>
-                        <td className="p-2.5 max-w-xs truncate">{req.reason || req.reasonForJoining || 'Ready to serve'}</td>
-                        <td className="p-2.5">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {req.status}
-                          </span>
-                        </td>
-                        <td className="p-2.5 text-right">
-                          {req.status === 'Pending' && (
-                            <div className="flex items-center justify-end gap-1.5">
+                    {teamRequests.map((req) => {
+                      const isPending = req.status === 'Pending' || req.status === 'Pending Review';
+                      const isApproved = req.status === 'Approved';
+                      return (
+                        <tr key={req._id || req.requestId}>
+                          <td className="p-2.5">
+                            <strong className="font-bold text-slate-900 dark:text-white block">{req.fullName}</strong>
+                            <span className="text-[10px] text-slate-400 font-mono">{req.phone}</span>
+                          </td>
+                          <td className="p-2.5">{req.teamName || req.teamId?.name || req.teamId || 'Selected Team'}</td>
+                          <td className="p-2.5">
+                            {req.aadhaarNumber && (
+                              <span className="font-mono text-[10px] font-bold text-teal-700 dark:text-teal-300 block">
+                                🆔 {req.idProofType || 'Aadhaar'}: {req.aadhaarNumber}
+                              </span>
+                            )}
+                            {req.idProofPhoto && (
                               <button
                                 type="button"
-                                onClick={() => handleJoinReqReview(req._id, 'Approved')}
-                                className="px-2 py-1 rounded bg-emerald-600 text-white font-bold text-[10px]"
+                                onClick={() => setPreviewImageModal({
+                                  title: `Applicant ID Proof — ${req.fullName}`,
+                                  url: req.idProofPhoto,
+                                  name: req.fullName,
+                                  idType: req.idProofType || 'Aadhaar Card',
+                                  idNumber: req.aadhaarNumber,
+                                })}
+                                className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-[10px] font-bold hover:bg-teal-100 cursor-pointer"
                               >
-                                Accept & Increment Count
+                                <span>🖼️</span>
+                                <span>View ID Photo</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleJoinReqReview(req._id, 'Rejected')}
-                                className="px-2 py-1 rounded bg-slate-200 text-slate-700 text-[10px]"
-                              >
-                                Reject
-                              </button>
+                            )}
+                            {req.idProofRef && (
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                Ref: {req.idProofRef}
+                              </span>
+                            )}
+                            {!req.aadhaarNumber && !req.idProofPhoto && (
+                              <span className="text-[10px] text-slate-400">ID Verification Pending</span>
+                            )}
+                          </td>
+                          <td className="p-2.5">{req.skills?.slice(0, 2).join(', ')}</td>
+                          <td className="p-2.5 max-w-xs truncate">{req.reason || req.reasonForJoining || 'Ready to serve'}</td>
+                          <td className="p-2.5">
+                            <div className="space-y-1">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold inline-block ${
+                                isApproved ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300' :
+                                req.status === 'Rejected' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300' :
+                                'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                              }`}>
+                                {req.status}
+                              </span>
+                              {req.secretKey && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-400/30">
+                                    🔑 {req.secretKey}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="p-2.5 text-right">
+                            {isPending ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleJoinReqReview(req.requestId || req._id, 'Approved')}
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow-xs transition-all flex items-center gap-1"
+                                  title="Verify ID, approve applicant, and assign Secret PIN"
+                                >
+                                  <span>✓</span>
+                                  <span>Verify & Assign Key</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleJoinReqReview(req.requestId || req._id, 'Rejected')}
+                                  className="px-2 py-1 rounded-lg bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 text-[10px] transition-all"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : isApproved && req.secretKey ? (
+                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                ✓ Verified & Active
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400">Archived</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
