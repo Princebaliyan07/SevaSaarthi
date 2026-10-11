@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import VolunteerTeamCard from '../components/volunteers/VolunteerTeamCard';
 import ReliefCampaignCard from '../components/volunteers/ReliefCampaignCard';
 import DeliveryPipeline from '../components/volunteers/DeliveryPipeline';
@@ -82,6 +82,12 @@ export default function VolunteersPage() {
   const [isJoinDeliveryFleetOpen, setIsJoinDeliveryFleetOpen] = useState(false);
   const [comingSoonModal, setComingSoonModal] = useState(null); // 'shop' | 'fleet' | null
 
+  const teamsSectionRef = useRef(null);
+  const scrollToTeams = () => {
+    if (teamsSectionRef.current) {
+      teamsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Geolocation Detection with explicit manual fallback
   const detectLocation = () => {
@@ -246,7 +252,7 @@ export default function VolunteersPage() {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setActiveSection('teams')}
+              onClick={scrollToTeams}
               className="px-5 py-2.5 rounded-2xl bg-emerald-400/90 hover:bg-emerald-300 text-emerald-950 font-black text-xs transition-all shadow-lg flex items-center gap-2"
             >
               <span>🤝</span>
@@ -422,7 +428,7 @@ export default function VolunteersPage() {
       {/* ======================================================== */}
       {/* SECTION 1: NEARBY VOLUNTEER TEAMS                         */}
       {/* ======================================================== */}
-      <section className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs">
+      <section ref={teamsSectionRef} className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-start gap-3">
             <span className="p-3 rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 text-2xl shrink-0">
