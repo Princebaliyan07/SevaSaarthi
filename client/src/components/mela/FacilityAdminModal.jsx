@@ -13,8 +13,8 @@ export default function FacilityAdminModal({
     name: '',
     category: 'hospital_medical',
     description: '',
-    latitude: 25.4285,
-    longitude: 81.884,
+    mapX: 50,
+    mapY: 50,
     status: 'Operational',
     isPublished: true,
     operatingHours: '24x7 (Demo Schedule)',
@@ -29,8 +29,8 @@ export default function FacilityAdminModal({
         name: facility.name || '',
         category: facility.category || 'hospital_medical',
         description: facility.description || '',
-        latitude: facility.latitude || 25.4285,
-        longitude: facility.longitude || 81.884,
+        mapX: facility.mapX !== undefined ? facility.mapX : 50,
+        mapY: facility.mapY !== undefined ? facility.mapY : 50,
         status: facility.status || 'Operational',
         isPublished: facility.isPublished !== undefined ? facility.isPublished : true,
         operatingHours: facility.operatingHours || '24x7 (Demo Schedule)',
@@ -39,8 +39,8 @@ export default function FacilityAdminModal({
     } else if (initialCoords) {
       setFormData((prev) => ({
         ...prev,
-        latitude: initialCoords.lat,
-        longitude: initialCoords.lng,
+        mapX: initialCoords.mapX !== undefined ? initialCoords.mapX : prev.mapX,
+        mapY: initialCoords.mapY !== undefined ? initialCoords.mapY : prev.mapY,
       }));
     }
   }, [facility, initialCoords]);
@@ -66,7 +66,7 @@ export default function FacilityAdminModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-xs">
       <div className="glass-card w-full max-w-lg overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
         <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -75,10 +75,10 @@ export default function FacilityAdminModal({
               {facility
                 ? lang === 'hi'
                   ? 'सुविधा संपादित करें'
-                  : 'Edit Mela Facility'
+                  : 'Edit Mela Facility Marker'
                 : lang === 'hi'
-                ? 'नई सुविधा जोड़ें'
-                : 'Add Mela Facility (Admin)'}
+                ? 'नई सुविधा मार्कर जोड़ें'
+                : 'Add Facility to 2D Mela Map (Admin)'}
             </h3>
           </div>
           <button
@@ -106,7 +106,7 @@ export default function FacilityAdminModal({
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g. Sector 2 Medical Aid Camp"
+              placeholder="e.g. RO Drinking Water Station #12"
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -147,30 +147,33 @@ export default function FacilityAdminModal({
             </div>
           </div>
 
+          {/* Map Relative Placement (0 to 100%) */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Latitude (e.g. 25.4285) *
+                Map X Coordinate (% 0-100)
               </label>
               <input
                 type="number"
-                step="any"
+                min="0"
+                max="100"
                 required
-                value={formData.latitude}
-                onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })}
+                value={formData.mapX}
+                onChange={(e) => setFormData({ ...formData, mapX: Number(e.target.value) })}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
             <div>
               <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Longitude (e.g. 81.8840) *
+                Map Y Coordinate (% 0-100)
               </label>
               <input
                 type="number"
-                step="any"
+                min="0"
+                max="100"
                 required
-                value={formData.longitude}
-                onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })}
+                value={formData.mapY}
+                onChange={(e) => setFormData({ ...formData, mapY: Number(e.target.value) })}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -225,7 +228,7 @@ export default function FacilityAdminModal({
               className="h-4 w-4 rounded text-teal-600 focus:ring-teal-500"
             />
             <label htmlFor="isPublished" className="font-semibold text-slate-700 dark:text-slate-300">
-              Publish immediately on public interactive map
+              Publish immediately on public 2D map
             </label>
           </div>
 
@@ -242,7 +245,7 @@ export default function FacilityAdminModal({
               disabled={saving}
               className="px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-sm disabled:opacity-50"
             >
-              {saving ? 'Saving...' : facility ? 'Update Facility' : 'Publish Facility'}
+              {saving ? 'Saving...' : facility ? 'Update Facility' : 'Save to Map'}
             </button>
           </div>
         </form>

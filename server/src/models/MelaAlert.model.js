@@ -51,13 +51,25 @@ const melaAlertSchema = new mongoose.Schema(
       default: 'Mela Administration & Police Command',
       trim: true,
     },
+    mapX: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100,
+    },
+    mapY: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100,
+    },
     latitude: {
       type: Number,
-      required: true,
+      default: 25.4284,
     },
     longitude: {
       type: Number,
-      required: true,
+      default: 81.8845,
     },
     areaRadiusMeters: {
       type: Number,

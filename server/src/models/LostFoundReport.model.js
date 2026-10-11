@@ -11,10 +11,11 @@ const lostFoundReportSchema = new mongoose.Schema(
     reportType: {
       type: String,
       required: true,
-      enum: ['missing_person', 'lost_item', 'found_person', 'found_item'],
+      enum: ['missing_person', 'found_person'],
+      default: 'missing_person',
       index: true,
     },
-    // Person fields
+    // Person Details
     personName: {
       type: String,
       trim: true,
@@ -44,18 +45,6 @@ const lostFoundReportSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
-    // Item fields
-    itemCategory: {
-      type: String,
-      trim: true,
-      default: '', // 'Bag/Luggage', 'Mobile/Electronics', 'Documents/Wallet', 'Jewelry/Valuables', 'Other'
-    },
-    itemDescription: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    // Common incident fields
     location: {
       type: String,
       required: true,
@@ -66,11 +55,28 @@ const lostFoundReportSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // Photos for Dual Comparison
     photoUrl: {
+      type: String,
+      default: '', // Photo provided when missing was reported
+    },
+    foundPhotoUrl: {
+      type: String,
+      default: '', // Photo uploaded when person was found by finder / police / volunteer
+    },
+    foundLocation: {
+      type: String,
+      default: '', // The exact location where the person was located / found
+    },
+    foundFinderName: {
       type: String,
       default: '',
     },
-    // Private Contact Info (HIDDEN from public listings)
+    foundFinderContact: {
+      type: String,
+      default: '',
+    },
+    // Private Reporter Contact
     reporterName: {
       type: String,
       required: true,
@@ -86,7 +92,7 @@ const lostFoundReportSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
-    // Secret Access Key for anonymous report owners to view & participate in private messages
+    // Secret Access Key
     secretAccessKey: {
       type: String,
       required: true,
@@ -104,16 +110,11 @@ const lostFoundReportSchema = new mongoose.Schema(
       default: true,
       index: true,
     },
-    // Match linkage
-    matchedReportRefId: {
-      type: String,
-      default: null,
-    },
     matchNotes: {
       type: String,
       default: '',
     },
-    // Private messages thread on this report
+    // Private messages thread
     messages: [
       {
         messageId: {

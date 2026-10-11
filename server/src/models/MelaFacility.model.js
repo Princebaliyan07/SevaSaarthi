@@ -36,13 +36,26 @@ const melaFacilitySchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    // Blueprint map relative coordinate percentages (0 to 100%)
+    mapX: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100,
+    },
+    mapY: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100,
+    },
     latitude: {
       type: Number,
-      required: true,
+      default: 25.4284,
     },
     longitude: {
       type: Number,
-      required: true,
+      default: 81.8845,
     },
     location: {
       type: {
@@ -52,7 +65,7 @@ const melaFacilitySchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], // [lng, lat]
-        required: true,
+        default: [81.8845, 25.4284],
       },
     },
     status: {
