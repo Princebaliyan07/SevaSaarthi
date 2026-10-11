@@ -31,124 +31,8 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return Math.round(R * c * 10) / 10;
 }
 
-// Baseline Initial Seed Teams
-const BASELINE_VOLUNTEER_TEAMS = [
-  {
-    teamId: 'VOL-TEAM-01',
-    name: 'NDRF Community Disaster Response Battalion 11',
-    description: 'Rapid response aquatic rescue, boat evacuation, and mass trauma first aid unit.',
-    teamCategory: 'NDRF/SDRF Affiliate',
-    supportedDisasters: ['Floods', 'Cyclones', 'General Emergency'],
-    location: 'Sangam Sector 2, Prayagraj',
-    city: 'Prayagraj',
-    district: 'Prayagraj',
-    state: 'Uttar Pradesh',
-    serviceArea: 'Sangam Ghats, Pontoon Bridges, and Riverfront Sectors',
-    coords: { lat: 25.4284, lng: 81.8845 },
-    leaderName: 'Inspector Vikram Rathore',
-    leaderPhone: '+91 98765 11001',
-    capacity: 60,
-    activeMembers: 24,
-    skills: ['Boat Rescue', 'Flood Evacuation', 'First Aid Trauma Support', 'Search & Rescue'],
-    isVerified: true,
-    verificationStatus: 'Verified',
-    operationalStatus: 'Active Relief Operation',
-    currentMission: 'Ghat edge patrolling and pontoon bridge crowd monitoring',
-    completedMissions: 18,
-  },
-  {
-    teamId: 'VOL-TEAM-02',
-    name: 'Civil Defence & Red Cross Emergency Corps',
-    description: 'Doorstep emergency medicine delivery, triage care, and vulnerable pilgrim escort.',
-    teamCategory: 'Red Cross / Medical Corps',
-    supportedDisasters: ['Floods', 'Heatwaves', 'General Emergency'],
-    location: 'Civil Lines Central Hub, Prayagraj',
-    city: 'Prayagraj',
-    district: 'Prayagraj',
-    state: 'Uttar Pradesh',
-    serviceArea: 'Prayagraj Central, Railway Hubs, Transit Camps',
-    coords: { lat: 25.4529, lng: 81.8349 },
-    leaderName: 'Dr. Sunita Agarwal',
-    leaderPhone: '+91 98765 11002',
-    capacity: 50,
-    activeMembers: 35,
-    skills: ['Triage First Aid', 'Medicine Doorstep Delivery', 'Lost Child Care', 'Elderly Escort'],
-    isVerified: true,
-    verificationStatus: 'Verified',
-    operationalStatus: 'Accepting Members',
-    currentMission: 'Medicine delivery to flooded and remote pilgrimage clusters',
-    completedMissions: 32,
-  },
-  {
-    teamId: 'VOL-TEAM-03',
-    name: 'SDRF Riverine Rescue Unit',
-    description: 'Deep diving, river currents patrol, and pontoon safety deployment.',
-    teamCategory: 'NDRF/SDRF Affiliate',
-    supportedDisasters: ['Floods', 'Severe Storms'],
-    location: 'Yamuna Riverbank Camp, Prayagraj',
-    city: 'Prayagraj',
-    district: 'Prayagraj',
-    state: 'Uttar Pradesh',
-    serviceArea: 'Yamuna & Ganga Confluence Waterfront',
-    coords: { lat: 25.422, lng: 81.879 },
-    leaderName: 'Sub-Inspector Ankit Tiwari',
-    leaderPhone: '+91 98765 11003',
-    capacity: 30,
-    activeMembers: 16,
-    skills: ['Deep Water Diving', 'Inflatable Boat Operations', 'Emergency Resuscitation'],
-    isVerified: true,
-    verificationStatus: 'Verified',
-    operationalStatus: 'Active Relief Operation',
-    currentMission: '24x7 River safety surveillance and bathing ghat barricading',
-    completedMissions: 14,
-  },
-  {
-    teamId: 'VOL-TEAM-04',
-    name: 'NDRF Community Disaster Response Unit - Gautam Budh Nagar',
-    description: 'Rapid emergency rescue, flood & waterlogging evacuation, and mass trauma triage squad.',
-    teamCategory: 'NDRF/SDRF Affiliate',
-    supportedDisasters: ['Floods', 'Severe Storms', 'General Emergency'],
-    location: 'Knowledge Park III, Greater Noida, Gautam Budh Nagar',
-    city: 'Gautam Budh Nagar',
-    district: 'Gautam Budh Nagar',
-    state: 'Uttar Pradesh',
-    serviceArea: 'Greater Noida, Pari Chowk, Yamuna Expressway Corridor',
-    coords: { lat: 28.4744, lng: 77.4937 },
-    leaderName: 'Inspector Rajesh Bhati',
-    leaderPhone: '+91 98765 22001',
-    capacity: 50,
-    activeMembers: 28,
-    skills: ['Boat Rescue', 'Flood Evacuation', 'First Aid Trauma Support', 'Search & Rescue'],
-    isVerified: true,
-    verificationStatus: 'Verified',
-    operationalStatus: 'Accepting Members',
-    currentMission: 'Urban waterlogging readiness and rapid medical assistance',
-    completedMissions: 12,
-  },
-  {
-    teamId: 'VOL-TEAM-05',
-    name: 'Noida Civil Defence & Red Cross Emergency Corps',
-    description: 'Emergency medicines doorstep distribution, trauma care, and vulnerable citizen transport.',
-    teamCategory: 'Red Cross / Medical Corps',
-    supportedDisasters: ['Floods', 'Heatwaves', 'General Emergency'],
-    location: 'Sector 62, Noida, Gautam Budh Nagar',
-    city: 'Noida',
-    district: 'Gautam Budh Nagar',
-    state: 'Uttar Pradesh',
-    serviceArea: 'Noida City, Sector 18 to Sector 137 Metro Corridor',
-    coords: { lat: 28.6258, lng: 77.3688 },
-    leaderName: 'Dr. Amit Sharma',
-    leaderPhone: '+91 98765 22002',
-    capacity: 45,
-    activeMembers: 30,
-    skills: ['Triage First Aid', 'Medicine Doorstep Delivery', 'Lost Child Care', 'Elderly Escort'],
-    isVerified: true,
-    verificationStatus: 'Verified',
-    operationalStatus: 'Accepting Members',
-    currentMission: 'Medicine and water kit distribution in suburban clusters',
-    completedMissions: 25,
-  },
-];
+// No hardcoded mock teams — all teams are dynamically registered by users and stored in MongoDB
+const BASELINE_VOLUNTEER_TEAMS = [];
 
 // Baseline Initial Seed Campaigns
 const BASELINE_CAMPAIGNS = [
@@ -256,6 +140,14 @@ const BASELINE_SUPPLIERS = [
 async function ensureSeedData() {
   if (mongoose.connection.readyState !== 1) return;
   try {
+    // One-time cleanup: delete any previously seeded fake/hardcoded teams
+    const FAKE_TEAM_IDS = ['VOL-TEAM-01', 'VOL-TEAM-02', 'VOL-TEAM-03', 'VOL-TEAM-04', 'VOL-TEAM-05'];
+    const deleted = await VolunteerTeam.deleteMany({ teamId: { $in: FAKE_TEAM_IDS } });
+    if (deleted.deletedCount > 0) {
+      console.log(`[Seed Cleanup] Removed ${deleted.deletedCount} hardcoded fake team(s) from MongoDB.`);
+    }
+
+    // BASELINE_VOLUNTEER_TEAMS is now empty — no fake teams will be inserted
     for (const team of BASELINE_VOLUNTEER_TEAMS) {
       await VolunteerTeam.updateOne(
         { teamId: team.teamId },
