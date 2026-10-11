@@ -512,7 +512,17 @@ export default function CommandReliefAdminTab() {
                         <strong className="text-slate-900 dark:text-white">{t.activeMembers || 1}</strong> / {t.capacity || 50}
                       </td>
                       <td className="p-3">
-                        <span>{t.leaderName || 'Coordinator'}</span>
+                        <span className="font-bold text-slate-900 dark:text-white block">{t.leaderName || 'Coordinator'}</span>
+                        {t.aadhaarNumber && (
+                          <span className="font-mono text-[10px] text-teal-700 dark:text-teal-300 block">
+                            🆔 {t.idProofType || 'Aadhaar'}: {t.aadhaarNumber}
+                          </span>
+                        )}
+                        {t.registrationDocRef && (
+                          <span className="text-[10px] text-slate-400 block font-mono">
+                            Ref: {t.registrationDocRef}
+                          </span>
+                        )}
                       </td>
                       <td className="p-3">
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800">
@@ -532,7 +542,7 @@ export default function CommandReliefAdminTab() {
                         {t.verificationStatus !== 'Verified' ? (
                           <button
                             type="button"
-                            onClick={() => handleTeamReview(t._id, 'Verified')}
+                            onClick={() => handleTeamReview(t.teamId || t._id, 'Verified')}
                             className="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-[11px]"
                           >
                             Verify Team
@@ -540,7 +550,7 @@ export default function CommandReliefAdminTab() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleTeamReview(t._id, 'Rejected')}
+                            onClick={() => handleTeamReview(t.teamId || t._id, 'Rejected')}
                             className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:text-rose-600 text-[10px] font-bold"
                           >
                             Revoke

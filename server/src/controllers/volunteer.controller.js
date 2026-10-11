@@ -295,10 +295,13 @@ export const getVolunteerTeamDetails = asyncHandler(async (req, res) => {
 
   let team = null;
   if (mongoose.connection.readyState === 1) {
-    team = await VolunteerTeam.findOne({ teamId }).lean();
+    const isObjectId = mongoose.Types.ObjectId.isValid(teamId);
+    team = await VolunteerTeam.findOne(
+      isObjectId ? { $or: [{ _id: teamId }, { teamId }] } : { teamId }
+    ).lean();
   }
   if (!team) {
-    team = BASELINE_VOLUNTEER_TEAMS.find((t) => t.teamId === teamId);
+    team = BASELINE_VOLUNTEER_TEAMS.find((t) => t.teamId === teamId || t._id === teamId);
   }
 
   if (!team) {
@@ -332,6 +335,8 @@ export const createVolunteerTeam = asyncHandler(async (req, res) => {
     leaderPhone,
     capacity = 50,
     skills = [],
+    aadhaarNumber = '',
+    idProofType = 'Aadhaar Card',
     registrationDocRef = '',
   } = req.body;
 
@@ -358,6 +363,8 @@ export const createVolunteerTeam = asyncHandler(async (req, res) => {
     },
     leaderName: leaderName.trim(),
     leaderPhone: leaderPhone.trim(),
+    aadhaarNumber: aadhaarNumber ? aadhaarNumber.trim() : '',
+    idProofType: idProofType || 'Aadhaar Card',
     capacity: Number(capacity) || 50,
     activeMembers: 1,
     approvedMembers: [
@@ -527,7 +534,10 @@ export const reviewVolunteerTeam = asyncHandler(async (req, res) => {
   const { verificationStatus, operationalStatus, capacity } = req.body;
 
   if (mongoose.connection.readyState === 1) {
-    const team = await VolunteerTeam.findOne({ teamId });
+    const isObjectId = mongoose.Types.ObjectId.isValid(teamId);
+    const team = await VolunteerTeam.findOne(
+      isObjectId ? { $or: [{ _id: teamId }, { teamId }] } : { teamId }
+    );
     if (!team) throw new ApiError(404, 'Team not found');
 
     if (verificationStatus) {

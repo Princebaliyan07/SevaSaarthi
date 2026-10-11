@@ -16,6 +16,8 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
     serviceArea: 'Within 25 km radius',
     leaderName: '',
     leaderPhone: '',
+    aadhaarNumber: '',
+    idProofType: 'Aadhaar Card',
     capacity: 50,
     skills: ['First Aid', 'Food Distribution'],
     registrationDocRef: '',
@@ -156,6 +158,47 @@ export default function CreateTeamModal({ isOpen, onClose, onCreateTeam }) {
                 value={formData.leaderPhone}
                 onChange={(e) => setFormData((p) => ({ ...p, leaderPhone: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Leader Aadhaar Number *</label>
+              <input
+                type="text"
+                required
+                maxLength={14}
+                placeholder="XXXX-XXXX-XXXX"
+                value={formData.aadhaarNumber || ''}
+                onChange={(e) => setFormData((p) => ({ ...p, aadhaarNumber: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono"
+              />
+              <span className="text-[10px] text-slate-400">12-digit Aadhaar for identity verification</span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">ID Proof Type *</label>
+              <select
+                value={formData.idProofType || 'Aadhaar Card'}
+                onChange={(e) => setFormData((p) => ({ ...p, idProofType: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
+              >
+                <option value="Aadhaar Card">Aadhaar Card</option>
+                <option value="Voter ID">Voter ID</option>
+                <option value="Driving License">Driving License</option>
+                <option value="PAN Card">PAN Card</option>
+                <option value="Government Service ID">Government Service ID</option>
+                <option value="Other Valid Govt ID">Other Valid Govt ID</option>
+              </select>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">ID Proof / Document Reference Number</label>
+              <input
+                type="text"
+                placeholder="e.g. DOC-REF-2024-9988 or Document ID"
+                value={formData.registrationDocRef}
+                onChange={(e) => setFormData((p) => ({ ...p, registrationDocRef: e.target.value }))}
+                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs"
               />
             </div>
 
