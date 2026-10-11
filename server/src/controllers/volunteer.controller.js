@@ -915,14 +915,24 @@ export const getReliefCampaigns = asyncHandler(async (req, res) => {
 
   let campaigns = [];
   if (mongoose.connection.readyState === 1) {
-    campaigns = await ReliefCampaign.find(filter).sort({ status: 1, createdAt: -1 }).lean();
+    campaigns = await ReliefCampaign.find(filter).sort({ createdAt: -1 }).lean();
   }
   if (campaigns.length === 0 && (!status || status === 'all')) {
     campaigns = BASELINE_CAMPAIGNS;
   }
 
+  // Deduplicate by campaignId — prevents duplicates when seed data and user-created campaigns share IDs
+  const seen = new Set();
+  campaigns = campaigns.filter((c) => {
+    const id = c.campaignId || String(c._id);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+
   return res.status(200).json(new ApiResponse(200, campaigns, 'Relief campaigns retrieved'));
 });
+
 
 export const createReliefCampaign = asyncHandler(async (req, res) => {
   const {
