@@ -36,6 +36,12 @@ const melaFacilitySchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    // Associated Ground Layout Map ID
+    mapId: {
+      type: String,
+      default: 'prayagraj_kumbh',
+      index: true,
+    },
     // Blueprint map relative coordinate percentages (0 to 100%)
     mapX: {
       type: Number,

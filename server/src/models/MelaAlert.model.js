@@ -51,6 +51,11 @@ const melaAlertSchema = new mongoose.Schema(
       default: 'Mela Administration & Police Command',
       trim: true,
     },
+    mapId: {
+      type: String,
+      default: 'prayagraj_kumbh',
+      index: true,
+    },
     mapX: {
       type: Number,
       default: 50,

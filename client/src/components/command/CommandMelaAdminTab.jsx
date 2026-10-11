@@ -1,11 +1,19 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { FACILITY_CATEGORIES } from '../mela/InteractiveMelaMap';
+import InteractiveMelaMap, { FACILITY_CATEGORIES } from '../mela/InteractiveMelaMap';
 
 export default function CommandMelaAdminTab({
   facilities = [],
   alerts = [],
   reports = [],
+  crowdZones = [],
+  maps = [],
+  selectedMapId = 'prayagraj_kumbh',
+  onSelectMap = null,
+  onOpenAddMap = null,
+  onCreateCrowdZone = null,
+  onUpdateCrowdZone = null,
+  onDeleteCrowdZone = null,
   onOpenAddFacility,
   onOpenEditFacility,
   onDeleteFacility,
@@ -21,7 +29,11 @@ export default function CommandMelaAdminTab({
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState(null);
 
-  const [activeSubTab, setActiveSubTab] = useState('verification'); // 'verification' | 'facilities' | 'alerts'
+  const [activeSubTab, setActiveSubTab] = useState('verification');
+  const [updatingZoneId, setUpdatingZoneId] = useState(null);
+  const [showAddZoneForm, setShowAddZoneForm] = useState(false);
+  const [newZone, setNewZone] = useState({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
+  const [savingZone, setSavingZone] = useState(false);
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();
@@ -156,6 +168,19 @@ export default function CommandMelaAdminTab({
             <span>🚨</span>
             <span>Crowd Safety Alerts ({alerts.filter((a) => a.status === 'Active').length})</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('crowd_zones')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeSubTab === 'crowd_zones'
+                ? 'bg-indigo-500 text-white shadow-lg'
+                : 'bg-white/10 text-slate-300 hover:bg-white/20'
+            }`}
+          >
+            <span>👥</span>
+            <span>Crowd Zones Desk ({crowdZones.length || 6})</span>
+          </button>
         </div>
       </div>
 
@@ -276,6 +301,34 @@ export default function CommandMelaAdminTab({
                           <strong>Attire: </strong> {rep.clothingDescription}
                         </p>
                       )}
+
+                      {/* Safeguarded Contact Number: Strictly Revealed Only When Verified */}
+                      {isVerified ? (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase block">
+                              🔓 Verified Reporter Contact:
+                            </span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
+                              {rep.reporterName}: {rep.reporterPhone || 'Number protected'}
+                            </span>
+                          </div>
+                          {rep.reporterPhone && (
+                            <a
+                              href={`tel:${rep.reporterPhone}`}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs flex items-center gap-1"
+                            >
+                              <span>📞</span>
+                              <span>Call Family</span>
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-[10px] text-slate-500 flex items-center gap-1.5">
+                          <span>🔒</span>
+                          <span>Family phone number remains encrypted until marked as "Verified Match".</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Right: Administrative Verification Action */}
@@ -318,25 +371,47 @@ export default function CommandMelaAdminTab({
 
       {/* SUBTAB 2: FACILITIES MANAGEMENT */}
       {activeSubTab === 'facilities' && (
-        <div className="glass-card p-6 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
+        <div className="glass-card p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200/80 dark:border-slate-800">
             <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Mela Map Facilities & Pin Markers
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Mela Map Facilities & Pin Markers
+                </h3>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+                  ⚡ Live Sync to Citizen Map
+                </span>
+              </div>
               <p className="text-xs text-slate-500">
-                Manage all toilets, drinking water points, medical tents, entry/exit gates on the 2D layout.
+                Click "🎯 Click Map to Place Marker" below to drop a pin anywhere on the blueprint layout, or manage existing markers below.
               </p>
             </div>
             {isAdmin && (
               <button
                 type="button"
-                onClick={onOpenAddFacility}
+                onClick={() => onOpenAddFacility()}
                 className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm"
               >
                 ➕ Add New Marker
               </button>
             )}
+          </div>
+
+          {/* Interactive Map Visualizer & Coordinate Picker for Admin */}
+          <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
+            <InteractiveMelaMap
+              facilities={facilities}
+              alerts={alerts}
+              maps={maps}
+              selectedMapId={selectedMapId}
+              onSelectMap={onSelectMap}
+              onOpenAddMap={onOpenAddMap}
+              isAdmin={isAdmin}
+              onAddFacility={onOpenAddFacility}
+              onEditFacility={onOpenEditFacility}
+              onDeleteFacility={onDeleteFacility}
+              lang={lang}
+            />
           </div>
 
           <div className="overflow-x-auto">
@@ -470,6 +545,263 @@ export default function CommandMelaAdminTab({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* SUBTAB 4: CROWD ZONES DESK — Fully Dynamic (Admin Creates, Updates, Deletes) */}
+      {activeSubTab === 'crowd_zones' && (
+        <div className="glass-card p-6 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200/80 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Mela Crowd Zones Management Desk
+                </h3>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
+                  ⚡ Live Sync to Citizen /mela Page
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Add and manage crowd zones. These appear live on the citizen Mela page with flash alerts.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800">
+                {crowdZones.length} Zone{crowdZones.length !== 1 ? 's' : ''}
+              </span>
+              {onCreateCrowdZone && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddZoneForm((v) => !v)}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-teal-600 text-white hover:bg-teal-700 flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  {showAddZoneForm ? '✕ Cancel' : '+ Add Zone'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Add Zone Form */}
+          {showAddZoneForm && onCreateCrowdZone && (
+            <div className="p-5 rounded-2xl border-2 border-teal-500/40 bg-teal-50/60 dark:bg-teal-950/20 space-y-4">
+              <h4 className="text-sm font-black text-teal-800 dark:text-teal-300">➕ New Crowd Zone</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Zone Name *</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    placeholder="e.g. Sangam Ghat Gate 3"
+                    value={newZone.name}
+                    onChange={(e) => setNewZone((z) => ({ ...z, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Initial Status</label>
+                  <select
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    value={newZone.status}
+                    onChange={(e) => setNewZone((z) => ({ ...z, status: e.target.value }))}
+                  >
+                    <option>Normal</option>
+                    <option>Moderate</option>
+                    <option>High</option>
+                    <option>Critical</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Crowd Density % (0–100)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    value={newZone.density}
+                    onChange={(e) => setNewZone((z) => ({ ...z, density: Number(e.target.value) }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Description (optional)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    placeholder="Short location note"
+                    value={newZone.description}
+                    onChange={(e) => setNewZone((z) => ({ ...z, description: e.target.value }))}
+                  />
+                </div>
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Official Advisory</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    placeholder="e.g. Heavy crowd — use alternate exit via Gate 4"
+                    value={newZone.advisory}
+                    onChange={(e) => setNewZone((z) => ({ ...z, advisory: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowAddZoneForm(false); setNewZone({ name: '', description: '', advisory: '', status: 'Normal', density: 0 }); }}
+                  className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={savingZone || !newZone.name.trim()}
+                  onClick={async () => {
+                    if (!newZone.name.trim()) return;
+                    setSavingZone(true);
+                    try {
+                      await onCreateCrowdZone({ ...newZone });
+                      setShowAddZoneForm(false);
+                      setNewZone({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
+                    } catch (err) {
+                      alert('Failed to create zone: ' + (err.response?.data?.message || err.message));
+                    } finally {
+                      setSavingZone(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-xl text-sm font-bold bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-60 transition-all"
+                >
+                  {savingZone ? 'Saving…' : '✓ Create Zone'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {crowdZones.length === 0 && !showAddZoneForm && (
+            <div className="py-12 text-center space-y-3">
+              <div className="text-4xl">👥</div>
+              <p className="text-sm font-semibold text-slate-500">No crowd zones added yet.</p>
+              <p className="text-xs text-slate-400">Click <strong>+ Add Zone</strong> above to create your first crowd monitoring zone.</p>
+            </div>
+          )}
+
+          {/* Zone Cards Grid */}
+          {crowdZones.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {crowdZones.map((zone) => {
+                const STATUS_COLORS = {
+                  Normal: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+                  Moderate: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40',
+                  High: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/40',
+                  Critical: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse',
+                };
+                const zoneKey = zone.zoneId || zone.id || zone._id;
+
+                return (
+                  <div
+                    key={zoneKey}
+                    className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3.5 shadow-xs hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                          {zone.name}
+                        </h4>
+                        {zone.description && (
+                          <p className="text-[11px] text-slate-400 truncate">{zone.description}</p>
+                        )}
+                      </div>
+                      <span
+                        className={`shrink-0 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          STATUS_COLORS[zone.status] || STATUS_COLORS.Normal
+                        }`}
+                      >
+                        {zone.status}
+                      </span>
+                    </div>
+
+                    {/* Density Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500">Crowd Density</span>
+                        <strong className="font-mono text-slate-900 dark:text-white">{zone.density ?? 0}%</strong>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            (zone.density ?? 0) >= 85
+                              ? 'bg-rose-500'
+                              : (zone.density ?? 0) >= 65
+                              ? 'bg-orange-500'
+                              : (zone.density ?? 0) >= 45
+                              ? 'bg-amber-500'
+                              : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.min(zone.density ?? 0, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Advisory */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300">
+                      <span className="font-semibold text-slate-400 block text-[10px] uppercase mb-0.5">Official Advisory:</span>
+                      {zone.advisory || 'Standard movement protocol.'}
+                    </div>
+
+                    {/* Quick Status Override */}
+                    {isAdmin && onUpdateCrowdZone && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Quick Status Override:</span>
+                        <div className="grid grid-cols-4 gap-1">
+                          {['Normal', 'Moderate', 'High', 'Critical'].map((st) => (
+                            <button
+                              key={st}
+                              type="button"
+                              disabled={updatingZoneId === zoneKey}
+                              onClick={async () => {
+                                setUpdatingZoneId(zoneKey);
+                                try {
+                                  const densityMap = { Normal: 25, Moderate: 55, High: 80, Critical: 95 };
+                                  await onUpdateCrowdZone(zoneKey, { status: st, density: densityMap[st] });
+                                } catch (err) {
+                                  alert('Failed: ' + err.message);
+                                } finally {
+                                  setUpdatingZoneId(null);
+                                }
+                              }}
+                              className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                                zone.status === st
+                                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Delete Zone */}
+                    {isAdmin && onDeleteCrowdZone && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm(`Delete zone "${zone.name}"? This cannot be undone.`)) return;
+                          try {
+                            await onDeleteCrowdZone(zoneKey);
+                          } catch (err) {
+                            alert('Delete failed: ' + err.message);
+                          }
+                        }}
+                        className="w-full mt-1 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 transition-all"
+                      >
+                        🗑️ Remove Zone
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

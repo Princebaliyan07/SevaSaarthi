@@ -83,6 +83,10 @@ export const FACILITY_CATEGORIES = {
 export default function InteractiveMelaMap({
   facilities = [],
   alerts = [],
+  maps = [],
+  selectedMapId = 'prayagraj_kumbh',
+  onSelectMap = null,
+  onOpenAddMap = null,
   focusedFacilityId = null,
   isAdmin = false,
   onAddFacility = null,
@@ -91,10 +95,29 @@ export default function InteractiveMelaMap({
   lang = 'en',
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeFacility, setActiveFacility] = useState(null);
   const [isPickingCoords, setIsPickingCoords] = useState(false);
+  const [selectedMapIdState, setSelectedMapIdState] = useState(selectedMapId);
   const mapContainerRef = useRef(null);
+
+  // Default maps fallback
+  const defaultMaps = [
+    {
+      mapId: 'prayagraj_kumbh',
+      name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
+      imageUrl: '/mela-blueprint-map.jpg',
+      description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
+    },
+    {
+      mapId: 'haridwar_kumbh',
+      name: 'Haridwar Kumbh (Har Ki Pauri & Ghats)',
+      imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
+      description: 'Har Ki Pauri corridor and pontoon footbridge crossing layout.',
+    },
+  ];
+
+  const allMaps = maps && maps.length > 0 ? maps : defaultMaps;
+  const activeMap = allMaps.find((m) => m.mapId === (selectedMapId || selectedMapIdState)) || allMaps[0];
 
   const handleMapClick = (e) => {
     if (!isPickingCoords || !mapContainerRef.current) return;
@@ -104,28 +127,34 @@ export default function InteractiveMelaMap({
     const cleanCoords = {
       mapX: Math.round(x),
       mapY: Math.round(y),
+      mapId: activeMap?.mapId || 'prayagraj_kumbh',
     };
     setIsPickingCoords(false);
     if (onAddFacility) onAddFacility(cleanCoords);
   };
 
-  const filteredFacilities = facilities.filter((fac) => {
+  // Filter facilities by active map and category
+  const mapFacilities = facilities.filter(
+    (f) => !f.mapId || f.mapId === activeMap?.mapId || (activeMap?.mapId === 'prayagraj_kumbh' && !f.mapId)
+  );
+
+  // Only display categories that are present in the admin-added facilities
+  const presentCategoryKeys = Array.from(new Set(mapFacilities.map((f) => f.category)));
+  const adminCategories = Object.entries(FACILITY_CATEGORIES).filter(([catKey]) =>
+    presentCategoryKeys.includes(catKey)
+  );
+  // Fallback to all if none added yet
+  const displayedCategories = adminCategories.length > 0 ? adminCategories : Object.entries(FACILITY_CATEGORIES);
+
+  const filteredFacilities = mapFacilities.filter((fac) => {
     if (selectedCategory !== 'all' && fac.category !== selectedCategory) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        fac.name?.toLowerCase().includes(q) ||
-        fac.description?.toLowerCase().includes(q) ||
-        fac.sector?.toLowerCase().includes(q)
-      );
-    }
     return true;
   });
 
   return (
     <div className="space-y-4">
-      {/* Top Filter & Clean Search Bar */}
-      <div className="glass-card p-4 sm:p-5 space-y-4 border-slate-200/80 dark:border-slate-800">
+      {/* Top Filter & Map Switcher Bar */}
+      <div className="glass-card p-4 sm:p-5 space-y-3.5 border-slate-200/80 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 text-lg">
@@ -134,10 +163,10 @@ export default function InteractiveMelaMap({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                  {lang === 'hi' ? 'महाकुंभ 2D लेआउट व सुविधा मानचित्र' : 'Kumbh Mela Ground Layout & Facilities Map'}
+                  {activeMap?.name || 'Mela Ground Layout & Facilities Map'}
                 </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                  ⚡ Interactive Demo
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  ⚡ Interactive Blueprint
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -148,61 +177,82 @@ export default function InteractiveMelaMap({
             </div>
           </div>
 
-          {isAdmin && onAddFacility && (
+          <div className="flex items-center gap-2">
+            {isAdmin && onAddFacility && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPickingCoords(!isPickingCoords);
+                  if (isPickingCoords) onAddFacility();
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs ${
+                  isPickingCoords
+                    ? 'bg-amber-600 text-white animate-pulse'
+                    : 'bg-teal-600 hover:bg-teal-700 text-white'
+                }`}
+              >
+                <span>{isPickingCoords ? '🎯 Click Map to Place Marker' : '➕ Add Facility Marker'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Multi-Map Ground Selector Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">
+              Ground Map:
+            </span>
+            {allMaps.map((m) => {
+              const isSelected = activeMap?.mapId === m.mapId;
+              return (
+                <button
+                  key={m.mapId}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMapIdState(m.mapId);
+                    if (onSelectMap) onSelectMap(m.mapId);
+                  }}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
+                    isSelected
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                      : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100'
+                  }`}
+                >
+                  📍 {m.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {isAdmin && onOpenAddMap && (
             <button
               type="button"
-              onClick={() => {
-                setIsPickingCoords(!isPickingCoords);
-                if (isPickingCoords) onAddFacility();
-              }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs ${
-                isPickingCoords
-                  ? 'bg-amber-600 text-white animate-pulse'
-                  : 'bg-teal-600 hover:bg-teal-700 text-white'
-              }`}
+              onClick={onOpenAddMap}
+              className="px-3 py-1 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-all whitespace-nowrap flex items-center gap-1"
             >
-              <span>{isPickingCoords ? '🎯 Click Map to Place Marker' : '➕ Add Facility Marker'}</span>
+              <span>➕</span>
+              <span>Add New Ground Map</span>
             </button>
           )}
         </div>
 
-        {/* Search Input */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder={lang === 'hi' ? 'सुविधा खोजें (उदा. शौचालय, पेयजल, अस्पताल, गेट)...' : 'Search facility (e.g. toilet, water, hospital, gate)...'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 px-3.5 py-2 pl-9 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-xs"
-          />
-          <span className="absolute left-3 top-2.5 text-xs text-slate-400">🔍</span>
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2 text-xs text-slate-400 hover:text-slate-600"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Category Pills (Horizontal Scroll) */}
+        {/* Category Filter Pills (Only categories added by admin) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
           <button
             type="button"
             onClick={() => setSelectedCategory('all')}
             className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all border ${
               selectedCategory === 'all'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                ? 'bg-teal-600 text-white border-teal-600 shadow-xs'
                 : 'bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100'
             }`}
           >
-            🌟 All ({facilities.length})
+            🌟 All ({mapFacilities.length})
           </button>
 
-          {Object.entries(FACILITY_CATEGORIES).map(([catKey, cat]) => {
-            const count = facilities.filter((f) => f.category === catKey).length;
+          {displayedCategories.map(([catKey, cat]) => {
+            const count = mapFacilities.filter((f) => f.category === catKey).length;
             const isSelected = selectedCategory === catKey;
             return (
               <button
@@ -224,31 +274,27 @@ export default function InteractiveMelaMap({
         </div>
       </div>
 
-      {/* Visual Blueprint Map Area */}
+      {/* Visual Blueprint Map Area — 65% of screen height */}
       <div
         ref={mapContainerRef}
         onClick={handleMapClick}
-        className={`relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl bg-slate-950 select-none ${
+        className={`relative w-full overflow-hidden rounded-none sm:rounded-2xl border-y sm:border border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-slate-900 select-none ${ 
           isPickingCoords ? 'cursor-crosshair ring-4 ring-amber-500' : 'cursor-default'
         }`}
+        style={{ height: '65vh', minHeight: '380px', maxHeight: '820px' }}
       >
-        {/* Top Watermark & Info */}
-        <div className="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md text-white border border-white/15 text-[11px] font-bold shadow-md flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Prayagraj Mela Pilgrimage Blueprint Layout (Interactive Demo)</span>
-        </div>
-
         {isPickingCoords && (
-          <div className="absolute top-3 right-3 z-20 px-3 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold shadow-lg animate-bounce">
+          <div className="absolute top-3 right-3 z-30 px-3.5 py-1.5 rounded-xl bg-amber-600 text-white text-xs font-bold shadow-lg animate-bounce">
             📍 Click anywhere on the ground layout to set coordinates
           </div>
         )}
 
-        {/* Blueprint Map Image */}
+        {/* Blueprint Map Image — fills 65vh container with object-cover, centred at top */}
         <img
-          src="/mela-blueprint-map.jpg"
-          alt="Kumbh Mela Pilgrimage Blueprint Layout Map"
-          className="w-full h-auto min-h-[480px] max-h-[640px] object-cover sm:object-contain bg-slate-900"
+          src={activeMap?.imageUrl || '/mela-blueprint-map.jpg'}
+          alt={activeMap?.name || 'Mela Ground Layout Map'}
+          className="w-full block select-none pointer-events-none"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
         />
 
         {/* Dynamic Facility Interactive Marker Pins Overlay */}

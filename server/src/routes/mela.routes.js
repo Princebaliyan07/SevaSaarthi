@@ -20,6 +20,13 @@ import {
   createMelaAlert,
   updateMelaAlert,
   resolveMelaAlert,
+  getMelaMaps,
+  createMelaMap,
+  deleteMelaMap,
+  getCrowdZones,
+  createCrowdZone,
+  updateCrowdZone,
+  deleteCrowdZone,
 } from '../controllers/melaCore.controller.js';
 import { verifyJwt } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
@@ -40,10 +47,7 @@ router.patch('/missing-persons/:id/reunite', reuniteMissingPerson);
 // ==========================================
 // FEATURE 1: INTERACTIVE MELA MAP FACILITIES
 // ==========================================
-// Public view
 router.get('/facilities', getMelaFacilities);
-
-// Admin-controlled facility management (verified server-side)
 router.post('/facilities', verifyJwt, authorizeRoles('admin'), createMelaFacility);
 router.patch('/facilities/:id', verifyJwt, authorizeRoles('admin'), updateMelaFacility);
 router.delete('/facilities/:id', verifyJwt, authorizeRoles('admin'), deleteMelaFacility);
@@ -51,29 +55,34 @@ router.delete('/facilities/:id', verifyJwt, authorizeRoles('admin'), deleteMelaF
 // ==========================================
 // FEATURE 2: MISSING PERSONS & LOST AND FOUND
 // ==========================================
-// Public submission & public sanitized directory
 router.post('/reports', createLostFoundReport);
 router.get('/reports', getLostFoundReports);
 router.get('/reports/:id', getReportDetails);
-
-// Submit a possible match (public with validation)
 router.post('/reports/:id/match', submitPossibleMatch);
-
-// Admin review workflow: change status
 router.patch('/reports/:id/status', verifyJwt, authorizeRoles('admin'), updateReportStatus);
-
-// Report-linked secure private messaging (reporter via secretKey or admin via JWT)
 router.post('/reports/:id/messages', sendReportMessage);
 
 // ==========================================
 // FEATURE 3: ADMIN-CONTROLLED CROWD ALERTS
 // ==========================================
-// Public active alerts
 router.get('/alerts', getMelaAlerts);
-
-// Admin-controlled alert management
 router.post('/alerts', verifyJwt, authorizeRoles('admin'), createMelaAlert);
 router.patch('/alerts/:id', verifyJwt, authorizeRoles('admin'), updateMelaAlert);
 router.patch('/alerts/:id/resolve', verifyJwt, authorizeRoles('admin'), resolveMelaAlert);
+
+// ==========================================
+// FEATURE 4: MULTIPLE GROUND MAPS
+// ==========================================
+router.get('/maps', getMelaMaps);
+router.post('/maps', verifyJwt, authorizeRoles('admin'), createMelaMap);
+router.delete('/maps/:mapId', verifyJwt, authorizeRoles('admin'), deleteMelaMap);
+
+// ==========================================
+// FEATURE 5: CROWD DENSITY ZONES — FULLY DYNAMIC
+// ==========================================
+router.get('/crowd-zones', getCrowdZones);                                        // public
+router.post('/crowd-zones', verifyJwt, authorizeRoles('admin'), createCrowdZone); // admin: add zone
+router.patch('/crowd-zones/:id', verifyJwt, authorizeRoles('admin'), updateCrowdZone); // admin: update
+router.delete('/crowd-zones/:id', verifyJwt, authorizeRoles('admin'), deleteCrowdZone); // admin: delete
 
 export default router;

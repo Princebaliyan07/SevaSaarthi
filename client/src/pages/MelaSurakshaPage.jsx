@@ -21,6 +21,8 @@ import {
   getMelaAlerts,
   createMelaAlert,
   resolveMelaAlert,
+  getMelaMaps,
+  getCrowdZones,
 } from '../services/melaService';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -34,6 +36,9 @@ export default function MelaSurakshaPage() {
   const [facilities, setFacilities] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [reportsData, setReportsData] = useState({ reports: [], pagination: {} });
+  const [maps, setMaps] = useState([]);
+  const [crowdZones, setCrowdZones] = useState([]);
+  const [selectedMapId, setSelectedMapId] = useState('prayagraj_kumbh');
 
   const [loading, setLoading] = useState(true);
   const [reportsLoading, setReportsLoading] = useState(false);
@@ -56,17 +61,21 @@ export default function MelaSurakshaPage() {
   // Load all live Mela data from MongoDB
   const fetchAllData = useCallback(async () => {
     try {
-      const [overviewRes, facilitiesRes, alertsRes, reportsRes] = await Promise.all([
+      const [overviewRes, facilitiesRes, alertsRes, reportsRes, mapsRes, zonesRes] = await Promise.all([
         getMelaOverview(),
         getMelaFacilities(),
         getMelaAlerts(),
         getLostFoundReports({ limit: 12 }),
+        getMelaMaps(),
+        getCrowdZones(),
       ]);
 
       if (overviewRes) setData(overviewRes);
       setFacilities(facilitiesRes || []);
       setAlerts(alertsRes || []);
       setReportsData(reportsRes || { reports: [], pagination: {} });
+      setMaps(mapsRes || []);
+      setCrowdZones(zonesRes || []);
       setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err) {
       console.error('Error fetching Mela data:', err);
@@ -180,24 +189,6 @@ export default function MelaSurakshaPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Admin Role Badge & Switcher */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-xs">
-            <span className="text-slate-500 font-semibold px-2">
-              Role: <strong className="text-slate-900 dark:text-white capitalize">{user?.role || 'citizen'}</strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => loginAs(isAdmin ? 'citizen' : 'admin')}
-              className={`px-3 py-1 rounded-xl font-bold transition-all ${
-                isAdmin
-                  ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                  : 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 hover:bg-teal-500/20'
-              }`}
-            >
-              {isAdmin ? 'Exit Admin Mode' : '🛡️ Switch to Admin'}
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={fetchAllData}
@@ -226,53 +217,43 @@ export default function MelaSurakshaPage() {
         ))}
       </div>
 
-      {/* FEATURE 1: INTERACTIVE MELA MAP */}
+      {/* FEATURE 1: INTERACTIVE MELA MAP (Citizen View) */}
       <section className="space-y-4">
         <InteractiveMelaMap
           facilities={facilities}
           alerts={alerts}
+          maps={maps}
+          selectedMapId={selectedMapId}
+          onSelectMap={(id) => setSelectedMapId(id)}
           focusedLocation={focusedLocation}
-          isAdmin={isAdmin}
-          onAddFacility={(coords) => {
-            setEditingFacility(null);
-            setPickedCoords(coords || null);
-            setFacilityModalOpen(true);
-          }}
-          onEditFacility={(fac) => {
-            setEditingFacility(fac);
-            setFacilityModalOpen(true);
-          }}
-          onDeleteFacility={handleDeleteFacility}
+          isAdmin={false}
           lang={lang}
         />
       </section>
 
-      {/* FEATURE 3: MELA CROWD SAFETY & OFFICIAL ALERTS */}
+      {/* FEATURE 3: MELA CROWD SAFETY & OFFICIAL ALERTS (Citizen View) */}
       <section className="space-y-4">
         <MelaCrowdSafetyAlertsSection
           alerts={alerts}
-          isAdmin={isAdmin}
-          onOpenCreateAlert={() => setAlertModalOpen(true)}
-          onResolveAlert={handleResolveAlert}
+          isAdmin={false}
           onViewOnMap={handleViewAlertOnMap}
           lang={lang}
         />
       </section>
 
-      {/* FEATURE 2: UNIFIED MISSING PERSONS AND LOST & FOUND DIRECTORY */}
+      {/* FEATURE 2: UNIFIED MISSING PERSONS DIRECTORY (Citizen View) */}
       <section className="space-y-4">
         <UnifiedLostFoundDirectory
           reports={reportsData.reports}
           pagination={reportsData.pagination}
           loading={reportsLoading}
-          isAdmin={isAdmin}
+          isAdmin={false}
           onOpenReportModal={(id) => {
             setSelectedReportId(id);
             setDetailModalOpen(true);
           }}
           onOpenNewReport={() => setReportModalOpen(true)}
           onFilterChange={handleReportFilterChange}
-          onUpdateStatus={handleUpdateReportStatus}
           lang={lang}
         />
       </section>
@@ -283,25 +264,11 @@ export default function MelaSurakshaPage() {
           <span>👥</span>
           <span>{t('mela.crowdZones')}</span>
         </h2>
-        <CrowdDensityGrid zones={data?.zones || []} />
+        <CrowdDensityGrid zones={crowdZones.length > 0 ? crowdZones : (data?.zones || [])} />
       </section>
 
-      {/* MODALS */}
-      {/* 1. Facility Admin Modal */}
-      <FacilityAdminModal
-        facility={editingFacility}
-        initialCoords={pickedCoords}
-        isOpen={facilityModalOpen}
-        onClose={() => {
-          setFacilityModalOpen(false);
-          setEditingFacility(null);
-          setPickedCoords(null);
-        }}
-        onSave={handleSaveFacility}
-        lang={lang}
-      />
-
-      {/* 2. Unified Lost & Found Report Filing Modal */}
+      {/* CITIZEN MODALS */}
+      {/* 1. Missing Person Report Filing Modal */}
       <UnifiedLostFoundReportingModal
         isOpen={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
@@ -309,24 +276,16 @@ export default function MelaSurakshaPage() {
         lang={lang}
       />
 
-      {/* 3. Report Detail, Match Claim & Private Chat Modal */}
+      {/* 2. Report Detail & Found Matching Modal (Citizen View) */}
       <ReportDetailModal
         reportId={selectedReportId}
         isOpen={detailModalOpen}
-        isAdmin={isAdmin}
+        isAdmin={false}
         onClose={() => {
           setDetailModalOpen(false);
           setSelectedReportId(null);
         }}
         onStatusUpdated={fetchAllData}
-        lang={lang}
-      />
-
-      {/* 4. Crowd Safety Alert Admin Modal */}
-      <CrowdAlertAdminModal
-        isOpen={alertModalOpen}
-        onClose={() => setAlertModalOpen(false)}
-        onSave={handleSaveAlert}
         lang={lang}
       />
     </div>

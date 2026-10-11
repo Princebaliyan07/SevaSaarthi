@@ -111,8 +111,8 @@ export default function ReportDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-xs overflow-y-auto">
-      <div className="glass-card w-full max-w-2xl my-6 overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 backdrop-blur-sm flex justify-center items-start pt-16 sm:pt-20 pb-12">
+      <div className="glass-card w-full max-w-2xl my-4 sm:my-6 rounded-3xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -162,18 +162,23 @@ export default function ReportDetailModal({
                       🔴 Photo When Reported Missing
                     </span>
                   </div>
-                  {report.photoUrl ? (
-                    <img
-                      src={report.photoUrl}
-                      alt="Photo when missing"
-                      className="w-full h-44 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
-                    />
-                  ) : (
-                    <div className="w-full h-44 rounded-lg bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-1">
-                      <span className="text-2xl">👤</span>
-                      <span className="text-[10px]">No photo provided at filing</span>
-                    </div>
-                  )}
+                  <div className="relative w-full h-48 bg-slate-950/90 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                    {report.photoUrl ? (
+                      <img
+                        src={report.photoUrl}
+                        alt="Photo when missing"
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400 space-y-1 p-4">
+                        <span className="text-3xl">👤</span>
+                        <span className="text-[10px] font-semibold">No photo provided at filing</span>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-slate-500">
                     Last Seen: <strong>{report.location}</strong> ({report.dateTimeApprox})
                   </p>
@@ -186,18 +191,23 @@ export default function ReportDetailModal({
                       🟢 Photo When Located / Found
                     </span>
                   </div>
-                  {report.foundPhotoUrl ? (
-                    <img
-                      src={report.foundPhotoUrl}
-                      alt="Photo when found"
-                      className="w-full h-44 object-cover rounded-lg border border-emerald-500/30"
-                    />
-                  ) : (
-                    <div className="w-full h-44 rounded-lg bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-slate-400 space-y-1">
-                      <span className="text-2xl">🔍</span>
-                      <span className="text-[10px]">Awaiting found photo upload</span>
-                    </div>
-                  )}
+                  <div className="relative w-full h-48 bg-slate-950/90 rounded-xl overflow-hidden border border-emerald-500/30 flex items-center justify-center">
+                    {report.foundPhotoUrl ? (
+                      <img
+                        src={report.foundPhotoUrl}
+                        alt="Photo when found"
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400 space-y-1 p-4">
+                        <span className="text-3xl">🔍</span>
+                        <span className="text-[10px] font-semibold">Awaiting found photo upload</span>
+                      </div>
+                    )}
+                  </div>
                   {report.foundLocation ? (
                     <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold">
                       📍 Located At: {report.foundLocation}
@@ -244,13 +254,53 @@ export default function ReportDetailModal({
 
             {/* Private Contact Isolation Box */}
             {isAuthorized ? (
-              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 space-y-1">
-                <span className="font-bold text-[11px] block">
-                  🔓 Authorized Contact Telemetry (Admin / Owner Verified):
-                </span>
-                <p>
-                  <span className="font-semibold">Reporter:</span> {report.reporterName} ({report.reporterPhone})
-                </p>
+              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[11px] flex items-center gap-1.5">
+                    <span>🔓</span>
+                    <span>Safeguarded Contact Vault (Authorized Access)</span>
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold">
+                    Case: {report.status}
+                  </span>
+                </div>
+
+                {/* If verified match or resolved, reveal contact number with direct call option */}
+                {isAdmin || report.status === 'Verified Match' || report.status === 'Resolved' ? (
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-500/40 space-y-1">
+                    <p className="text-xs">
+                      <span className="font-semibold text-slate-500">Family Reporter:</span>{' '}
+                      <strong className="text-slate-900 dark:text-white">{report.reporterName}</strong>
+                    </p>
+                    <p className="text-xs flex items-center justify-between">
+                      <span>
+                        <span className="font-semibold text-slate-500">Phone Number:</span>{' '}
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-sm">
+                          {report.reporterPhone || 'Not provided'}
+                        </strong>
+                      </span>
+                      {report.reporterPhone && (
+                        <a
+                          href={`tel:${report.reporterPhone}`}
+                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs flex items-center gap-1"
+                        >
+                          <span>📞</span>
+                          <span>Call Family Directly</span>
+                        </a>
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] space-y-1">
+                    <div className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                      <span>🔒</span>
+                      <span>Phone Number Encrypted Until Official Match Verification</span>
+                    </div>
+                    <p>
+                      In accordance with citizen privacy guidelines, the family's contact phone number remains strictly masked until an administrative officer marks this case as <strong>Verified Match</strong>.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -303,22 +353,79 @@ export default function ReportDetailModal({
 
               {showFoundForm && (
                 <form onSubmit={handleSubmitFound} className="pt-2 space-y-2.5 border-t border-slate-200 dark:border-slate-700">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     <input
                       type="text"
                       required
                       placeholder="Current Location Where Person Found *"
                       value={foundLocation}
                       onChange={(e) => setFoundLocation(e.target.value)}
-                      className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 text-xs"
+                      className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 text-xs"
                     />
-                    <input
-                      type="url"
-                      placeholder="Found Person Photo URL (Direct Link)"
-                      value={foundPhotoUrl}
-                      onChange={(e) => setFoundPhotoUrl(e.target.value)}
-                      className="rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 text-xs"
-                    />
+
+                    {/* Photo File Picker for Found Person */}
+                    <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                          <span>📸</span>
+                          <span>Upload Found Person Photo (For Admin Verification)</span>
+                        </span>
+                        {foundPhotoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setFoundPhotoUrl('')}
+                            className="text-[10px] text-rose-500 font-bold hover:underline flex items-center gap-0.5"
+                          >
+                            <span>🗑️</span>
+                            <span>Remove Photo</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {foundPhotoUrl ? (
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={foundPhotoUrl}
+                            alt="Found preview"
+                            className="h-14 w-14 object-cover rounded-lg border border-emerald-500/50 shadow-xs"
+                          />
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                            ✓ Found photo ready for admin comparison
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <label className="flex-1 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-emerald-500 bg-white dark:bg-slate-800 cursor-pointer text-[11px] text-slate-600 dark:text-slate-300 font-semibold transition-all">
+                            <span>📁 Choose Photo from Device</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    alert('Photo size exceeds 5MB. Please choose a smaller image.');
+                                    return;
+                                  }
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => setFoundPhotoUrl(reader.result);
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                          <span className="text-[10px] text-slate-400">or</span>
+                          <input
+                            type="url"
+                            placeholder="Paste image URL..."
+                            value={foundPhotoUrl}
+                            onChange={(e) => setFoundPhotoUrl(e.target.value)}
+                            className="flex-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-2 py-1.5 text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <input

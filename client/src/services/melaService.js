@@ -117,3 +117,63 @@ export async function resolveMelaAlert(id) {
   const res = await api.patch(`/mela/alerts/${id}/resolve`);
   return res.data?.data;
 }
+
+// ==========================================
+// FEATURE 4: MULTIPLE GROUND MAPS
+// ==========================================
+export async function getMelaMaps() {
+  try {
+    const res = await api.get('/mela/maps');
+    return res.data?.data || [];
+  } catch (err) {
+    console.error('Error fetching mela maps:', err);
+    return [
+      {
+        mapId: 'prayagraj_kumbh',
+        name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
+        imageUrl: '/mela-blueprint-map.jpg',
+        description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
+        isDefault: true,
+      },
+    ];
+  }
+}
+
+export async function createMelaMap(data) {
+  const res = await api.post('/mela/maps', data);
+  return res.data?.data;
+}
+
+export async function deleteMelaMap(mapId) {
+  const res = await api.delete(`/mela/maps/${mapId}`);
+  return res.data?.data;
+}
+
+// ==========================================
+// FEATURE 5: CROWD DENSITY ZONES — FULLY DYNAMIC
+// ==========================================
+export async function getCrowdZones(mapId) {
+  try {
+    const params = mapId ? { mapId } : {};
+    const res = await api.get('/mela/crowd-zones', { params });
+    return res.data?.data || [];
+  } catch (err) {
+    console.error('Error fetching crowd zones:', err);
+    return [];
+  }
+}
+
+export async function createCrowdZone(data) {
+  const res = await api.post('/mela/crowd-zones', data);
+  return res.data?.data;
+}
+
+export async function updateCrowdZone(id, data) {
+  const res = await api.patch(`/mela/crowd-zones/${id}`, data);
+  return res.data?.data;
+}
+
+export async function deleteCrowdZone(id) {
+  const res = await api.delete(`/mela/crowd-zones/${id}`);
+  return res.data;
+}

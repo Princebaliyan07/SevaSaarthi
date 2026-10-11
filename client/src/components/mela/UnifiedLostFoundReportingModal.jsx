@@ -48,9 +48,19 @@ export default function UnifiedLostFoundReportingModal({
     }
   };
 
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, photoUrl: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-xs overflow-y-auto">
-      <div className="glass-card w-full max-w-xl my-6 overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/80 p-3 sm:p-6 backdrop-blur-sm flex justify-center items-start pt-16 sm:pt-20 pb-12">
+      <div className="glass-card w-full max-w-xl my-4 sm:my-6 overflow-hidden rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
         <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 text-lg">
@@ -183,17 +193,73 @@ export default function UnifiedLostFoundReportingModal({
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Photo URL of Missing Person (Used for Dual Comparison)
-                </label>
-                <input
-                  type="url"
-                  value={form.photoUrl}
-                  onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
-                  placeholder="Paste direct photo link or image URL (optional)"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
+              {/* Photo Upload & Live Verification Preview Section */}
+              <div className="space-y-2 p-3 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 text-xs">
+                    <span>📸</span>
+                    <span>Photograph of Missing Person (Crucial for Verification)</span>
+                  </label>
+                  <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">
+                    Used for Dual Photo Comparison
+                  </span>
+                </div>
+
+                {form.photoUrl ? (
+                  <div className="relative w-full h-44 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-slate-950 flex items-center justify-center">
+                    <img
+                      src={form.photoUrl}
+                      alt="Missing person preview"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute top-2 right-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, photoUrl: '' })}
+                        className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md flex items-center gap-1 transition-all"
+                      >
+                        <span>🗑️</span>
+                        <span>Remove Photo</span>
+                      </button>
+                    </div>
+                    <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded bg-emerald-600/95 text-white text-[10px] font-bold shadow-sm">
+                      ✓ Photo Attached for Officer Verification
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="missing-photo-input"
+                      className="border-2 border-dashed border-teal-500/40 hover:border-teal-500 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer bg-teal-50/20 dark:bg-teal-950/20 hover:bg-teal-50/40 transition-all text-center group"
+                    >
+                      <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">📷</span>
+                      <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
+                        Click to Choose / Upload Photo from Gallery
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">
+                        JPEG, PNG, WebP · Allows officials to compare face & clothing
+                      </span>
+                      <input
+                        id="missing-photo-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                      <span>Or link:</span>
+                      <input
+                        type="url"
+                        value={form.photoUrl}
+                        onChange={(e) => setForm({ ...form, photoUrl: e.target.value })}
+                        placeholder="Paste image link URL..."
+                        className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -241,12 +307,20 @@ export default function UnifiedLostFoundReportingModal({
               </div>
             </div>
 
-            {/* Reporter Contact Information */}
-            <div className="p-3.5 rounded-2xl bg-teal-50/70 dark:bg-teal-950/20 border border-teal-500/20 space-y-2.5">
-              <div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-300">
-                <span>🔒</span>
-                <span>Reporter Contact Details (Safeguarded from Public View)</span>
+            {/* Reporter Contact Information (Protected & Safeguarded with Guarantee) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50/70 to-teal-50/70 dark:from-emerald-950/20 dark:to-teal-950/20 border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-200">
+                  <span className="text-base">🛡️</span>
+                  <span>Reporter Contact Details (Safeguarded from Public View)</span>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  🔒 Private & Encrypted
+                </span>
               </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Your contact telephone will <strong>never</strong> be posted publicly or displayed in open listings. It is strictly encrypted and accessible solely to authorized Command Officers once an official verified match is approved.
+              </p>
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -266,7 +340,7 @@ export default function UnifiedLostFoundReportingModal({
                     Your Contact Phone *
                   </label>
                   <input
-                    type="text"
+                    type="tel"
                     required
                     value={form.reporterPhone}
                     onChange={(e) => setForm({ ...form, reporterPhone: e.target.value })}

@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import MelaFacility from '../models/MelaFacility.model.js';
 import MelaAlert from '../models/MelaAlert.model.js';
 import LostFoundReport from '../models/LostFoundReport.model.js';
+import MelaMap from '../models/MelaMap.model.js';
+import CrowdZone from '../models/CrowdZone.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -1045,4 +1047,166 @@ export const resolveMelaAlert = asyncHandler(async (req, res) => {
   }
 
   throw new ApiError(404, 'Alert not found');
+});
+
+// ==========================================
+// FEATURE 4: MULTIPLE GROUND MAPS MANAGEMENT
+// ==========================================
+
+export const DEFAULT_MAPS = [
+  {
+    mapId: 'prayagraj_kumbh',
+    name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
+    nameHi: 'प्रयागराज महाकुंभ 2025 (संगम क्षेत्र)',
+    imageUrl: '/mela-blueprint-map.jpg',
+    description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
+    isDefault: true,
+    isActive: true,
+  },
+  {
+    mapId: 'haridwar_kumbh',
+    name: 'Haridwar Kumbh Ground (Har Ki Pauri & Ghats)',
+    nameHi: 'हरिद्वार कुंभ क्षेत्र (हर की पौड़ी व घाट)',
+    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80',
+    description: 'Brahma Kund, Har Ki Pauri corridor, and pontoon footbridge crossing layout.',
+    isDefault: false,
+    isActive: true,
+  },
+];
+
+let inMemoryMaps = [...DEFAULT_MAPS];
+
+export const getMelaMaps = asyncHandler(async (req, res) => {
+  if (mongoose.connection.readyState === 1) {
+    try {
+      let maps = await MelaMap.find({ isActive: true }).sort({ isDefault: -1, createdAt: 1 }).lean();
+      if (!maps || maps.length === 0) {
+        await MelaMap.insertMany(DEFAULT_MAPS);
+        maps = await MelaMap.find({ isActive: true }).sort({ isDefault: -1, createdAt: 1 }).lean();
+      }
+      if (maps && maps.length > 0) {
+        return res.status(200).json(new ApiResponse(200, maps, 'Mela layout maps retrieved'));
+      }
+    } catch (err) {
+      console.error('[Get Maps DB Error]', err);
+    }
+  }
+
+  return res.status(200).json(new ApiResponse(200, inMemoryMaps, 'Mela layout maps retrieved (memory)'));
+});
+
+export const createMelaMap = asyncHandler(async (req, res) => {
+  const { name, nameHi, imageUrl, description, mapId } = req.body;
+  if (!name || !imageUrl) {
+    throw new ApiError(400, 'Map name and image URL are required');
+  }
+
+  const cleanMapId = mapId
+    ? mapId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_')
+    : `map_${Date.now().toString().slice(-6)}`;
+
+  const payload = {
+    mapId: cleanMapId,
+    name: name.trim(),
+    nameHi: nameHi ? nameHi.trim() : '',
+    imageUrl: imageUrl.trim(),
+    description: description ? description.trim() : '',
+    isDefault: false,
+    isActive: true,
+  };
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const created = await MelaMap.create(payload);
+      return res.status(201).json(new ApiResponse(201, created, 'Ground map created successfully'));
+    } catch (err) {
+      console.error('[Create Map DB Error]', err);
+    }
+  }
+
+  inMemoryMaps.push(payload);
+  return res.status(201).json(new ApiResponse(201, payload, 'Ground map created (memory)'));
+});
+
+export const deleteMelaMap = asyncHandler(async (req, res) => {
+  const { mapId } = req.params;
+  if (mapId === 'prayagraj_kumbh') {
+    throw new ApiError(400, 'Cannot delete the default Prayagraj Kumbh map');
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      await MelaMap.findOneAndDelete({ mapId });
+    } catch (err) {
+      console.error('[Delete Map DB Error]', err);
+    }
+  }
+
+  inMemoryMaps = inMemoryMaps.filter((m) => m.mapId !== mapId);
+  return res.status(200).json(new ApiResponse(200, null, 'Ground map deleted'));
+});
+
+// ==========================================
+// FEATURE 5: CROWD ZONES — FULLY DYNAMIC (Admin creates, updates, deletes)
+// ==========================================
+
+// GET all active zones (public — citizen /mela page)
+export const getCrowdZones = asyncHandler(async (req, res) => {
+  const { mapId } = req.query;
+  const filter = { isActive: true };
+  if (mapId) filter.mapId = mapId;
+  const zones = await CrowdZone.find(filter).sort({ createdAt: -1 });
+  return res.status(200).json(new ApiResponse(200, zones, 'Crowd zones retrieved'));
+});
+
+// POST create new zone (admin only)
+export const createCrowdZone = asyncHandler(async (req, res) => {
+  const { name, description, mapId, status, density, advisory } = req.body;
+
+  if (!name || !name.trim()) {
+    throw new ApiError(400, 'Zone name is required');
+  }
+
+  const zoneId = `zone-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const zone = await CrowdZone.create({
+    zoneId,
+    name: name.trim(),
+    description: description?.trim() || '',
+    mapId: mapId?.trim() || 'prayagraj_kumbh',
+    status: status || 'Normal',
+    density: typeof density === 'number' ? density : 0,
+    advisory: advisory?.trim() || 'Standard crowd management protocols in effect.',
+    createdBy: req.user?.name || 'Admin',
+  });
+
+  broadcastEmergencyAlert('mela:zone_created', zone);
+  return res.status(201).json(new ApiResponse(201, zone, 'Crowd zone created successfully'));
+});
+
+// PATCH update status/density/advisory (admin only)
+export const updateCrowdZone = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status, density, advisory } = req.body;
+
+  const zone = await CrowdZone.findOne({ $or: [{ zoneId: id }, { _id: mongoose.isValidObjectId(id) ? id : undefined }] });
+  if (!zone) throw new ApiError(404, 'Crowd zone not found');
+
+  if (status) zone.status = status;
+  if (density !== undefined) zone.density = Number(density);
+  if (advisory) zone.advisory = advisory.trim();
+
+  await zone.save();
+  broadcastEmergencyAlert('mela:zone_updated', zone);
+  return res.status(200).json(new ApiResponse(200, zone, 'Crowd zone updated successfully'));
+});
+
+// DELETE remove zone (admin only)
+export const deleteCrowdZone = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const zone = await CrowdZone.findOne({ $or: [{ zoneId: id }, { _id: mongoose.isValidObjectId(id) ? id : undefined }] });
+  if (!zone) throw new ApiError(404, 'Crowd zone not found');
+
+  await zone.deleteOne();
+  return res.status(200).json(new ApiResponse(200, {}, 'Crowd zone deleted successfully'));
 });
