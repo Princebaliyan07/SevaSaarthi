@@ -4,6 +4,7 @@ export default function ReliefCampaignCard({
   campaign,
   onDonateFunds = null,
   onSponsorSupplies = null,
+  onViewDetails = null,
 }) {
   const { lang } = useLanguage();
 
@@ -89,7 +90,14 @@ export default function ReliefCampaignCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={() => onViewDetails && onViewDetails(campaign)}
+          className="py-2 px-3 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all text-center"
+        >
+          🔍 View Campaign & Progress
+        </button>
         {onDonateFunds && (
           <button
             type="button"
