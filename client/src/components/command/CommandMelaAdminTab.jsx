@@ -42,17 +42,8 @@ export default function CommandMelaAdminTab({
     return itemMapId === selectedMapId;
   };
 
-  const defaultMaps = [
-    {
-      mapId: 'prayagraj_kumbh',
-      name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
-      imageUrl: '/mela-blueprint-map.jpg',
-      description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
-      isDefault: true,
-    },
-  ];
-  const allMaps = maps && maps.length > 0 ? maps : defaultMaps;
-  const activeMap = allMaps.find((m) => m.mapId === selectedMapId) || allMaps[0] || defaultMaps[0];
+  const allMaps = maps || [];
+  const activeMap = allMaps.find((m) => m.mapId === selectedMapId) || allMaps[0] || null;
 
   const scopedReports = reports.filter((r) => isMatchMap(r.mapId));
   const scopedFacilities = facilities.filter((f) => isMatchMap(f.mapId));
@@ -123,9 +114,9 @@ export default function CommandMelaAdminTab({
                       title={`Delete map: ${m.name}`}
                       aria-label={`Delete map ${m.name}`}
                       onClick={() => onDeleteMap(m.mapId)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-xs text-rose-600 opacity-80 transition hover:bg-rose-100 hover:opacity-100 group-hover:opacity-100"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-xs text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 shadow-xs"
                     >
-                      🗑
+                      🗑️
                     </button>
                   )}
                 </div>

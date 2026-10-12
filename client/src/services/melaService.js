@@ -132,15 +132,7 @@ export async function getMelaMaps() {
     return res.data?.data || [];
   } catch (err) {
     console.error('Error fetching mela maps:', err);
-    return [
-      {
-        mapId: 'prayagraj_kumbh',
-        name: 'Prayagraj Maha Kumbh 2025 (Sangam Ground)',
-        imageUrl: '/mela-blueprint-map.jpg',
-        description: 'Sangam confluence, Akhada camp, Kalpwas sectors, and pontoon bridges ground layout.',
-        isDefault: true,
-      },
-    ];
+    return [];
   }
 }
 

@@ -1093,14 +1093,8 @@ let inMemoryMaps = [...DEFAULT_MAPS];
 export const getMelaMaps = asyncHandler(async (req, res) => {
   if (mongoose.connection.readyState === 1) {
     try {
-      let maps = await MelaMap.find({ isActive: true }).sort({ isDefault: -1, createdAt: 1 }).lean();
-      if (!maps || maps.length === 0) {
-        await MelaMap.insertMany(DEFAULT_MAPS);
-        maps = await MelaMap.find({ isActive: true }).sort({ isDefault: -1, createdAt: 1 }).lean();
-      }
-      if (maps && maps.length > 0) {
-        return res.status(200).json(new ApiResponse(200, maps, 'Mela layout maps retrieved'));
-      }
+      const maps = await MelaMap.find({ isActive: true }).sort({ isDefault: -1, createdAt: 1 }).lean();
+      return res.status(200).json(new ApiResponse(200, maps || [], 'Mela layout maps retrieved'));
     } catch (err) {
       console.error('[Get Maps DB Error]', err);
     }

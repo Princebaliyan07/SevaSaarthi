@@ -545,13 +545,18 @@ export default function CommandCentrePage() {
                 onOpenAddMap={() => setAddMapModalOpen(true)}
                 onDeleteMap={async (mapId) => {
                   if (!window.confirm('Delete this ground map? All its facilities will remain in the database but will be unlinked.')) return;
-                  await deleteMelaMap(mapId);
-                  // If the deleted map was active, switch to the first remaining one
-                  if (selectedMapId === mapId) {
+                  try {
                     const remaining = maps.filter((m) => m.mapId !== mapId);
-                    setSelectedMapId(remaining[0]?.mapId || 'prayagraj_kumbh');
+                    setMaps(remaining);
+                    if (selectedMapId === mapId) {
+                      setSelectedMapId(remaining[0]?.mapId || '');
+                    }
+                    await deleteMelaMap(mapId);
+                  } catch (err) {
+                    console.error('Failed to delete map:', err);
+                  } finally {
+                    await loadData();
                   }
-                  await loadData();
                 }}
                 onCreateCrowdZone={async (data) => {
                   await createCrowdZone({ ...data, mapId: selectedMapId || 'prayagraj_kumbh' });
