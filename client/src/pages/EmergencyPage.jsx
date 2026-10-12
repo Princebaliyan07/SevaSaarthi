@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import EmergencyTileGrid from '../components/emergency/EmergencyTileGrid';
-import GpsLocationCard from '../components/emergency/GpsLocationCard';
 import VoiceSosRecorder from '../components/emergency/VoiceSosRecorder';
-import IncidentStatusTracker from '../components/emergency/IncidentStatusTracker';
 import { reportIncident } from '../services/incidentService';
 import { useEmergency } from '../context/EmergencyContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -59,22 +57,14 @@ export default function EmergencyPage() {
         </div>
       </div>
 
-      {/* Main Grid: 12-Tile SOS Grid on Left, Numbers & Location on Right */}
+      {/* Main Grid: Quick Access on Left, Numbers + Voice SOS on Right */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Left Column: 12 Tactile Tiles + Integrated Push in Emergency Voice SOS */}
-        <div className="space-y-6 lg:col-span-7">
+        {/* Left Column: Emergency Quick Access Tiles */}
+        <div className="lg:col-span-7">
           <EmergencyTileGrid onSelectTile={handleTileClick} />
-          <VoiceSosRecorder
-            onDispatchSuccess={(ticket) => {
-              if (ticket) {
-                setCreatedIncident(ticket);
-                setActiveIncident(ticket);
-              }
-            }}
-          />
         </div>
 
-        {/* Right Column: Official Numbers, Your Location, Created Report */}
+        {/* Right Column: Official Numbers + Voice SOS */}
         <div className="space-y-6 lg:col-span-5">
           {/* Official Numbers List */}
           <div className="glass-card p-6 space-y-4">
@@ -107,29 +97,15 @@ export default function EmergencyPage() {
             </div>
           </div>
 
-          {/* Your Location Card */}
-          <GpsLocationCard />
-
-          {/* Live Incident Tracker Card */}
-          {createdIncident ? (
-            <IncidentStatusTracker
-              incidentId={createdIncident.id}
-              title={createdIncident.title}
-              status={createdIncident.status}
-            />
-          ) : (
-            <div className="glass-card p-5 space-y-2 text-center border-dashed border-slate-300 dark:border-slate-800">
-              <span className="text-2xl">🛡️</span>
-              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {lang === 'hi' ? 'कोई सक्रिय आपातकाल रिपोर्ट नहीं' : 'No Active Emergency Ticket'}
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {lang === 'hi'
-                  ? 'तत्काल 112 सहायता और रिस्पांडर डिस्पैच के लिए बाईं ओर किसी भी लाल टाइल पर टैप करें।'
-                  : 'Tap any emergency tile on the left to trigger immediate GPS dispatch to police, ambulance, and disaster response teams.'}
-              </p>
-            </div>
-          )}
+          {/* Voice SOS Recorder */}
+          <VoiceSosRecorder
+            onDispatchSuccess={(ticket) => {
+              if (ticket) {
+                setCreatedIncident(ticket);
+                setActiveIncident(ticket);
+              }
+            }}
+          />
         </div>
       </div>
     </div>

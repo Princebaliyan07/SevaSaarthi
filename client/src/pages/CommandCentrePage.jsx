@@ -101,6 +101,9 @@ export default function CommandCentrePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Coming Soon modal
+  const [comingSoonAction, setComingSoonAction] = useState(null);
+
   // Modals
   const [facilityModalOpen, setFacilityModalOpen] = useState(false);
   const [editingFacility, setEditingFacility] = useState(null);
@@ -282,7 +285,7 @@ export default function CommandCentrePage() {
   };
 
   const handleAction = (actionName) => {
-    alert(`Action "${actionName}" triggered for incident ${selectedIncident?.id}`);
+    setComingSoonAction(actionName);
   };
 
   // Mela ops handlers
@@ -674,7 +677,7 @@ export default function CommandCentrePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleStatusChange(selectedIncident.id, 'Resolved')}
+                        onClick={() => handleAction('Mark Resolved')}
                         className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
                       >
                         ✓ {t('command.markResolved')}
@@ -691,6 +694,70 @@ export default function CommandCentrePage() {
                 )}
               </div>
 
+              {/* ===== VOICE SOS RECORDINGS LOG ===== */}
+              {(() => {
+                const sosRecordings = incidents.filter((i) => i.audioUrl);
+                if (!sosRecordings.length) return null;
+                return (
+                  <div className={`${PANEL} p-5 sm:p-6 space-y-4`}>
+                    <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950/50 text-base">🎙️</span>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Voice SOS Recordings</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{sosRecordings.length} recording{sosRecordings.length !== 1 ? 's' : ''} received — Police Command Audio Log</p>
+                      </div>
+                      <span className="ml-auto flex items-center gap-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        LIVE
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {sosRecordings.map((rec) => (
+                        <div
+                          key={rec.id}
+                          className="rounded-2xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 p-4 space-y-3"
+                        >
+                          {/* Caller info row */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="h-7 w-7 rounded-full bg-rose-200 dark:bg-rose-900/60 flex items-center justify-center text-sm">👤</span>
+                              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                {rec.citizenName || 'Unknown Caller'}
+                              </span>
+                            </div>
+                            {rec.citizenPhone && (
+                              <a
+                                href={`tel:${rec.citizenPhone}`}
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-800 px-2.5 py-1 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                              >
+                                📞 {rec.citizenPhone}
+                              </a>
+                            )}
+                            {rec.location && (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                📍 {rec.location}
+                              </span>
+                            )}
+                            <span className="ml-auto text-[11px] font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                              🕐 {rec.reportedAt || 'Unknown time'}
+                            </span>
+                          </div>
+
+                          {/* Audio player */}
+                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                          <audio
+                            controls
+                            src={rec.audioUrl}
+                            className="w-full h-10 rounded-xl"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <AnalyticsCharts
                 incidentsByType={stats.incidentsByType}
                 responseTimeTrend={stats.responseTimeTrend}
@@ -699,6 +766,7 @@ export default function CommandCentrePage() {
               <AgencyStatusCards agencies={stats.agencies} />
             </div>
           )}
+
 
           {/* ---------- SECTION: HOSPITALS ---------- */}
           {activeMainTab === 'healthcare' && (
@@ -821,6 +889,35 @@ export default function CommandCentrePage() {
         onStatusUpdated={loadData}
         lang={lang}
       />
+
+      {/* Coming Soon / Working on it Modal */}
+      {comingSoonAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="relative w-full max-w-sm rounded-3xl border border-amber-200 bg-white p-6 shadow-2xl text-center dark:border-amber-800 dark:bg-slate-900">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-3xl dark:bg-amber-950/60">
+              🚧
+            </div>
+            <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
+              {lang === 'hi' ? 'जल्द आ रहा है / प्रगति पर है' : 'Coming Soon / Working On It'}
+            </h3>
+            <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 py-1.5 px-3 rounded-xl border border-amber-200 dark:border-amber-900/50">
+              Action: &quot;{comingSoonAction}&quot;
+            </p>
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {lang === 'hi'
+                ? 'यह सुविधा वर्तमान में विकास के अधीन है और आगामी अपडेट में सक्रिय होगी।'
+                : 'This command action is currently under development and will be connected to automated live dispatch soon.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => setComingSoonAction(null)}
+              className="mt-5 w-full rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:from-amber-700 hover:to-orange-700 transition active:scale-95"
+            >
+              {lang === 'hi' ? 'ठीक है' : 'Got it'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
