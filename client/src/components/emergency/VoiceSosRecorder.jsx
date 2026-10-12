@@ -148,6 +148,20 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
       reader.onloadend = async () => {
         const base64Audio = reader.result;
 
+        // Fetch real-time from WorldTimeAPI / Time API, fallback to accurate system ISO
+        let liveIsoTime = new Date().toISOString();
+        try {
+          const timeRes = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { cache: 'no-store' });
+          if (timeRes.ok) {
+            const timeData = await timeRes.json();
+            if (timeData.datetime) {
+              liveIsoTime = timeData.datetime;
+            }
+          }
+        } catch {
+          // fallback to client time
+        }
+
         const incidentPayload = {
           title: `🎙️ Voice SOS: ${callerName || 'Emergency Citizen'}`,
           category: 'Medical',
@@ -159,6 +173,8 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
           location: locAddress,
           description: `Citizen Voice SOS dispatched directly to Police Command Centre. Coordinates: ${locAddress}. Contact: ${callerPhone || 'N/A'}.`,
           audioUrl: base64Audio,
+          reportedAt: liveIsoTime,
+          createdAt: liveIsoTime,
         };
 
         const res = await reportIncident(incidentPayload);

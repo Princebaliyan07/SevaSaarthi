@@ -646,7 +646,26 @@ export default function CommandCentrePage() {
                                 <div className="flex items-center gap-2">
                                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                                     <span>📅</span>
-                                    <span>{rec.reportedAt || 'Recent'}</span>
+                                    <span>
+                                      {(() => {
+                                        const raw = rec.reportedAt || rec.createdAt || rec.dateTime;
+                                        if (!raw) return 'Recent';
+                                        // If already formatted with date
+                                        if (typeof raw === 'string' && raw.includes(',')) return raw;
+                                        const parsed = new Date(raw);
+                                        if (!isNaN(parsed.getTime())) {
+                                          return parsed.toLocaleString('en-IN', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true,
+                                          });
+                                        }
+                                        return raw;
+                                      })()}
+                                    </span>
                                   </span>
                                   <button
                                     type="button"

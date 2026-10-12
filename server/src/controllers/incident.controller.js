@@ -183,7 +183,15 @@ export const reportIncident = asyncHandler(async (req, res) => {
     name: name || 'Anonymous Citizen',
     phone: phone || '',
     audioUrl: audioUrl || '',
-    createdAt: new Date().toISOString(),
+    reportedAt: new Date(req.body.reportedAt || Date.now()).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }),
+    createdAt: req.body.createdAt || new Date().toISOString(),
   };
 
   if (mongoose.connection.readyState === 1) {
@@ -209,6 +217,7 @@ export const reportIncident = asyncHandler(async (req, res) => {
         verified: true,
         assignedAgency: responsePayload.team,
         slaMinutesRemaining: 15,
+        reportedAt: req.body.reportedAt ? new Date(req.body.reportedAt) : new Date(),
         audioUrl: audioUrl || '',
         rawPayload: {
           citizenName: name || '',
