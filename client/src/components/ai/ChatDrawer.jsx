@@ -128,9 +128,9 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
   };
 
   return (
-    <div className="flex h-[calc(100vh-15rem)] max-h-[720px] min-h-[540px] flex-col overflow-hidden rounded-3xl border border-line bg-white shadow-card">
+    <div className="flex h-[calc(100vh-15rem)] max-h-[720px] min-h-[540px] flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card dark:shadow-cardDark transition-colors">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-brand to-brand-dark px-4 py-3.5 text-white sm:px-6">
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-900 px-4 py-3.5 text-white sm:px-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30">
@@ -159,7 +159,7 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
           <button
             type="button"
             onClick={resetChat}
-            className="flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-brand-dark shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
@@ -171,13 +171,13 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
 
       {/* End chat confirmation */}
       {confirmEnd && (
-        <div className="flex items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 sm:px-6">
+        <div className="flex items-center justify-between gap-3 border-b border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 px-4 py-2.5 text-sm text-amber-900 dark:text-amber-200 sm:px-6">
           <span>End this chat? The conversation will be deleted.</span>
           <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={() => setConfirmEnd(false)}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
             >
               Keep chatting
             </button>
@@ -217,11 +217,11 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
       )}
 
       {/* Message stream */}
-      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto bg-slate-50/70 px-4 py-5 sm:px-6">
+      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto bg-slate-50/70 dark:bg-slate-950/70 px-4 py-5 sm:px-6 transition-colors">
         {/* Greeting (always first, never stored) */}
         <div className="flex items-end gap-2.5">
           <BotAvatar />
-          <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-white px-4 py-3 text-sm leading-relaxed text-ink shadow-sm">
+          <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/90 px-4 py-3 text-sm leading-relaxed text-slate-800 dark:text-slate-100 shadow-sm">
             {t('ai.greeting')}
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
                 key={p}
                 type="button"
                 onClick={() => handleSend(p)}
-                className="rounded-full border border-brand bg-white px-3.5 py-1.5 text-xs font-semibold text-brand-dark transition hover:bg-brand hover:text-white"
+                className="rounded-full border border-teal-600/70 dark:border-teal-500/50 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-teal-800 dark:text-teal-300 transition hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white shadow-xs"
               >
                 {p}
               </button>
@@ -251,10 +251,10 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
                 <div
                   className={`max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                     isUser
-                      ? 'rounded-br-md bg-gradient-to-br from-brand to-brand-dark text-white'
+                      ? 'rounded-br-md bg-gradient-to-br from-teal-700 to-emerald-800 text-white'
                       : m.isRedFlag
-                      ? 'rounded-bl-md border border-red-200 bg-red-50 font-semibold text-sos'
-                      : 'rounded-bl-md border border-line bg-white text-ink'
+                      ? 'rounded-bl-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 font-semibold text-sos dark:text-red-300'
+                      : 'rounded-bl-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100'
                   }`}
                 >
                   {m.text}
@@ -272,7 +272,7 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
                       className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
                         act.danger
                           ? 'bg-sos text-white hover:bg-sos-dark focus-visible:ring-sos'
-                          : 'border border-brand bg-white text-brand-dark hover:bg-brand hover:text-white focus-visible:ring-brand'
+                          : 'border border-teal-600 dark:border-teal-500/60 bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-300 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white focus-visible:ring-brand shadow-xs'
                       }`}
                     >
                       {act.label}
@@ -288,23 +288,23 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
         {loading && (
           <div className="flex items-end gap-2.5">
             <BotAvatar />
-            <div className="flex items-center gap-1 rounded-2xl rounded-bl-md border border-line bg-white px-4 py-3.5 shadow-sm" role="status" aria-label="AI Saarthi is typing">
-              <span className="h-2 w-2 animate-bounce rounded-full bg-brand [animation-delay:-0.3s]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-brand [animation-delay:-0.15s]" />
-              <span className="h-2 w-2 animate-bounce rounded-full bg-brand" />
+            <div className="flex items-center gap-1 rounded-2xl rounded-bl-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-4 py-3.5 shadow-sm" role="status" aria-label="AI Saarthi is typing">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-teal-500 [animation-delay:-0.3s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-teal-500 [animation-delay:-0.15s]" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-teal-500" />
             </div>
           </div>
         )}
       </div>
 
       {/* Input bar */}
-      <div className="border-t border-line bg-white px-3 pb-3 pt-3 sm:px-5">
+      <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 pb-3 pt-3 sm:px-5 transition-colors">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="flex items-center gap-2 rounded-full border border-line bg-slate-50 p-1.5 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/30"
+          className="flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-1.5 transition focus-within:border-teal-500 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-teal-500/30"
         >
           <input
             type="text"
@@ -315,12 +315,12 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
             placeholder={
               lockedRedFlag ? 'Typing paused. Please call 112.' : t('ai.placeholder')
             }
-            className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-ink placeholder-ink-soft focus:outline-none disabled:cursor-not-allowed"
+            className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none disabled:cursor-not-allowed"
           />
           <button
             type="submit"
             disabled={lockedRedFlag || !inputText.trim() || loading}
-            className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-brand to-brand-dark px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-teal-700 to-emerald-800 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('ai.send')}
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -328,7 +328,7 @@ export default function ChatDrawer({ initialQuery = '', externalPrompt = null })
             </svg>
           </button>
         </form>
-        <p className="mt-2 text-center text-[11px] text-ink-soft">
+        <p className="mt-2 text-center text-[11px] text-slate-400 dark:text-slate-500">
           Chats are not saved. Refreshing the page deletes this conversation.
         </p>
       </div>

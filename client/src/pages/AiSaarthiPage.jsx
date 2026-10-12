@@ -29,16 +29,26 @@ export default function AiSaarthiPage() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-teal-50/70 via-white to-white">
+    <div className="min-h-screen bg-slate-50 transition-colors duration-300 dark:bg-[#0B0F19]">
       <div className="container-page space-y-6 py-8">
-        {/* Title */}
-        <div>
-          <h1 className="text-3xl font-extrabold text-brand-dark sm:text-4xl">
-            {t('ai.title')}
-          </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-ink-soft sm:text-base">
-            Find hospitals, shelters and help near you. Ask in Hindi, English or Hinglish.
-          </p>
+        {/* Hero Header Banner (matching Volunteers page aesthetic) */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-teal-900 via-slate-900 to-emerald-950 p-6 sm:p-8 text-white shadow-xl border border-teal-500/20">
+          <div className="relative z-10 max-w-4xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+              <span>🤖</span>
+              <span>{lang === 'hi' ? 'बुद्धिमान सहायता प्रणाली' : 'Intelligent Assistance Grid'}</span>
+            </div>
+
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+              {t('ai.title')}
+            </h1>
+
+            <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
+              {lang === 'hi'
+                ? 'अपने आस-पास अस्पताल, राहत शिविर और आपातकालीन मदद खोजें। हिंदी, अंग्रेजी या हिंग्लिश में पूछें।'
+                : 'Find hospitals, shelters and emergency help near you. Ask in Hindi, English or Hinglish.'}
+            </p>
+          </div>
         </div>
 
         {/* Main two column layout */}

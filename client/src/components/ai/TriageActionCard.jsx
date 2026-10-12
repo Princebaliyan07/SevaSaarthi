@@ -49,16 +49,16 @@ export default function TriageActionCard({ onSelectPrompt }) {
   };
 
   return (
-    <div className="rounded-3xl border border-line bg-white p-5 shadow-card sm:p-6">
+    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-card dark:shadow-cardDark sm:p-6 transition-colors">
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-ink">Quick help</h2>
-        <p className="mt-0.5 text-sm text-ink-soft">Tap a question and AI Saarthi will answer in the chat.</p>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Quick help</h2>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">Tap a question and AI Saarthi will answer in the chat.</p>
       </div>
 
       <div className="space-y-5">
         {FAQ_GROUPS.map((group) => (
           <section key={group.title}>
-            <h3 className="mb-2 text-sm font-semibold text-ink-soft">{group.title}</h3>
+            <h3 className="mb-2 text-sm font-semibold text-slate-500 dark:text-slate-400">{group.title}</h3>
             <div className="grid grid-cols-2 gap-2.5">
               {group.items.map((item) => (
                 <button
@@ -67,8 +67,8 @@ export default function TriageActionCard({ onSelectPrompt }) {
                   onClick={() => ask(item.prompt)}
                   className={`flex items-center gap-2.5 rounded-2xl border px-3 py-2.5 text-left text-[13px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                     item.urgent
-                      ? 'border-red-200 bg-red-50 text-sos hover:border-sos hover:bg-red-100'
-                      : 'border-line bg-slate-50 text-ink hover:border-brand hover:bg-white hover:shadow-sm'
+                      ? 'border-red-200 bg-red-50 text-sos hover:border-sos hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-brand hover:bg-white hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-teal-500 dark:hover:bg-slate-750'
                   }`}
                 >
                   <span className="text-lg leading-none" aria-hidden="true">{item.icon}</span>
@@ -81,10 +81,10 @@ export default function TriageActionCard({ onSelectPrompt }) {
       </div>
 
       {/* What the assistant can do */}
-      <details className="group mt-5 rounded-2xl border border-line bg-slate-50/60">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
+      <details className="group mt-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
           What AI Saarthi can do
-          <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-soft transition group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 text-slate-400 transition group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6" />
           </svg>
         </summary>
@@ -94,12 +94,14 @@ export default function TriageActionCard({ onSelectPrompt }) {
               <button
                 type="button"
                 onClick={() => ask(a.prompt)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-white px-3.5 py-2.5 text-left text-sm font-medium text-ink transition hover:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-left text-sm font-medium text-slate-800 dark:text-slate-200 transition hover:border-brand dark:hover:border-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <span>{a.label}</span>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                    a.safe ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    a.safe
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                   }`}
                 >
                   {a.safe ? 'Safe' : 'Asks first'}
