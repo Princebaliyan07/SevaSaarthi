@@ -334,14 +334,14 @@ async function runSeed() {
   console.log(`[Seed Script] Seeded ${SEED_MISSING_PERSONS.length} missing person cases.`);
 
   // 5. Seed Default Admin User
-  const adminPhone = '+919999999999';
+  const adminPhone = '8920060656';
   const existingAdmin = await User.findOne({ phone: adminPhone });
   if (!existingAdmin) {
     await User.create({
       name: 'District Magistrate Command Officer',
       phone: adminPhone,
       email: 'command@sevasaarthi.gov.in',
-      password: 'AdminPassword123!',
+      password: 'ChhaviPrince03032021',
       role: 'admin',
       isVerified: true,
     });
