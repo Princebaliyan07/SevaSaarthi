@@ -24,6 +24,7 @@ export default function CommandMelaAdminTab({
   onDeleteFacility,
   onOpenCreateAlert,
   onResolveAlert,
+  onDeleteAlert = null,
   onUpdateReportStatus,
   onOpenReportModal,
   lang = 'en',
@@ -419,13 +420,24 @@ export default function CommandMelaAdminTab({
                     <Pill tone={a.status === 'Active' ? 'rose' : 'slate'}>{a.status}</Pill>
                   </td>
                   <td className="px-3 py-3 text-right">
-                    {isAdmin && a.status === 'Active' ? (
-                      <button type="button" onClick={() => onResolveAlert(a.alertId || a._id)} className={BTN.success}>
-                        Resolve
-                      </button>
-                    ) : (
-                      <span className="text-slate-300">-</span>
-                    )}
+                    <div className="flex items-center justify-end gap-1.5">
+                      {isAdmin && a.status === 'Active' && onResolveAlert && (
+                        <button type="button" onClick={() => onResolveAlert(a.alertId || a._id)} className={BTN.success}>
+                          Resolve
+                        </button>
+                      )}
+                      {isAdmin && onDeleteAlert && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteAlert(a.alertId || a._id)}
+                          className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+                          title="Delete alert"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                      {!isAdmin && <span className="text-slate-300">-</span>}
+                    </div>
                   </td>
                 </tr>
               ))}

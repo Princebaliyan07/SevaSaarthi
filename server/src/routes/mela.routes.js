@@ -20,6 +20,7 @@ import {
   createMelaAlert,
   updateMelaAlert,
   resolveMelaAlert,
+  deleteMelaAlert,
   getMelaMaps,
   createMelaMap,
   deleteMelaMap,
@@ -69,6 +70,7 @@ router.get('/alerts', getMelaAlerts);
 router.post('/alerts', verifyJwt, authorizeRoles('admin'), createMelaAlert);
 router.patch('/alerts/:id', verifyJwt, authorizeRoles('admin'), updateMelaAlert);
 router.patch('/alerts/:id/resolve', verifyJwt, authorizeRoles('admin'), resolveMelaAlert);
+router.delete('/alerts/:id', verifyJwt, authorizeRoles('admin'), deleteMelaAlert);
 
 // ==========================================
 // FEATURE 4: MULTIPLE GROUND MAPS

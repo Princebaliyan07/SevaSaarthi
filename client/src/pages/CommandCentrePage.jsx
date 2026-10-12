@@ -19,6 +19,7 @@ import {
   getMelaAlerts,
   createMelaAlert,
   resolveMelaAlert,
+  deleteMelaAlert,
   getLostFoundReports,
   updateReportStatus,
   getMelaMaps,
@@ -331,6 +332,12 @@ export default function CommandCentrePage() {
     await loadData();
   };
 
+  const handleDeleteAlert = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this alert?')) return;
+    await deleteMelaAlert(id);
+    await loadData();
+  };
+
   const handleUpdateReportStatus = async (id, status) => {
     await updateReportStatus(id, { status });
     await loadData();
@@ -559,6 +566,7 @@ export default function CommandCentrePage() {
                 onDeleteFacility={handleDeleteFacility}
                 onOpenCreateAlert={() => setAlertModalOpen(true)}
                 onResolveAlert={handleResolveAlert}
+                onDeleteAlert={handleDeleteAlert}
                 onUpdateReportStatus={handleUpdateReportStatus}
                 onOpenReportModal={(id) => {
                   setSelectedReportId(id);

@@ -118,6 +118,11 @@ export async function resolveMelaAlert(id) {
   return res.data?.data;
 }
 
+export async function deleteMelaAlert(id) {
+  const res = await api.delete(`/mela/alerts/${id}`);
+  return res.data?.data;
+}
+
 // ==========================================
 // FEATURE 4: MULTIPLE GROUND MAPS
 // ==========================================

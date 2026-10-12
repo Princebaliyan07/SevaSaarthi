@@ -212,49 +212,10 @@ export const DEFAULT_FACILITIES = [
   },
 ];
 
-export const DEFAULT_ALERTS = [
-  {
-    alertId: 'MA-ALERT-01',
-    title: 'High Crowd Surge near Sangam Bathing Confluence',
-    alertType: 'High Crowd Density',
-    severity: 'Warning',
-    affectedLocation: 'Sangam Main Bathing Ghats',
-    recommendedAction: 'Use Pontoon Bridge 4 or proceed towards Ram Ghats to avoid bottleneck congestion.',
-    issuingAuthority: 'Mela Police & Crowd Command',
-    mapX: 52,
-    mapY: 45,
-    latitude: 25.428,
-    longitude: 81.886,
-    areaRadiusMeters: 300,
-    status: 'Active',
-    isPublished: true,
-    isSensorVerified: false,
-    reportedSource: 'Administration-Reported (Timestamped)',
-    expiresAt: new Date(Date.now() + 6 * 3600 * 1000),
-  },
-  {
-    alertId: 'MA-ALERT-02',
-    title: 'Pontoon Bridge #2 Under Temporary Regulation',
-    alertType: 'Route Temporarily Closed',
-    severity: 'Advisory',
-    affectedLocation: 'Pontoon Bridge 2 (South Approach)',
-    recommendedAction: 'Pilgrims advised to follow illuminated green arrows towards Pontoon Bridge 6.',
-    issuingAuthority: 'Traffic & Riverfront Control',
-    mapX: 52,
-    mapY: 67,
-    latitude: 25.429,
-    longitude: 81.881,
-    areaRadiusMeters: 200,
-    status: 'Active',
-    isPublished: true,
-    isSensorVerified: false,
-    reportedSource: 'Administration-Reported (Timestamped)',
-    expiresAt: new Date(Date.now() + 3 * 3600 * 1000),
-  },
-];
+export const DEFAULT_ALERTS = [];
 
 let inMemoryFacilities = [...DEFAULT_FACILITIES];
-let inMemoryAlerts = [...DEFAULT_ALERTS];
+let inMemoryAlerts = [];
 let inMemoryReports = [
   {
     reportRefId: 'SR-MISS-2026-001',
@@ -935,17 +896,11 @@ export const getMelaAlerts = asyncHandler(async (req, res) => {
 
   if (mongoose.connection.readyState === 1) {
     try {
-      let alerts = await MelaAlert.find(filter).sort({ createdAt: -1 }).lean();
-      if (!alerts || alerts.length === 0) {
-        const count = await MelaAlert.countDocuments();
-        if (count === 0) {
-          await MelaAlert.insertMany(DEFAULT_ALERTS);
-          alerts = await MelaAlert.find(filter).sort({ createdAt: -1 }).lean();
-        }
-      }
-      if (alerts && alerts.length > 0) {
-        return res.status(200).json(new ApiResponse(200, alerts, 'Active Mela alerts retrieved'));
-      }
+      // Clean up legacy default demo alerts if they exist in the DB
+      await MelaAlert.deleteMany({ alertId: { $in: ['MA-ALERT-01', 'MA-ALERT-02'] } });
+
+      const alerts = await MelaAlert.find(filter).sort({ createdAt: -1 }).lean();
+      return res.status(200).json(new ApiResponse(200, alerts || [], 'Active Mela alerts retrieved'));
     } catch (err) {
       console.error('[Get Alerts DB Error]', err);
     }
@@ -1078,6 +1033,31 @@ export const resolveMelaAlert = asyncHandler(async (req, res) => {
   if (a) {
     a.status = 'Resolved';
     return res.status(200).json(new ApiResponse(200, a, 'Alert resolved (memory)'));
+  }
+
+  throw new ApiError(404, 'Alert not found');
+});
+
+export const deleteMelaAlert = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const deleted = await MelaAlert.findOneAndDelete({
+        $or: [{ alertId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+      });
+      if (deleted) {
+        return res.status(200).json(new ApiResponse(200, deleted, 'Alert deleted successfully'));
+      }
+    } catch (err) {
+      console.error('[Delete Alert DB Error]', err);
+    }
+  }
+
+  const idx = inMemoryAlerts.findIndex((item) => item.alertId === id || item._id === id);
+  if (idx !== -1) {
+    const [removed] = inMemoryAlerts.splice(idx, 1);
+    return res.status(200).json(new ApiResponse(200, removed, 'Alert deleted successfully (memory)'));
   }
 
   throw new ApiError(404, 'Alert not found');
