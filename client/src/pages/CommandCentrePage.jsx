@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Badge from '../components/common/Badge';
 import IncidentQueueTable from '../components/command/IncidentQueueTable';
 import AnalyticsCharts from '../components/command/AnalyticsCharts';
@@ -96,8 +96,20 @@ export default function CommandCentrePage() {
   const [crowdZones, setCrowdZones] = useState([]);
   const [maps, setMaps] = useState([]);
   const [selectedMapId, setSelectedMapId] = useState('prayagraj_kumbh');
-  // Track IDs that the admin has deleted — filter them out even if backend re-returns them
-  const deletedAlertIds = useState(() => new Set(['MA-ALERT-01', 'MA-ALERT-02']))[0];
+  // Persist deleted alert IDs in localStorage so they survive page refreshes
+  const deletedAlertIds = useRef((() => {
+    const LEGACY = ['MA-ALERT-01', 'MA-ALERT-02', 'MA-060161'];
+    try {
+      const saved = JSON.parse(localStorage.getItem('ss_deleted_alerts') || '[]');
+      return new Set([...LEGACY, ...saved]);
+    } catch { return new Set(LEGACY); }
+  })()).current;
+  const persistDeletedAlert = (id) => {
+    deletedAlertIds.add(id);
+    try {
+      localStorage.setItem('ss_deleted_alerts', JSON.stringify([...deletedAlertIds]));
+    } catch { /* ignore storage errors */ }
+  };
 
   // Load status
   const [loadError, setLoadError] = useState(false);
@@ -343,8 +355,8 @@ export default function CommandCentrePage() {
 
   const handleDeleteAlert = async (id) => {
     if (!window.confirm('Are you sure you want to delete this alert?')) return;
-    // Mark this ID as deleted immediately — prevents reappearance from backend refreshes
-    deletedAlertIds.add(id);
+    // Mark as deleted in localStorage — survives page refreshes
+    persistDeletedAlert(id);
     try {
       setAlerts((prev) => prev.filter((a) => a.alertId !== id && a._id !== id));
       await deleteMelaAlert(id);
