@@ -15,6 +15,8 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
   const [locStatus, setLocStatus] = useState('detecting'); // 'detecting' | 'ready' | 'fallback'
   const [locAddress, setLocAddress] = useState('Detecting GPS location...');
 
+  const [nameError, setNameError] = useState(false);
+
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isDispatching, setIsDispatching] = useState(false);
@@ -73,6 +75,18 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
   }, []);
 
   const startVoiceRecording = async () => {
+    // Validate caller name is filled before allowing voice recording
+    if (!callerName.trim()) {
+      setNameError(true);
+      alert(
+        hi
+          ? 'कृपया वॉयस रिकॉर्डिंग शुरू करने से पहले अपना नाम दर्ज करें।'
+          : 'Please enter your name before speaking or sending Voice SOS.'
+      );
+      return;
+    }
+    setNameError(false);
+
     try {
       setSentSuccess(false);
       audioChunksRef.current = [];
@@ -187,16 +201,28 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
       {/* Caller Name & Phone Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
-            {hi ? 'आपका नाम' : 'Your Name'}
+          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>{hi ? 'आपका नाम (अनिवार्य)' : 'Your Name (Required)'}</span>
+            {nameError && (
+              <span className="text-rose-600 dark:text-rose-400 font-bold text-[10px]">
+                {hi ? 'नाम भरना जरूरी है' : 'Name is required'}
+              </span>
+            )}
           </label>
           <input
             type="text"
             placeholder={hi ? 'अपना नाम दर्ज करें' : 'Enter your name'}
             value={callerName}
-            onChange={(e) => setCallerName(e.target.value)}
+            onChange={(e) => {
+              setCallerName(e.target.value);
+              if (e.target.value.trim()) setNameError(false);
+            }}
             disabled={isRecording || isDispatching}
-            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none"
+            className={`w-full rounded-xl border ${
+              nameError
+                ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/30'
+                : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
+            } p-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:border-rose-500 focus:outline-none`}
           />
         </div>
 

@@ -57,55 +57,52 @@ export default function EmergencyPage() {
         </div>
       </div>
 
-      {/* Top: Emergency Quick Access Tiles */}
+      {/* 1st Section: Voice SOS Dispatch */}
       <div>
+        <VoiceSosRecorder
+          onDispatchSuccess={(ticket) => {
+            if (ticket) {
+              setCreatedIncident(ticket);
+              setActiveIncident(ticket);
+            }
+          }}
+        />
+      </div>
+
+      {/* 2nd Section: Platform Quick Access (Live Direct Links) */}
+      <div className="pt-2">
         <EmergencyTileGrid onSelectTile={handleTileClick} />
       </div>
 
-      {/* Lower Section: Voice SOS Recorder & Official Numbers side by side */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start pt-2">
-        {/* Voice SOS Recorder (Left, 7 columns) */}
-        <div className="lg:col-span-7">
-          <VoiceSosRecorder
-            onDispatchSuccess={(ticket) => {
-              if (ticket) {
-                setCreatedIncident(ticket);
-                setActiveIncident(ticket);
-              }
-            }}
-          />
-        </div>
-
-        {/* Official Numbers List (Right, 5 columns) */}
-        <div className="lg:col-span-5">
-          <div className="glass-card p-6 space-y-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>📞</span>
-              <span>{t('emergency.officialNumbers')}</span>
-            </h2>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {OFFICIAL_NUMBERS.map((item) => (
-                <div
-                  key={item.num}
-                  className="flex items-center justify-between py-3 text-xs"
-                >
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+      {/* 3rd Section: Official Emergency Numbers */}
+      <div className="pt-2">
+        <div className="glass-card p-6 space-y-4">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>📞</span>
+            <span>{t('emergency.officialNumbers')}</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {OFFICIAL_NUMBERS.map((item) => (
+              <div
+                key={item.num}
+                className="flex items-center justify-between p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 shadow-xs"
+              >
+                <div className="flex flex-col">
+                  <span className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                     {lang === 'hi' ? item.nameHi : item.name}
                   </span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono font-black text-rose-600 dark:text-rose-400 text-sm">
-                      {item.num}
-                    </span>
-                    <a
-                      href={`tel:${item.num}`}
-                      className="rounded-xl bg-gradient-to-r from-red-600 to-rose-700 px-3.5 py-1.5 font-bold text-white shadow-xs hover:from-red-500 hover:to-rose-600 transition-all"
-                    >
-                      {t('emergency.call')}
-                    </a>
-                  </div>
+                  <span className="font-mono font-black text-rose-600 dark:text-rose-400 text-base">
+                    {item.num}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <a
+                  href={`tel:${item.num}`}
+                  className="rounded-xl bg-gradient-to-r from-red-600 to-rose-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:from-red-500 hover:to-rose-600 transition-all active:scale-95"
+                >
+                  {t('emergency.call')}
+                </a>
+              </div>
+            ))}
           </div>
         </div>
       </div>
