@@ -108,7 +108,7 @@ export default function CommandMelaAdminTab({
                     <span aria-hidden="true">{isSelected ? '📍' : '🗺️'}</span>
                     {m.name}
                   </button>
-                  {isAdmin && onDeleteMap && (
+                  {isAdmin && onDeleteMap && m.mapId !== 'prayagraj_kumbh' && (
                     <button
                       type="button"
                       title={`Delete map: ${m.name}`}
