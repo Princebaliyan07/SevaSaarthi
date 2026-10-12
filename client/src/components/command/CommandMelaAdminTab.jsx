@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import InteractiveMelaMap, { FACILITY_CATEGORIES } from '../mela/InteractiveMelaMap';
+import { PANEL, INPUT, LABEL, BTN, Pill, SectionHead, EmptyState, DataTable, ROW, Tabs } from './commandUi';
+
+/*
+ * "Quick Preview" logs in as admin WITHOUT a password. It is only shown while developing
+ * (npm run dev). To show it on a deployed demo, set VITE_ALLOW_QUICK_PREVIEW=true in your
+ * hosting environment variables. Leave it unset for the real site.
+ */
+const ALLOW_QUICK_PREVIEW =
+  import.meta.env.DEV || import.meta.env.VITE_ALLOW_QUICK_PREVIEW === 'true';
+
+const EMPTY_ZONE = { name: '', description: '', advisory: '', status: 'Normal', density: 0 };
+const ZONE_TONE = { Normal: 'green', Moderate: 'amber', High: 'orange', Critical: 'rose' };
 
 export default function CommandMelaAdminTab({
   facilities = [],
@@ -25,7 +37,9 @@ export default function CommandMelaAdminTab({
   lang = 'en',
 }) {
   const { user, isAdmin, login, loginAs } = useAuth();
-  const [adminPhone, setAdminPhone] = useState('9876543210');
+
+  // Sign-in form (starts empty: no pre-filled phone number)
+  const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState(null);
@@ -33,7 +47,7 @@ export default function CommandMelaAdminTab({
   const [activeSubTab, setActiveSubTab] = useState('verification');
   const [updatingZoneId, setUpdatingZoneId] = useState(null);
   const [showAddZoneForm, setShowAddZoneForm] = useState(false);
-  const [newZone, setNewZone] = useState({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
+  const [newZone, setNewZone] = useState(EMPTY_ZONE);
   const [savingZone, setSavingZone] = useState(false);
 
   const isMatchMap = (itemMapId) => {
@@ -65,122 +79,142 @@ export default function CommandMelaAdminTab({
     try {
       const res = await login(adminPhone, adminPassword);
       if (!res.success) {
-        setLoginError(res.error || 'Authentication failed');
+        setLoginError(res.error || 'Sign in failed. Check your phone number and password.');
+      } else {
+        setAdminPassword('');
       }
     } catch (err) {
-      setLoginError(err.message || 'Login failed');
+      setLoginError(err.message || 'Sign in failed');
     } finally {
       setLoggingIn(false);
     }
   };
 
+  const resetZoneForm = () => {
+    setShowAddZoneForm(false);
+    setNewZone(EMPTY_ZONE);
+  };
+
+  const subTabs = [
+    { id: 'verification', icon: '📸', label: 'Photo verification', count: scopedReports.filter((r) => r.status === 'Possible Match').length },
+    { id: 'facilities', icon: '🗺️', label: 'Map and facilities', count: scopedFacilities.length },
+    { id: 'alerts', icon: '🚨', label: 'Safety alerts', count: scopedAlerts.filter((a) => a.status === 'Active').length },
+    { id: 'crowd_zones', icon: '👥', label: 'Crowd zones', count: scopedCrowdZones.length },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* HIGHLIGHTED HEADER WITH ADMIN AUTHENTICATION & ACTIVE MAP SELECTOR */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 text-white shadow-2xl border-2 border-teal-500/40 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
-              <span className="h-2 w-2 rounded-full bg-teal-400 animate-ping" />
-              <span>COMMAND CENTRE · MELA MANAGEMENT SYSTEM</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
-              Official Mela Layout & Pilgrim Reunification Command
+    <div className="space-y-5">
+      {/* ================= HEADER: map, sign-in ================= */}
+      <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Mela layout and missing-person desk
             </h2>
-            <p className="text-xs text-slate-300 max-w-2xl">
-              Currently operating: <strong className="text-amber-300">{activeMap?.name}</strong>. All facility markers, missing persons, crowd zones, and alerts below belong strictly to this selected Mela.
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Working on <strong className="text-slate-800 dark:text-slate-200">{activeMap?.name}</strong>. Everything below belongs to this map only.
             </p>
           </div>
 
-          {/* Quick Admin Auth Box */}
+          {/* Sign in / signed in */}
           <div className="shrink-0">
             {!isAdmin ? (
-              <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-amber-300">
-                    🔒 Command Officer Login
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => loginAs('admin')}
-                    className="text-[10px] font-bold text-teal-300 underline"
-                  >
-                    (Quick Preview)
-                  </button>
-                </div>
-                {loginError && <p className="text-rose-400 text-[10px]">{loginError}</p>}
-                <form onSubmit={handleAdminLogin} className="flex gap-2">
+              <form
+                onSubmit={handleAdminLogin}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60"
+              >
+                <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  🔒 Command officer sign in
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
                   <input
-                    type="text"
-                    placeholder="Phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="username"
+                    placeholder="Phone number"
                     value={adminPhone}
                     onChange={(e) => setAdminPhone(e.target.value)}
-                    className="w-24 rounded-lg bg-white/15 px-2 py-1 text-xs text-white placeholder:text-slate-400 border border-white/20"
+                    className={`${INPUT} !w-36 !py-2`}
                   />
                   <input
                     type="password"
+                    autoComplete="current-password"
                     placeholder="Password"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-24 rounded-lg bg-white/15 px-2 py-1 text-xs text-white placeholder:text-slate-400 border border-white/20"
+                    className={`${INPUT} !w-32 !py-2`}
                   />
                   <button
                     type="submit"
-                    disabled={loggingIn}
-                    className="px-3 py-1 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs"
+                    disabled={loggingIn || !adminPhone.trim() || !adminPassword}
+                    className={BTN.primary}
                   >
-                    {loggingIn ? '...' : 'Sign In'}
+                    {loggingIn ? 'Signing in...' : 'Sign in'}
                   </button>
-                </form>
-              </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl bg-teal-500/20 border border-teal-500/40 text-right space-y-1">
-                <div className="flex items-center gap-2 justify-end">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold text-emerald-300">Authorized: {user?.name || 'Command Officer'}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => loginAs('citizen')}
-                  className="text-[10px] text-slate-300 hover:text-white underline font-semibold"
-                >
-                  Switch to Visitor Mode
-                </button>
+                {loginError && (
+                  <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400" role="alert">
+                    {loginError}
+                  </p>
+                )}
+                {ALLOW_QUICK_PREVIEW && (
+                  <button
+                    type="button"
+                    onClick={() => loginAs('admin')}
+                    className="mt-2 text-xs font-semibold text-slate-500 underline hover:text-teal-700"
+                  >
+                    Quick preview (testing only, no password)
+                  </button>
+                )}
+              </form>
+            ) : (
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <div className="text-xs">
+                  <p className="font-bold text-emerald-800 dark:text-emerald-300">
+                    Signed in: {user?.name || 'Command officer'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => loginAs('citizen')}
+                    className="font-semibold text-slate-500 underline hover:text-slate-800 dark:hover:text-white"
+                  >
+                    Switch to visitor mode
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Multi-Map Ground Selector Bar for entire Command Center */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
-            <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider shrink-0 flex items-center gap-1">
-              <span>📍 Active Fair / Map:</span>
-            </span>
+        {/* Map selector */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
+            <span className="shrink-0 text-xs font-semibold text-slate-500">Active map</span>
             {allMaps.map((m) => {
               const isSelected = activeMap?.mapId === m.mapId;
               return (
-                <div key={m.mapId} className="flex items-center gap-0.5 group">
+                <div key={m.mapId} className="group flex shrink-0 items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (onSelectMap) onSelectMap(m.mapId);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap border flex items-center gap-1.5 ${
+                    onClick={() => onSelectMap && onSelectMap(m.mapId)}
+                    aria-pressed={isSelected}
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
                       isSelected
-                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md ring-2 ring-white/50'
-                        : 'bg-white/10 text-slate-200 border-white/20 hover:bg-white/20'
+                        ? 'border-teal-600 bg-teal-50 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                     }`}
                   >
-                    <span>{isSelected ? '🎯' : '🗺️'}</span>
-                    <span>{m.name}</span>
+                    <span aria-hidden="true">{isSelected ? '📍' : '🗺️'}</span>
+                    {m.name}
                   </button>
                   {isAdmin && onDeleteMap && m.mapId !== 'prayagraj_kumbh' && (
                     <button
                       type="button"
                       title={`Delete map: ${m.name}`}
+                      aria-label={`Delete map ${m.name}`}
                       onClick={() => onDeleteMap(m.mapId)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 h-6 w-6 rounded-lg flex items-center justify-center bg-rose-500/80 hover:bg-rose-600 text-white text-[11px] shrink-0"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-xs text-rose-600 opacity-60 transition hover:bg-rose-100 hover:opacity-100 group-hover:opacity-100"
                     >
                       🗑
                     </button>
@@ -191,294 +225,198 @@ export default function CommandMelaAdminTab({
           </div>
 
           {isAdmin && onOpenAddMap && (
-            <button
-              type="button"
-              onClick={onOpenAddMap}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 shadow-sm transition-all whitespace-nowrap flex items-center gap-1"
-            >
-              <span>➕</span>
-              <span>Add New Ground Map</span>
+            <button type="button" onClick={onOpenAddMap} className={BTN.primary}>
+              + Add ground map
             </button>
           )}
         </div>
-
-        {/* 4 Quick Navigation Pill Tabs with scoped counts */}
-        <div className="flex items-center gap-2 pt-2 border-t border-white/10 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('verification')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'verification'
-                ? 'bg-rose-500 text-white shadow-lg'
-                : 'bg-white/10 text-slate-300 hover:bg-white/20'
-            }`}
-          >
-            <span>📸</span>
-            <span>Photo Verification ({scopedReports.filter((r) => r.status === 'Possible Match').length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('facilities')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'facilities'
-                ? 'bg-teal-500 text-slate-950 shadow-lg'
-                : 'bg-white/10 text-slate-300 hover:bg-white/20'
-            }`}
-          >
-            <span>🗺️</span>
-            <span>Map & Facilities ({scopedFacilities.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('alerts')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'alerts'
-                ? 'bg-amber-500 text-slate-950 shadow-lg'
-                : 'bg-white/10 text-slate-300 hover:bg-white/20'
-            }`}
-          >
-            <span>🚨</span>
-            <span>Safety Alerts ({scopedAlerts.filter((a) => a.status === 'Active').length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('crowd_zones')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeSubTab === 'crowd_zones'
-                ? 'bg-indigo-500 text-white shadow-lg'
-                : 'bg-white/10 text-slate-300 hover:bg-white/20'
-            }`}
-          >
-            <span>👥</span>
-            <span>Crowd Zones ({scopedCrowdZones.length})</span>
-          </button>
-        </div>
       </div>
 
-      {/* SUBTAB 1: DUAL PHOTO COMPARISON & VERIFICATION QUEUE */}
+      {/* ================= SUB TABS ================= */}
+      <Tabs tabs={subTabs} active={activeSubTab} onChange={setActiveSubTab} ariaLabel="Mela sections" />
+
+      {/* ================= 1. PHOTO VERIFICATION ================= */}
       {activeSubTab === 'verification' && (
-        <div className="glass-card p-6 space-y-5 border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
-            <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>📸</span>
-                <span>Missing Persons Verification Desk — {activeMap?.name}</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Compare photos provided when reported missing with photos uploaded by finders, verify matching facial details, review found location, and mark Verified Match.
-              </p>
-            </div>
-            <span className="text-xs font-bold font-mono px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-              Total Cases ({activeMap?.name}): {scopedReports.length}
-            </span>
-          </div>
+        <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
+          <SectionHead
+            title="Missing-person verification"
+            desc="Compare the photo from the family with the photo from the finder, check where the person was found, then mark a verified match."
+          >
+            <Pill>{scopedReports.length} case{scopedReports.length !== 1 ? 's' : ''}</Pill>
+          </SectionHead>
 
           {scopedReports.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-400">
-              No missing persons reported for {activeMap?.name}.
-            </div>
+            <EmptyState icon="🔎" title="No missing-person reports yet" hint={`Nothing has been reported for ${activeMap?.name}.`} />
           ) : (
             <div className="space-y-4">
               {scopedReports.map((rep) => {
-              const isMatchCandidate = rep.status === 'Possible Match';
-              const isVerified = rep.status === 'Verified Match' || rep.status === 'Resolved';
+                const isMatchCandidate = rep.status === 'Possible Match';
+                const isVerified = rep.status === 'Verified Match' || rep.status === 'Resolved';
 
-              return (
-                <div
-                  key={rep.reportRefId || rep._id}
-                  className={`p-5 rounded-2xl border transition-all ${
-                    isMatchCandidate
-                      ? 'border-amber-500/50 bg-amber-50/30 dark:border-amber-500/30 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-500/20'
-                      : isVerified
-                      ? 'border-emerald-500/40 bg-emerald-50/20 dark:border-emerald-500/20 dark:bg-emerald-950/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
-                  }`}
-                >
-                  <div className="flex flex-col lg:flex-row items-start justify-between gap-5">
-                    {/* Left: Dual Photos Side-by-Side for Direct Comparison */}
-                    <div className="flex items-center gap-3 shrink-0 w-full lg:w-72">
-                      {/* Photo 1: When Missing */}
-                      <div className="flex-1 space-y-1">
-                        <span className="block text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase">
-                          🔴 When Missing
-                        </span>
-                        <div className="h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
-                          {rep.photoUrl ? (
-                            <img
-                              src={rep.photoUrl}
-                              alt="When missing"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
-                              No Photo
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Photo 2: When Found */}
-                      <div className="flex-1 space-y-1">
-                        <span className="block text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">
-                          🟢 When Found
-                        </span>
-                        <div className="h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border-2 border-emerald-500/50">
-                          {rep.foundPhotoUrl ? (
-                            <img
-                              src={rep.foundPhotoUrl}
-                              alt="When found"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-[10px] p-2 text-center">
-                              <span>⏳</span>
-                              <span>Awaiting Photo</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Middle: Details & Found Location */}
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                          {rep.reportRefId}
-                        </span>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                          {rep.personName} ({rep.personGender}, {rep.personAge || 'Age unknown'} yrs)
-                        </h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase block">Last Seen Location:</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">📍 {rep.location}</span>
-                          <span className="block text-[10px] text-slate-400">Time: {rep.dateTimeApprox}</span>
-                        </div>
-
-                        <div className={`p-2.5 rounded-xl border ${
-                          rep.foundLocation
-                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
-                            : 'bg-slate-50 dark:bg-slate-850 border-slate-200/80 dark:border-slate-800 text-slate-400'
-                        }`}>
-                          <span className="text-[10px] font-bold uppercase block">Location Where Person Found:</span>
-                          <span className="font-bold">
-                            {rep.foundLocation ? `🎯 ${rep.foundLocation}` : 'Not yet located'}
-                          </span>
-                          {rep.foundFinderName && (
-                            <span className="block text-[10px] opacity-80">Reported by: {rep.foundFinderName}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {rep.clothingDescription && (
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          <strong>Attire: </strong> {rep.clothingDescription}
-                        </p>
-                      )}
-
-                      {/* Safeguarded Contact Number: Strictly Revealed Only When Verified */}
-                      {isVerified ? (
-                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase block">
-                              🔓 Verified Reporter Contact:
-                            </span>
-                            <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
-                              {rep.reporterName}: {rep.reporterPhone || 'Number protected'}
-                            </span>
+                return (
+                  <article
+                    key={rep.reportRefId || rep._id}
+                    className={`rounded-2xl border p-4 sm:p-5 ${
+                      isMatchCandidate
+                        ? 'border-amber-300 bg-amber-50/50 dark:border-amber-700/50 dark:bg-amber-950/20'
+                        : isVerified
+                        ? 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-800/50 dark:bg-emerald-950/20'
+                        : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+                    }`}
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+                      {/* Photos side by side */}
+                      <div className="grid w-full shrink-0 grid-cols-2 gap-3 lg:w-72">
+                        <figure className="space-y-1.5">
+                          <figcaption className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                            <span className="h-2 w-2 rounded-full bg-rose-500" /> When missing
+                          </figcaption>
+                          <div className="h-28 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+                            {rep.photoUrl ? (
+                              <img src={rep.photoUrl} alt="Person when reported missing" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-xs text-slate-400">No photo</div>
+                            )}
                           </div>
-                          {rep.reporterPhone && (
-                            <a
-                              href={`tel:${rep.reporterPhone}`}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs flex items-center gap-1"
-                            >
-                              <span>📞</span>
-                              <span>Call Family</span>
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-[10px] text-slate-500 flex items-center gap-1.5">
-                          <span>🔒</span>
-                          <span>Family phone number remains encrypted until marked as "Verified Match".</span>
-                        </div>
-                      )}
-                    </div>
+                        </figure>
+                        <figure className="space-y-1.5">
+                          <figcaption className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> When found
+                          </figcaption>
+                          <div className="h-28 overflow-hidden rounded-xl border-2 border-emerald-300 bg-slate-100 dark:border-emerald-800 dark:bg-slate-800">
+                            {rep.foundPhotoUrl ? (
+                              <img src={rep.foundPhotoUrl} alt="Person when found" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-[11px] text-slate-400">
+                                <span aria-hidden="true">⏳</span>
+                                Waiting for photo
+                              </div>
+                            )}
+                          </div>
+                        </figure>
+                      </div>
 
-                    {/* Right: Administrative Verification Action */}
-                    <div className="shrink-0 flex flex-col items-end gap-2 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-500">Status:</span>
-                        {isAdmin ? (
-                          <select
-                            value={rep.status}
-                            onChange={(e) => onUpdateReportStatus(rep.reportRefId || rep._id, e.target.value)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs"
+                      {/* Details */}
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            {rep.reportRefId}
+                          </span>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                            {rep.personName} ({rep.personGender}, {rep.personAge || 'age unknown'}{rep.personAge ? ' yrs' : ''})
+                          </h4>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+                            <p className="text-[11px] font-semibold text-slate-400">Last seen</p>
+                            <p className="mt-0.5 font-semibold text-slate-800 dark:text-slate-200">📍 {rep.location}</p>
+                            <p className="text-[11px] text-slate-400">{rep.dateTimeApprox}</p>
+                          </div>
+                          <div
+                            className={`rounded-xl border p-3 ${
+                              rep.foundLocation
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200'
+                                : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-800 dark:bg-slate-800/60'
+                            }`}
                           >
-                            <option value="Submitted">Submitted</option>
-                            <option value="Under Review">Under Review</option>
-                            <option value="Possible Match">Possible Match</option>
-                            <option value="Verified Match">✅ Verified Match</option>
-                            <option value="Resolved">Resolved / Reunited</option>
-                            <option value="Rejected">Rejected</option>
-                          </select>
+                            <p className="text-[11px] font-semibold opacity-80">Found at</p>
+                            <p className="mt-0.5 font-semibold">
+                              {rep.foundLocation ? `🎯 ${rep.foundLocation}` : 'Not located yet'}
+                            </p>
+                            {rep.foundFinderName && (
+                              <p className="text-[11px] opacity-80">Reported by {rep.foundFinderName}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {rep.clothingDescription && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            <strong>Clothing: </strong>
+                            {rep.clothingDescription}
+                          </p>
+                        )}
+
+                        {/* Contact revealed only after verification */}
+                        {isVerified ? (
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+                            <div>
+                              <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                                🔓 Verified reporter contact
+                              </p>
+                              <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                                {rep.reporterName}: {rep.reporterPhone || 'Number protected'}
+                              </p>
+                            </div>
+                            {rep.reporterPhone && (
+                              <a
+                                href={`tel:${rep.reporterPhone}`}
+                                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700"
+                              >
+                                📞 Call family
+                              </a>
+                            )}
+                          </div>
                         ) : (
-                          <span className="font-bold text-xs">{rep.status}</span>
+                          <p className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-[11px] text-slate-500 dark:bg-slate-800/60">
+                            🔒 The family's phone number stays hidden until the case is marked "Verified Match".
+                          </p>
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => onOpenReportModal(rep.reportRefId || rep._id)}
-                        className="px-4 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
-                      >
-                        Inspect Case File & Chat →
-                      </button>
+                      {/* Actions */}
+                      <div className="flex w-full shrink-0 flex-col gap-2 border-t border-slate-200 pt-3 dark:border-slate-800 lg:w-auto lg:items-end lg:border-t-0 lg:pt-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-500">Status</span>
+                          {isAdmin ? (
+                            <select
+                              value={rep.status}
+                              onChange={(e) => onUpdateReportStatus(rep.reportRefId || rep._id, e.target.value)}
+                              className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                            >
+                              <option value="Submitted">Submitted</option>
+                              <option value="Under Review">Under Review</option>
+                              <option value="Possible Match">Possible Match</option>
+                              <option value="Verified Match">✅ Verified Match</option>
+                              <option value="Resolved">Resolved / Reunited</option>
+                              <option value="Rejected">Rejected</option>
+                            </select>
+                          ) : (
+                            <Pill tone={isVerified ? 'green' : isMatchCandidate ? 'amber' : 'slate'}>{rep.status}</Pill>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onOpenReportModal(rep.reportRefId || rep._id)}
+                          className={BTN.primary}
+                        >
+                          Open case file and chat
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    )}
-
-      {/* SUBTAB 2: FACILITIES MANAGEMENT */}
-      {activeSubTab === 'facilities' && (
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200/80 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Mela Map Facilities & Pin Markers
-                </h3>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-                  ⚡ Live Sync to Citizen Map
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Click "🎯 Click Map to Place Marker" below to drop a pin anywhere on the blueprint layout, or manage existing markers below.
-              </p>
+                  </article>
+                );
+              })}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= 2. FACILITIES ================= */}
+      {activeSubTab === 'facilities' && (
+        <div className={`${PANEL} space-y-6 p-5 sm:p-6`}>
+          <SectionHead
+            title="Map facilities and markers"
+            desc="Click the map to place a marker anywhere on the layout, or manage the existing markers in the table. Changes show on the visitor map straight away."
+          >
             {isAdmin && (
-              <button
-                type="button"
-                onClick={() => onOpenAddFacility()}
-                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm"
-              >
-                ➕ Add New Marker
+              <button type="button" onClick={() => onOpenAddFacility()} className={BTN.primary}>
+                + Add marker
               </button>
             )}
-          </div>
+          </SectionHead>
 
-          {/* Interactive Map Visualizer & Coordinate Picker for Admin */}
-          <div className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
             <InteractiveMelaMap
               facilities={facilities}
               alerts={alerts}
@@ -495,203 +433,137 @@ export default function CommandMelaAdminTab({
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 uppercase font-mono text-[10px] text-slate-400">
-                <tr>
-                  <th className="p-3">Facility Name</th>
-                  <th className="p-3">Category</th>
-                  <th className="p-3">Sector</th>
-                  <th className="p-3">Blueprint Coordinates</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {facilities
-                  .filter((f) => !f.mapId || f.mapId === selectedMapId || (selectedMapId === 'prayagraj_kumbh' && !f.mapId))
-                  .map((fac) => {
-                  const cat = FACILITY_CATEGORIES[fac.category] || FACILITY_CATEGORIES.help_desk;
-                  return (
-                    <tr key={fac.facilityId || fac._id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
-                      <td className="p-3">
-                        <span className="font-bold text-slate-900 dark:text-white block">{fac.name}</span>
-                        <span className="font-mono text-[10px] text-slate-400">{fac.facilityId}</span>
-                      </td>
-                      <td className="p-3">
-                        <span className="flex items-center gap-1 font-semibold">
-                          <span>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </span>
-                      </td>
-                      <td className="p-3">{fac.sector}</td>
-                      <td className="p-3 font-mono text-[11px]">
-                        X: {fac.mapX}%, Y: {fac.mapY}%
-                      </td>
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                          {fac.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right space-x-2">
-                        {isAdmin ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => onOpenEditFacility(fac)}
-                              className="text-teal-600 hover:underline font-bold"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onDeleteFacility(fac.facilityId || fac._id)}
-                              className="text-rose-600 hover:underline font-bold"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-slate-400 italic">Login required</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* SUBTAB 3: ALERTS */}
-      {activeSubTab === 'alerts' && (
-        <div className="glass-card p-6 space-y-4">
-          <div className="flex items-center justify-between border-b pb-3 border-slate-200/80 dark:border-slate-800">
-            <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Official Crowd Safety Directives — {activeMap?.name}
-              </h3>
-              <p className="text-xs text-slate-500">
-                Broadcast warnings for high crowd surges, bridge closures, and safety protocols for {activeMap?.name}.
-              </p>
-            </div>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={onOpenCreateAlert}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm"
-              >
-                📢 Broadcast New Alert
-              </button>
-            )}
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 uppercase font-mono text-[10px] text-slate-400">
-                <tr>
-                  <th className="p-3">Alert Title</th>
-                  <th className="p-3">Type</th>
-                  <th className="p-3">Severity</th>
-                  <th className="p-3">Location</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {scopedAlerts.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="p-6 text-center text-xs text-slate-400">
-                      No active alerts for {activeMap?.name}. Click "Broadcast New Alert" to create one.
+          {scopedFacilities.length === 0 ? (
+            <EmptyState icon="📍" title="No markers on this map yet" hint='Use "Add marker" or click the map to place one.' />
+          ) : (
+            <DataTable columns={['Facility', 'Category', 'Sector', 'Map position', 'Status', 'Actions']} lastRight>
+              {scopedFacilities.map((fac) => {
+                const cat = FACILITY_CATEGORIES[fac.category] || FACILITY_CATEGORIES.help_desk;
+                return (
+                  <tr key={fac.facilityId || fac._id} className={ROW}>
+                    <td className="px-3 py-3">
+                      <span className="block font-bold text-slate-900 dark:text-white">{fac.name}</span>
+                      <span className="font-mono text-[11px] text-slate-400">{fac.facilityId}</span>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <span aria-hidden="true">{cat.icon}</span>
+                        {cat.label}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3">{fac.sector}</td>
+                    <td className="px-3 py-3 font-mono text-[11px]">
+                      X {fac.mapX}%, Y {fac.mapY}%
+                    </td>
+                    <td className="px-3 py-3">
+                      <Pill tone="green">{fac.status}</Pill>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      {isAdmin ? (
+                        <div className="flex items-center justify-end gap-3">
+                          <button type="button" onClick={() => onOpenEditFacility(fac)} className="font-bold text-teal-600 hover:underline">
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => onDeleteFacility(fac.facilityId || fac._id)} className="font-bold text-rose-600 hover:underline">
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">Sign in to edit</span>
+                      )}
                     </td>
                   </tr>
-                ) : (
-                  scopedAlerts.map((a) => (
-                    <tr key={a.alertId || a._id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
-                      <td className="p-3">
-                        <span className="font-bold text-slate-900 dark:text-white block">{a.title}</span>
-                        <span className="text-[11px] text-slate-500">{a.recommendedAction}</span>
-                      </td>
-                      <td className="p-3">{a.alertType}</td>
-                      <td className="p-3 font-bold">{a.severity}</td>
-                      <td className="p-3">{a.affectedLocation}</td>
-                      <td className="p-3 font-bold">{a.status}</td>
-                      <td className="p-3 text-right">
-                        {isAdmin && a.status === 'Active' ? (
-                          <button
-                            type="button"
-                            onClick={() => onResolveAlert(a.alertId || a._id)}
-                            className="px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs"
-                          >
-                            Resolve
-                          </button>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </DataTable>
+          )}
         </div>
       )}
 
-      {/* SUBTAB 4: CROWD ZONES DESK — Fully Dynamic (Admin Creates, Updates, Deletes) */}
-      {activeSubTab === 'crowd_zones' && (
-        <div className="glass-card p-6 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200/80 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Mela Crowd Zones Management Desk — {activeMap?.name}
-                </h3>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-                  ⚡ Live Sync to Citizen /mela Page
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Add and manage crowd zones for {activeMap?.name}. These appear live on the citizen Mela page with flash alerts.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-                {scopedCrowdZones.length} Zone{scopedCrowdZones.length !== 1 ? 's' : ''}
-              </span>
-              {onCreateCrowdZone && (
-                <button
-                  type="button"
-                  onClick={() => setShowAddZoneForm((v) => !v)}
-                  className="px-4 py-2 rounded-xl text-sm font-bold bg-teal-600 text-white hover:bg-teal-700 flex items-center gap-1.5 shadow-sm transition-all"
-                >
-                  {showAddZoneForm ? '✕ Cancel' : '+ Add Zone'}
-                </button>
-              )}
-            </div>
-          </div>
+      {/* ================= 3. ALERTS ================= */}
+      {activeSubTab === 'alerts' && (
+        <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
+          <SectionHead
+            title="Crowd safety alerts"
+            desc={`Broadcast warnings about crowd surges, closed bridges and safety rules for ${activeMap?.name}.`}
+          >
+            {isAdmin && (
+              <button type="button" onClick={onOpenCreateAlert} className={BTN.danger}>
+                📢 Broadcast alert
+              </button>
+            )}
+          </SectionHead>
 
-          {/* Add Zone Form */}
+          {scopedAlerts.length === 0 ? (
+            <EmptyState icon="✅" title="No alerts for this map" hint='Use "Broadcast alert" to create one.' />
+          ) : (
+            <DataTable columns={['Alert', 'Type', 'Severity', 'Location', 'Status', 'Action']} lastRight>
+              {scopedAlerts.map((a) => (
+                <tr key={a.alertId || a._id} className={ROW}>
+                  <td className="px-3 py-3">
+                    <span className="block font-bold text-slate-900 dark:text-white">{a.title}</span>
+                    <span className="text-[11px] text-slate-500">{a.recommendedAction}</span>
+                  </td>
+                  <td className="px-3 py-3">{a.alertType}</td>
+                  <td className="px-3 py-3 font-semibold">{a.severity}</td>
+                  <td className="px-3 py-3">{a.affectedLocation}</td>
+                  <td className="px-3 py-3">
+                    <Pill tone={a.status === 'Active' ? 'rose' : 'slate'}>{a.status}</Pill>
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {isAdmin && a.status === 'Active' ? (
+                      <button type="button" onClick={() => onResolveAlert(a.alertId || a._id)} className={BTN.success}>
+                        Resolve
+                      </button>
+                    ) : (
+                      <span className="text-slate-300">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </DataTable>
+          )}
+        </div>
+      )}
+
+      {/* ================= 4. CROWD ZONES ================= */}
+      {activeSubTab === 'crowd_zones' && (
+        <div className={`${PANEL} space-y-6 p-5 sm:p-6`}>
+          <SectionHead
+            title="Crowd zones"
+            desc={`Add and update crowd zones for ${activeMap?.name}. They appear live on the visitor Mela page.`}
+          >
+            <Pill>{scopedCrowdZones.length} zone{scopedCrowdZones.length !== 1 ? 's' : ''}</Pill>
+            {onCreateCrowdZone && (
+              <button
+                type="button"
+                onClick={() => (showAddZoneForm ? resetZoneForm() : setShowAddZoneForm(true))}
+                className={showAddZoneForm ? BTN.secondary : BTN.primary}
+              >
+                {showAddZoneForm ? 'Cancel' : '+ Add zone'}
+              </button>
+            )}
+          </SectionHead>
+
+          {/* Add zone form */}
           {showAddZoneForm && onCreateCrowdZone && (
-            <div className="p-5 rounded-2xl border-2 border-teal-500/40 bg-teal-50/60 dark:bg-teal-950/20 space-y-4">
-              <h4 className="text-sm font-black text-teal-800 dark:text-teal-300">➕ New Crowd Zone</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Zone Name *</label>
+            <div className="space-y-4 rounded-2xl border border-teal-200 bg-teal-50/60 p-5 dark:border-teal-900/50 dark:bg-teal-950/20">
+              <h4 className="text-sm font-bold text-teal-900 dark:text-teal-200">New crowd zone</h4>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={LABEL}>Zone name *</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className={INPUT}
                     placeholder="e.g. Sangam Ghat Gate 3"
                     value={newZone.name}
                     onChange={(e) => setNewZone((z) => ({ ...z, name: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Initial Status</label>
+                <div>
+                  <label className={LABEL}>Starting status</label>
                   <select
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className={INPUT}
                     value={newZone.status}
                     onChange={(e) => setNewZone((z) => ({ ...z, status: e.target.value }))}
                   >
@@ -701,44 +573,40 @@ export default function CommandMelaAdminTab({
                     <option>Critical</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Crowd Density % (0–100)</label>
+                <div>
+                  <label className={LABEL}>Crowd density (0 to 100%)</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className={INPUT}
                     value={newZone.density}
                     onChange={(e) => setNewZone((z) => ({ ...z, density: Number(e.target.value) }))}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Description (optional)</label>
+                <div>
+                  <label className={LABEL}>Description (optional)</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className={INPUT}
                     placeholder="Short location note"
                     value={newZone.description}
                     onChange={(e) => setNewZone((z) => ({ ...z, description: e.target.value }))}
                   />
                 </div>
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Official Advisory</label>
+                <div className="sm:col-span-2">
+                  <label className={LABEL}>Official advisory</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
-                    placeholder="e.g. Heavy crowd — use alternate exit via Gate 4"
+                    className={INPUT}
+                    placeholder="e.g. Heavy crowd, use the alternate exit via Gate 4"
                     value={newZone.advisory}
                     onChange={(e) => setNewZone((z) => ({ ...z, advisory: e.target.value }))}
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowAddZoneForm(false); setNewZone({ name: '', description: '', advisory: '', status: 'Normal', density: 0 }); }}
-                  className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-                >
+                <button type="button" onClick={resetZoneForm} className={BTN.secondary}>
                   Cancel
                 </button>
                 <button
@@ -749,98 +617,64 @@ export default function CommandMelaAdminTab({
                     setSavingZone(true);
                     try {
                       await onCreateCrowdZone({ ...newZone, mapId: selectedMapId });
-                      setShowAddZoneForm(false);
-                      setNewZone({ name: '', description: '', advisory: '', status: 'Normal', density: 0 });
+                      resetZoneForm();
                     } catch (err) {
-                      alert('Failed to create zone: ' + (err.response?.data?.message || err.message));
+                      alert('Could not create zone: ' + (err.response?.data?.message || err.message));
                     } finally {
                       setSavingZone(false);
                     }
                   }}
-                  className="px-5 py-2 rounded-xl text-sm font-bold bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-60 transition-all"
+                  className={BTN.primary}
                 >
-                  {savingZone ? 'Saving…' : '✓ Create Zone'}
+                  {savingZone ? 'Saving...' : 'Create zone'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Empty State */}
           {scopedCrowdZones.length === 0 && !showAddZoneForm && (
-            <div className="py-12 text-center space-y-3">
-              <div className="text-4xl">👥</div>
-              <p className="text-sm font-semibold text-slate-500">No crowd zones added yet for {activeMap?.name}.</p>
-              <p className="text-xs text-slate-400">Click <strong>+ Add Zone</strong> above to create a crowd monitoring zone for this Mela.</p>
-            </div>
+            <EmptyState icon="👥" title={`No crowd zones for ${activeMap?.name} yet`} hint='Click "+ Add zone" to start monitoring a crowd area.' />
           )}
 
-          {/* Zone Cards Grid */}
           {scopedCrowdZones.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {scopedCrowdZones.map((zone) => {
-                const STATUS_COLORS = {
-                  Normal: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
-                  Moderate: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40',
-                  High: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/40',
-                  Critical: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse',
-                };
                 const zoneKey = zone.zoneId || zone.id || zone._id;
+                const density = zone.density ?? 0;
+                const barColor =
+                  density >= 85 ? 'bg-rose-500' : density >= 65 ? 'bg-orange-500' : density >= 45 ? 'bg-amber-500' : 'bg-emerald-500';
 
                 return (
                   <div
                     key={zoneKey}
-                    className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3.5 shadow-xs hover:shadow-md transition-all"
+                    className="space-y-3.5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">
-                          {zone.name}
-                        </h4>
-                        {zone.description && (
-                          <p className="text-[11px] text-slate-400 truncate">{zone.description}</p>
-                        )}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-sm font-bold text-slate-900 dark:text-white">{zone.name}</h4>
+                        {zone.description && <p className="truncate text-[11px] text-slate-400">{zone.description}</p>}
                       </div>
-                      <span
-                        className={`shrink-0 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                          STATUS_COLORS[zone.status] || STATUS_COLORS.Normal
-                        }`}
-                      >
-                        {zone.status}
-                      </span>
+                      <Pill tone={ZONE_TONE[zone.status] || 'green'}>{zone.status}</Pill>
                     </div>
 
-                    {/* Density Bar */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">Crowd Density</span>
-                        <strong className="font-mono text-slate-900 dark:text-white">{zone.density ?? 0}%</strong>
+                        <span className="text-slate-500">Crowd density</span>
+                        <strong className="font-mono text-slate-900 dark:text-white">{density}%</strong>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            (zone.density ?? 0) >= 85
-                              ? 'bg-rose-500'
-                              : (zone.density ?? 0) >= 65
-                              ? 'bg-orange-500'
-                              : (zone.density ?? 0) >= 45
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
-                          }`}
-                          style={{ width: `${Math.min(zone.density ?? 0, 100)}%` }}
-                        />
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(density, 100)}%` }} />
                       </div>
                     </div>
 
-                    {/* Advisory */}
-                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300">
-                      <span className="font-semibold text-slate-400 block text-[10px] uppercase mb-0.5">Official Advisory:</span>
-                      {zone.advisory || 'Standard movement protocol.'}
+                    <div className="rounded-xl bg-slate-50 p-3 text-[11px] text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+                      <span className="mb-0.5 block font-semibold text-slate-400">Official advisory</span>
+                      {zone.advisory || 'Standard movement rules.'}
                     </div>
 
-                    {/* Quick Status Override */}
                     {isAdmin && onUpdateCrowdZone && (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Quick Status Override:</span>
+                      <div className="space-y-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
+                        <span className="block text-[11px] font-semibold text-slate-400">Quick status change</span>
                         <div className="grid grid-cols-4 gap-1">
                           {['Normal', 'Moderate', 'High', 'Critical'].map((st) => (
                             <button
@@ -853,15 +687,15 @@ export default function CommandMelaAdminTab({
                                   const densityMap = { Normal: 25, Moderate: 55, High: 80, Critical: 95 };
                                   await onUpdateCrowdZone(zoneKey, { status: st, density: densityMap[st] });
                                 } catch (err) {
-                                  alert('Failed: ' + err.message);
+                                  alert('Update failed: ' + err.message);
                                 } finally {
                                   setUpdatingZoneId(null);
                                 }
                               }}
-                              className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                              className={`rounded-lg px-1.5 py-1.5 text-[11px] font-bold transition ${
                                 zone.status === st
-                                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
                               }`}
                             >
                               {st}
@@ -871,7 +705,6 @@ export default function CommandMelaAdminTab({
                       </div>
                     )}
 
-                    {/* Delete Zone */}
                     {isAdmin && onDeleteCrowdZone && (
                       <button
                         type="button"
@@ -883,9 +716,9 @@ export default function CommandMelaAdminTab({
                             alert('Delete failed: ' + err.message);
                           }
                         }}
-                        className="w-full mt-1 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 transition-all"
+                        className={`${BTN.softDanger} w-full !py-1.5`}
                       >
-                        🗑️ Remove Zone
+                        🗑️ Remove zone
                       </button>
                     )}
                   </div>

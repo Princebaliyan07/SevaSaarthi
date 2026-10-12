@@ -33,17 +33,53 @@ import { getHospitals } from '../services/hospitalService';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 
+/* Shared look for every panel on this page */
+const PANEL =
+  'rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900';
+
+/* Sidebar / tab navigation. `id` is the value stored in activeMainTab. */
+const NAV_ITEMS = [
+  {
+    id: 'mela_ops',
+    icon: '🕉️',
+    label: 'Mela operations',
+    title: 'Mela operations',
+    desc: 'Manage the ground map, facilities, crowd zones, safety alerts and missing-person reports.',
+  },
+  {
+    id: 'volunteer_ops',
+    icon: '🤝',
+    label: 'Relief and volunteers',
+    title: 'Relief and volunteers',
+    desc: 'Coordinate disaster relief requests and volunteer teams.',
+  },
+  {
+    id: 'incidents',
+    icon: '🚨',
+    label: 'Emergency incidents',
+    title: 'Emergency incidents',
+    desc: 'Track the SOS queue, assign teams and update incident status.',
+  },
+  {
+    id: 'healthcare',
+    icon: '🏥',
+    label: 'Hospitals',
+    title: 'Hospitals',
+    desc: 'Monitor hospital beds, ICU capacity, oxygen and trauma centres.',
+  },
+];
+
 export default function CommandCentrePage() {
   const { lang, t } = useLanguage();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
-  const [activeMainTab, setActiveMainTab] = useState('mela_ops'); // 'mela_ops' | 'incidents' | 'healthcare'
+  const [activeMainTab, setActiveMainTab] = useState('mela_ops'); // 'mela_ops' | 'volunteer_ops' | 'incidents' | 'healthcare'
 
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState(null);
   const [selectedIncident, setSelectedIncident] = useState(null);
 
-  // Mela Admin State
+  // Mela admin state
   const [facilities, setFacilities] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [reports, setReports] = useState([]);
@@ -51,6 +87,11 @@ export default function CommandCentrePage() {
   const [crowdZones, setCrowdZones] = useState([]);
   const [maps, setMaps] = useState([]);
   const [selectedMapId, setSelectedMapId] = useState('prayagraj_kumbh');
+
+  // Load status
+  const [loadError, setLoadError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Modals
   const [facilityModalOpen, setFacilityModalOpen] = useState(false);
@@ -62,6 +103,7 @@ export default function CommandCentrePage() {
   const [addMapModalOpen, setAddMapModalOpen] = useState(false);
 
   const loadData = async () => {
+    setRefreshing(true);
     try {
       const [incList, statData, facList, alertList, repData, hospList, zonesList, mapsList] = await Promise.all([
         getIncidents(),
@@ -82,9 +124,21 @@ export default function CommandCentrePage() {
       setHospitals(hospList || []);
       setCrowdZones(zonesList || []);
       setMaps(mapsList || []);
-      if (incList?.length > 0 && !selectedIncident) setSelectedIncident(incList[0]);
+
+      // Keep the selected incident across auto-refreshes (and refresh its data);
+      // only fall back to the first incident when nothing is selected yet.
+      setSelectedIncident((prev) => {
+        if (!prev) return incList?.[0] || null;
+        return (incList || []).find((i) => i.id === prev.id) || prev;
+      });
+
+      setLoadError(false);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error('Error loading command data:', err);
+      setLoadError(true);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -92,6 +146,7 @@ export default function CommandCentrePage() {
     loadData();
     const timer = setInterval(loadData, 20000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStatusChange = async (id, newStatus) => {
@@ -108,7 +163,7 @@ export default function CommandCentrePage() {
     alert(`Action "${actionName}" triggered for incident ${selectedIncident?.id}`);
   };
 
-  // Mela Ops Handlers
+  // Mela ops handlers
   const handleSaveFacility = async (formData, id) => {
     if (id) {
       await updateMelaFacility(id, formData);
@@ -126,12 +181,10 @@ export default function CommandCentrePage() {
     }
   };
 
-  const handleSaveAlert = async (formData, id) => {
-    if (id) {
-      await updateMelaAlert(id, formData);
-    } else {
-      await createMelaAlert({ ...formData, mapId: selectedMapId || 'prayagraj_kumbh' });
-    }
+  // Alerts are only created from this page. (The old code called updateMelaAlert, which was
+  // never imported and would crash on edit, so the unused edit branch was removed.)
+  const handleSaveAlert = async (formData) => {
+    await createMelaAlert({ ...formData, mapId: selectedMapId || 'prayagraj_kumbh' });
     await loadData();
   };
 
@@ -145,362 +198,388 @@ export default function CommandCentrePage() {
     await loadData();
   };
 
+  /* ---------- Loading / error states ---------- */
   if (!stats) {
-    return <div className="container-page py-16 text-center text-sm text-slate-500">Loading Command Telemetry...</div>;
+    return (
+      <div className="container-page py-20 text-center">
+        {loadError ? (
+          <div className="mx-auto max-w-sm space-y-4">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Could not load command data.
+            </p>
+            <p className="text-xs text-slate-500">Check your connection or the server, then try again.</p>
+            <button type="button" onClick={loadData} className="btn-primary text-sm">
+              Try again
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
+            <span className="h-3 w-3 animate-pulse rounded-full bg-teal-500" />
+            Loading command data...
+          </div>
+        )}
+      </div>
+    );
   }
 
+  const activeAlerts = alerts.filter((a) => a.status === 'Active').length;
+
   const METRIC_CARDS = [
-    { label: t('command.activeEmergencies'), val: stats.activeEmergencies, color: 'text-rose-600 dark:text-rose-400', bar: 'from-rose-500 to-red-600' },
-    { label: t('command.openIncidents'), val: stats.openIncidents, color: 'text-amber-600 dark:text-amber-400', bar: 'from-amber-500 to-orange-500' },
-    { label: 'Mela Facilities', val: facilities.length, color: 'text-teal-600 dark:text-teal-400', bar: 'from-teal-500 to-emerald-500' },
-    { label: 'Active Alerts', val: alerts.filter((a) => a.status === 'Active').length, color: 'text-blue-600 dark:text-blue-400', bar: 'from-blue-500 to-indigo-500' },
-    { label: 'Lost & Found Queue', val: reports.length, color: 'text-violet-600 dark:text-violet-400', bar: 'from-violet-500 to-purple-600' },
-    { label: t('command.resolved'), val: stats.resolved, color: 'text-emerald-600 dark:text-emerald-400', bar: 'from-emerald-500 to-green-500' },
+    { label: t('command.activeEmergencies'), val: stats.activeEmergencies, dot: 'bg-rose-500', num: 'text-rose-600 dark:text-rose-400' },
+    { label: t('command.openIncidents'), val: stats.openIncidents, dot: 'bg-amber-500', num: 'text-amber-600 dark:text-amber-400' },
+    { label: 'Mela facilities', val: facilities.length, dot: 'bg-teal-500', num: 'text-teal-600 dark:text-teal-400' },
+    { label: 'Active alerts', val: activeAlerts, dot: 'bg-blue-500', num: 'text-blue-600 dark:text-blue-400' },
+    { label: 'Lost and found', val: reports.length, dot: 'bg-violet-500', num: 'text-violet-600 dark:text-violet-400' },
+    { label: t('command.resolved'), val: stats.resolved, dot: 'bg-emerald-500', num: 'text-emerald-600 dark:text-emerald-400' },
   ];
 
+  // Small number badge shown next to a nav item
+  const navBadge = (id) => {
+    if (id === 'incidents' && stats.activeEmergencies > 0) return { n: stats.activeEmergencies, cls: 'bg-rose-500 text-white' };
+    if (id === 'mela_ops' && reports.length > 0) return { n: reports.length, cls: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100' };
+    return null;
+  };
+
+  const current = NAV_ITEMS.find((n) => n.id === activeMainTab) || NAV_ITEMS[0];
+
   return (
-    <div className="container-page py-10 space-y-8">
-      {/* Official Admin Command Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-            <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-            <span>SEVASAARTHI · UNIFIED ADMINISTRATIVE COMMAND HEADQUARTERS</span>
-          </div>
-          <h1 className="page-title">
-            <span className="gradient-title">Admin Operations Headquarters</span>
-          </h1>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Master control console for Mela ground layout & markers, citizen missing persons verification, emergency SOS queue, and healthcare capacity.
-            </p>
-            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              MongoDB Atlas Live Sync
-            </span>
-          </div>
-        </div>
-
-        {/* 3-Section Master Admin Navigation */}
-        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('mela_ops')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeMainTab === 'mela_ops'
-                ? 'bg-teal-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span>🕉️</span>
-            <span>Mela Operations & Map Control</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('volunteer_ops')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeMainTab === 'volunteer_ops'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span>🤝</span>
-            <span>Disaster Relief & Volunteer Command</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('incidents')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeMainTab === 'incidents'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span>🚨</span>
-            <span>Emergency SOS & Incidents</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMainTab('healthcare')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-              activeMainTab === 'healthcare'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <span>🏥</span>
-            <span>Hospital Telemetry</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 6 Executive Metric Counters */}
-      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
-        {METRIC_CARDS.map((m, i) => (
-          <div key={i} className="glass-card relative overflow-hidden p-4.5 flex flex-col justify-between">
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${m.bar}`} />
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{m.label}</span>
-            <span className={`mt-2 text-3xl font-black ${m.color}`}>
-              {m.val}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* SECTION 1: MELA OPERATIONS & GROUND MAP ADMINISTRATION */}
-      {activeMainTab === 'mela_ops' && (
-        <section>
-          <CommandMelaAdminTab
-            facilities={facilities}
-            alerts={alerts}
-            reports={reports}
-            crowdZones={crowdZones}
-            maps={maps}
-            selectedMapId={selectedMapId}
-            onSelectMap={(mapId) => setSelectedMapId(mapId)}
-            onOpenAddMap={() => setAddMapModalOpen(true)}
-            onDeleteMap={async (mapId) => {
-              if (!window.confirm('Delete this ground map? All its facilities will remain in the database but will be unlinked.')) return;
-              await deleteMelaMap(mapId);
-              // If deleted map was active, switch to first remaining
-              if (selectedMapId === mapId) {
-                const remaining = maps.filter((m) => m.mapId !== mapId);
-                setSelectedMapId(remaining[0]?.mapId || 'prayagraj_kumbh');
-              }
-              await loadData();
-            }}
-            onCreateCrowdZone={async (data) => {
-              await createCrowdZone({ ...data, mapId: selectedMapId || 'prayagraj_kumbh' });
-              await loadData();
-            }}
-            onUpdateCrowdZone={async (id, data) => {
-              await updateCrowdZone(id, data);
-              await loadData();
-            }}
-            onDeleteCrowdZone={async (id) => {
-              await deleteCrowdZone(id);
-              await loadData();
-            }}
-            onOpenAddFacility={(coords) => {
-              setEditingFacility(null);
-              setPickedCoords(coords || null);
-              setFacilityModalOpen(true);
-            }}
-            onOpenEditFacility={(fac) => {
-              setEditingFacility(fac);
-              setPickedCoords(null);
-              setFacilityModalOpen(true);
-            }}
-            onDeleteFacility={handleDeleteFacility}
-            onOpenCreateAlert={() => setAlertModalOpen(true)}
-            onResolveAlert={handleResolveAlert}
-            onUpdateReportStatus={handleUpdateReportStatus}
-            onOpenReportModal={(id) => {
-              setSelectedReportId(id);
-              setDetailModalOpen(true);
-            }}
-            lang={lang}
-          />
-        </section>
-      )}
-
-      {/* SECTION 2: EMERGENCY INCIDENTS & SOS DISPATCH */}
-      {activeMainTab === 'incidents' && (
-        <>
-          {/* Incident Queue & Analytics Section */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-            {/* Incident Queue Table */}
-            <div className="lg:col-span-6">
-              <IncidentQueueTable
-                incidents={incidents}
-                selectedId={selectedIncident?.id}
-                onSelectIncident={(inc) => setSelectedIncident(inc)}
-                onStatusChange={handleStatusChange}
-              />
+    <div className="container-page py-8">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+        {/* ============ SIDEBAR (desktop) ============ */}
+        <aside className="hidden lg:block">
+          <div className={`${PANEL} sticky top-24 p-3`}>
+            <div className="px-3 pb-3 pt-2">
+              <p className="text-base font-bold text-slate-900 dark:text-white">Command centre</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Admin dashboard</p>
             </div>
 
-            {/* Selected Incident Action Drawer / Card */}
-            <div className="space-y-6 lg:col-span-6">
-              {selectedIncident && (
-                <div className="glass-card p-6 space-y-5 border-teal-500/30 dark:border-teal-400/30">
-                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                        {selectedIncident.title}
-                      </h3>
-                      <Badge type={selectedIncident.severity}>
-                        {selectedIncident.severity?.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <span className="font-mono text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md">
-                      {selectedIncident.id}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900/80">
-                    <div>
-                      <span className="block text-slate-400 font-medium">{t('command.reported')}</span>
-                      <strong className="text-slate-900 dark:text-white block mt-0.5">{selectedIncident.reportedAt}</strong>
-                    </div>
-                    <div>
-                      <span className="block text-slate-400 font-medium">{t('command.team')}</span>
-                      <strong className="text-slate-900 dark:text-white block mt-0.5">{selectedIncident.team}</strong>
-                    </div>
-                    <div>
-                      <span className="block text-slate-400 font-medium">{t('command.eta')}</span>
-                      <strong className="text-teal-600 dark:text-teal-400 font-bold block mt-0.5">{selectedIncident.eta}</strong>
-                    </div>
-                  </div>
-
-                  {selectedIncident.notes && (
-                    <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-850 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 leading-relaxed">
-                      📝 {selectedIncident.notes}
-                    </p>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-2.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleAction('Assign team')}
-                      className="btn-primary text-xs"
-                    >
-                      {t('command.assignTeam')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(selectedIncident.id, 'Resolved')}
-                      className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:from-emerald-500 hover:to-teal-600 transition-all"
-                    >
-                      ✓ {t('command.markResolved')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAction('Escalate to SDRF/NDRF')}
-                      className="btn-sos text-xs"
-                    >
-                      ⚡ {t('command.escalate')}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Analytics Charts */}
-          <section>
-            <AnalyticsCharts
-              incidentsByType={stats.incidentsByType}
-              responseTimeTrend={stats.responseTimeTrend}
-            />
-          </section>
-
-          {/* Inter-Agency Status Overview */}
-          <section>
-            <AgencyStatusCards agencies={stats.agencies} />
-          </section>
-        </>
-      )}
-
-      {/* SECTION 2: DISASTER RELIEF & VOLUNTEER COMMAND */}
-      {activeMainTab === 'volunteer_ops' && (
-        <section>
-          <CommandReliefAdminTab />
-        </section>
-      )}
-
-      {/* SECTION 3: HEALTHCARE & HOSPITAL CAPACITY */}
-      {activeMainTab === 'healthcare' && (
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-200/80 dark:border-slate-800">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Regional Hospital & Emergency Bed Telemetry
-                </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30">
-                  Live Operations Deck
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Monitor hospital beds, ICU capacity, oxygen facilities, and trauma centers across district emergency zones.
-              </p>
-            </div>
-          </div>
-
-          {/* Real vs Demonstration Data Banner */}
-          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
-            <span className="text-lg">ℹ️</span>
-            <div>
-              <strong className="block font-bold">Important Data Transparency Notice:</strong>
-              Hospital names, physical addresses, and Google Maps GPS navigation links are real. Emergency phone numbers and bed/oxygen availability values are demonstration data.
-            </div>
-          </div>
-
-          {/* Hospital Telemetry Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 uppercase font-mono text-[10px] text-slate-400">
-                <tr>
-                  <th className="p-3">Hospital Name</th>
-                  <th className="p-3">Location / District</th>
-                  <th className="p-3">ICU Beds</th>
-                  <th className="p-3">Oxygen Beds</th>
-                  <th className="p-3">Trauma Centre</th>
-                  <th className="p-3">Doctors on Duty</th>
-                  <th className="p-3 text-right">Navigation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {hospitals.slice(0, 15).map((h) => (
-                  <tr key={h.id} className="hover:bg-slate-50 dark:hover:bg-slate-850">
-                    <td className="p-3">
-                      <strong className="text-slate-900 dark:text-white block">{h.name}</strong>
-                      <span className="text-[10px] font-mono text-slate-400">{h.id} · {h.type}</span>
-                    </td>
-                    <td className="p-3">
-                      <span>{h.city || h.district}</span>
-                      <span className="block text-[10px] text-slate-400">{h.address}</span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded font-mono font-bold ${
-                        (h.icuBedsAvailable || 0) > 5 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                      }`}>
-                        {h.icuBedsAvailable || 0} Avail
+            <nav className="space-y-1" aria-label="Command centre sections">
+              {NAV_ITEMS.map((item) => {
+                const active = activeMainTab === item.id;
+                const badge = navBadge(item.id);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveMainTab(item.id)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+                      active
+                        ? 'bg-teal-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="text-base" aria-hidden="true">{item.icon}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {badge && (
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${active ? 'bg-white/25 text-white' : badge.cls}`}>
+                        {badge.n}
                       </span>
-                    </td>
-                    <td className="p-3 font-mono font-semibold">
-                      {h.oxygenBedsAvailable || 0} Beds
-                    </td>
-                    <td className="p-3">
-                      {h.traumaCenterActive ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">🟢 Active 24x7</span>
-                      ) : (
-                        <span className="text-slate-400">Standard ER</span>
-                      )}
-                    </td>
-                    <td className="p-3 font-mono">{h.doctorsOnDuty || 12}</td>
-                    <td className="p-3 text-right">
-                      {h.googleMapsUrl && (
-                        <a
-                          href={h.googleMapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-bold border border-teal-500/20 hover:underline"
-                        >
-                          Directions ↗
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
 
-      {/* Admin Modals */}
+            <div className="mt-3 border-t border-slate-200 px-3 pt-3 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <span className={`h-2 w-2 rounded-full bg-emerald-500 ${refreshing ? 'animate-pulse' : ''}`} />
+                {loadError ? 'Sync problem, retrying' : 'Live sync'}
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">
+                {lastUpdated
+                  ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Waiting for data'}
+              </p>
+              <button
+                type="button"
+                onClick={loadData}
+                disabled={refreshing}
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {refreshing ? 'Refreshing...' : 'Refresh now'}
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* ============ MAIN ============ */}
+        <div className="min-w-0 space-y-6">
+          {/* Mobile / tablet nav */}
+          <nav
+            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden"
+            aria-label="Command centre sections"
+          >
+            {NAV_ITEMS.map((item) => {
+              const active = activeMainTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveMainTab(item.id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    active
+                      ? 'border-teal-600 bg-teal-600 text-white'
+                      : 'border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Page header */}
+          <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
+                {current.title}
+              </h1>
+              <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{current.desc}</p>
+            </div>
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 lg:hidden">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Live sync
+            </p>
+          </header>
+
+          {/* Summary numbers */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            {METRIC_CARDS.map((m) => (
+              <div key={m.label} className={`${PANEL} p-4`}>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${m.dot}`} />
+                  <span className="text-xs font-semibold leading-tight text-slate-500 dark:text-slate-400">{m.label}</span>
+                </div>
+                <p className={`mt-2 text-2xl font-extrabold sm:text-3xl ${m.num}`}>{m.val}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ---------- SECTION: MELA OPERATIONS ---------- */}
+          {activeMainTab === 'mela_ops' && (
+            <section>
+              <CommandMelaAdminTab
+                facilities={facilities}
+                alerts={alerts}
+                reports={reports}
+                crowdZones={crowdZones}
+                maps={maps}
+                selectedMapId={selectedMapId}
+                onSelectMap={(mapId) => setSelectedMapId(mapId)}
+                onOpenAddMap={() => setAddMapModalOpen(true)}
+                onDeleteMap={async (mapId) => {
+                  if (!window.confirm('Delete this ground map? All its facilities will remain in the database but will be unlinked.')) return;
+                  await deleteMelaMap(mapId);
+                  // If the deleted map was active, switch to the first remaining one
+                  if (selectedMapId === mapId) {
+                    const remaining = maps.filter((m) => m.mapId !== mapId);
+                    setSelectedMapId(remaining[0]?.mapId || 'prayagraj_kumbh');
+                  }
+                  await loadData();
+                }}
+                onCreateCrowdZone={async (data) => {
+                  await createCrowdZone({ ...data, mapId: selectedMapId || 'prayagraj_kumbh' });
+                  await loadData();
+                }}
+                onUpdateCrowdZone={async (id, data) => {
+                  await updateCrowdZone(id, data);
+                  await loadData();
+                }}
+                onDeleteCrowdZone={async (id) => {
+                  await deleteCrowdZone(id);
+                  await loadData();
+                }}
+                onOpenAddFacility={(coords) => {
+                  setEditingFacility(null);
+                  setPickedCoords(coords || null);
+                  setFacilityModalOpen(true);
+                }}
+                onOpenEditFacility={(fac) => {
+                  setEditingFacility(fac);
+                  setPickedCoords(null);
+                  setFacilityModalOpen(true);
+                }}
+                onDeleteFacility={handleDeleteFacility}
+                onOpenCreateAlert={() => setAlertModalOpen(true)}
+                onResolveAlert={handleResolveAlert}
+                onUpdateReportStatus={handleUpdateReportStatus}
+                onOpenReportModal={(id) => {
+                  setSelectedReportId(id);
+                  setDetailModalOpen(true);
+                }}
+                lang={lang}
+              />
+            </section>
+          )}
+
+          {/* ---------- SECTION: RELIEF AND VOLUNTEERS ---------- */}
+          {activeMainTab === 'volunteer_ops' && (
+            <section>
+              <CommandReliefAdminTab />
+            </section>
+          )}
+
+          {/* ---------- SECTION: INCIDENTS ---------- */}
+          {activeMainTab === 'incidents' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+                <IncidentQueueTable
+                  incidents={incidents}
+                  selectedId={selectedIncident?.id}
+                  onSelectIncident={(inc) => setSelectedIncident(inc)}
+                  onStatusChange={handleStatusChange}
+                />
+
+                {selectedIncident ? (
+                  <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                          {selectedIncident.title}
+                        </h3>
+                        <Badge type={selectedIncident.severity}>
+                          {selectedIncident.severity?.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {selectedIncident.id}
+                      </span>
+                    </div>
+
+                    <dl className="grid grid-cols-3 gap-3 rounded-xl bg-slate-50 p-4 text-xs dark:bg-slate-800/60">
+                      <div>
+                        <dt className="font-medium text-slate-400">{t('command.reported')}</dt>
+                        <dd className="mt-0.5 font-bold text-slate-900 dark:text-white">{selectedIncident.reportedAt}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-slate-400">{t('command.team')}</dt>
+                        <dd className="mt-0.5 font-bold text-slate-900 dark:text-white">{selectedIncident.team}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-slate-400">{t('command.eta')}</dt>
+                        <dd className="mt-0.5 font-bold text-teal-600 dark:text-teal-400">{selectedIncident.eta}</dd>
+                      </div>
+                    </dl>
+
+                    {selectedIncident.notes && (
+                      <p className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+                        📝 {selectedIncident.notes}
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2.5">
+                      <button type="button" onClick={() => handleAction('Assign team')} className="btn-primary text-xs">
+                        {t('command.assignTeam')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(selectedIncident.id, 'Resolved')}
+                        className="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                      >
+                        ✓ {t('command.markResolved')}
+                      </button>
+                      <button type="button" onClick={() => handleAction('Escalate to SDRF/NDRF')} className="btn-sos text-xs">
+                        ⚡ {t('command.escalate')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`${PANEL} p-8 text-center text-sm text-slate-500`}>
+                    Select an incident from the queue to see its details.
+                  </div>
+                )}
+              </div>
+
+              <AnalyticsCharts
+                incidentsByType={stats.incidentsByType}
+                responseTimeTrend={stats.responseTimeTrend}
+              />
+
+              <AgencyStatusCards agencies={stats.agencies} />
+            </div>
+          )}
+
+          {/* ---------- SECTION: HOSPITALS ---------- */}
+          {activeMainTab === 'healthcare' && (
+            <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                <span className="text-base" aria-hidden="true">ℹ️</span>
+                <p className="leading-relaxed">
+                  <strong className="font-bold">About this data: </strong>
+                  Hospital names, addresses and Google Maps links are real. Emergency phone numbers and bed or oxygen availability are demonstration data.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-xs text-slate-600 dark:text-slate-300">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                      <th className="px-3 py-3">Hospital</th>
+                      <th className="px-3 py-3">Location</th>
+                      <th className="px-3 py-3">ICU beds</th>
+                      <th className="px-3 py-3">Oxygen beds</th>
+                      <th className="px-3 py-3">Trauma centre</th>
+                      <th className="px-3 py-3">Doctors on duty</th>
+                      <th className="px-3 py-3 text-right">Directions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {hospitals.slice(0, 15).map((h) => (
+                      <tr key={h.id} className="transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="px-3 py-3">
+                          <strong className="block text-slate-900 dark:text-white">{h.name}</strong>
+                          <span className="text-[11px] text-slate-400">{h.type}</span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span>{h.city || h.district}</span>
+                          <span className="block text-[11px] text-slate-400">{h.address}</span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 font-bold ${
+                              (h.icuBedsAvailable || 0) > 5
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                            }`}
+                          >
+                            {h.icuBedsAvailable || 0} free
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 font-semibold">{h.oxygenBedsAvailable || 0}</td>
+                        <td className="px-3 py-3">
+                          {h.traumaCenterActive ? (
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">Active 24x7</span>
+                          ) : (
+                            <span className="text-slate-400">Standard ER</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 font-semibold">{h.doctorsOnDuty || 12}</td>
+                        <td className="px-3 py-3 text-right">
+                          {h.googleMapsUrl && (
+                            <a
+                              href={h.googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-50 px-3 py-1 font-bold text-teal-700 transition hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-300"
+                            >
+                              Open map
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Admin modals */}
       <FacilityAdminModal
         facility={editingFacility}
         initialCoords={pickedCoords}
