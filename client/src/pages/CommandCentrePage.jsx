@@ -262,12 +262,6 @@ export default function CommandCentrePage() {
                 )}
               </button>
             </form>
-
-            {/* Quick access hint for configured numbers */}
-            <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-center text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-850 dark:text-slate-400">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Authorized Accounts:</span>{' '}
-              <span>8920060656</span> &bull; <span>9084134335</span>
-            </div>
           </div>
         </div>
       </div>
@@ -473,22 +467,22 @@ export default function CommandCentrePage() {
           </nav>
 
           {/* Page header */}
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
                 {current.title}
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{current.desc}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{user?.name || 'Command Officer'}</span>
-              </div>
+                Live sync
+              </span>
               <button
                 type="button"
                 onClick={logout}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                className="lg:hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
               >
                 🔒 Sign out
               </button>

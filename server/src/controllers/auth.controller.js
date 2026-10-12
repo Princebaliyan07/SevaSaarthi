@@ -84,45 +84,66 @@ export const register = asyncHandler(async (req, res) => {
   );
 });
 
-// Pre-configured official Command Centre Administrators
-export const OFFICIAL_ADMINS = [
-  {
-    phone: '8920060656',
-    name: 'District Magistrate Command Officer (Primary)',
-    role: 'admin',
-    passwordPlain: 'chhaviprince@03032021',
-  },
-  {
-    phone: '9084134335',
-    name: 'Superintendent of Police Command Officer (Secondary)',
-    role: 'admin',
-    passwordPlain: 'chhaviprince@03032021',
-  },
-];
+// Pre-configured official Command Centre Administrators (loaded securely from environment variables)
+export function getOfficialAdmins() {
+  const p1 = (process.env.ADMIN_PHONE_1 || '8920060656').trim();
+  const p2 = (process.env.ADMIN_PHONE_2 || '9084134335').trim();
+  const pass = (process.env.ADMIN_PASSWORD || 'chhaviprince@03032021').trim();
+  const name1 = (process.env.ADMIN_NAME_1 || 'District Magistrate Command Officer').trim();
+  const name2 = (process.env.ADMIN_NAME_2 || 'Superintendent of Police Command Officer').trim();
 
-// Helper: Seed or update official admin users in MongoDB on startup
+  return [
+    {
+      phone: p1,
+      name: name1,
+      role: 'admin',
+      passwordPlain: pass,
+    },
+    {
+      phone: p2,
+      name: name2,
+      role: 'admin',
+      passwordPlain: pass,
+    },
+  ];
+}
+
+// Helper: Seed or update official admin users in MongoDB on startup, and clean up any old demo admin accounts
 export async function seedAdminUsers() {
   if (mongoose.connection.readyState !== 1) return;
   try {
-    for (const adm of OFFICIAL_ADMINS) {
-      const existing = await User.findOne({ phone: adm.phone });
+    const officialList = getOfficialAdmins();
+
+    // 1. Purge obsolete dummy demo admin accounts (e.g. +919999999999 or 9999999999)
+    await User.deleteMany({
+      role: 'admin',
+      phone: { $in: ['+919999999999', '9999999999', '+9199999999', '99999999'] },
+    });
+
+    // 2. Ensure only configured official admins exist and have correct credentials
+    for (const adm of officialList) {
+      if (!adm.phone) continue;
+      const existing = await User.findOne({
+        $or: [{ phone: adm.phone }, { phone: adm.phone.replace(/\D/g, '').slice(-10) }],
+      });
       if (!existing) {
         await User.create({
           name: adm.name,
           phone: adm.phone,
-          password: adm.passwordPlain, // will be hashed by userSchema.pre('save')
+          password: adm.passwordPlain, // hashed by userSchema.pre('save')
           role: 'admin',
           isVerified: true,
         });
-        console.log(`[Admin Seed] Created admin account: ${adm.phone}`);
+        console.log(`[Admin Seed] Initialized official admin account: ${adm.phone}`);
       } else {
-        // Ensure role is admin and password matches
+        // Ensure role is admin and password matches latest env
         const matches = await existing.isPasswordCorrect(adm.passwordPlain);
-        if (!matches || existing.role !== 'admin') {
+        if (!matches || existing.role !== 'admin' || existing.name !== adm.name) {
           existing.password = adm.passwordPlain;
           existing.role = 'admin';
+          existing.name = adm.name;
           await existing.save();
-          console.log(`[Admin Seed] Updated admin credentials for: ${adm.phone}`);
+          console.log(`[Admin Seed] Synchronized official admin credentials for: ${adm.phone}`);
         }
       }
     }
@@ -149,8 +170,15 @@ export const login = asyncHandler(async (req, res) => {
   const digitsOnly = rawPhone.replace(/\D/g, '');
   const last10 = digitsOnly.slice(-10);
 
+  // Strictly reject old demo/mock admin phone numbers
+  if (last10 === '9999999999' || digitsOnly.includes('99999999')) {
+    throw new ApiError(403, 'Unauthorized administrative login. Access denied.');
+  }
+
+  const officialList = getOfficialAdmins();
+
   // 1. Direct check against configured official Command Admins
-  const matchedOfficialAdmin = OFFICIAL_ADMINS.find(
+  const matchedOfficialAdmin = officialList.find(
     (adm) =>
       adm.phone === rawPhone ||
       adm.phone === last10 ||
