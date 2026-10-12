@@ -345,7 +345,7 @@ async function runSeed() {
       role: 'admin',
       isVerified: true,
     });
-    console.log('[Seed Script] Seeded Admin User (+919999999999 / AdminPassword123!).');
+    console.log('[Seed Script] Seeded Admin User (8920060656 / ChhaviPrince03032021).');
   }
 
   console.log('\n[Seed Script] All database collections seeded successfully!\n');
