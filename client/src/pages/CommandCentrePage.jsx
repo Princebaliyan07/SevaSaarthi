@@ -582,6 +582,71 @@ export default function CommandCentrePage() {
           {/* ---------- SECTION: INCIDENTS ---------- */}
           {activeMainTab === 'incidents' && (
             <div className="space-y-6">
+              {/* ===== VOICE SOS RECORDINGS LOG (TOP) ===== */}
+              {(() => {
+                const sosRecordings = incidents.filter((i) => i.audioUrl);
+                if (!sosRecordings.length) return null;
+                return (
+                  <div className={`${PANEL} p-5 sm:p-6 space-y-4`}>
+                    <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950/50 text-base">🎙️</span>
+                      <div>
+                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Voice SOS Recordings</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{sosRecordings.length} recording{sosRecordings.length !== 1 ? 's' : ''} received — Police Command Audio Log</p>
+                      </div>
+                      <span className="ml-auto flex items-center gap-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        LIVE
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {sosRecordings.map((rec) => (
+                        <div
+                          key={rec.id}
+                          className="rounded-2xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 p-4 space-y-3"
+                        >
+                          {/* Caller info row */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="h-7 w-7 rounded-full bg-rose-200 dark:bg-rose-900/60 flex items-center justify-center text-sm">👤</span>
+                              <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                {rec.citizenName || 'Unknown Caller'}
+                              </span>
+                            </div>
+                            {rec.citizenPhone && (
+                              <a
+                                href={`tel:${rec.citizenPhone}`}
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-800 px-2.5 py-1 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                              >
+                                📞 {rec.citizenPhone}
+                              </a>
+                            )}
+                            {rec.location && (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                📍 {rec.location}
+                              </span>
+                            )}
+                            <span className="ml-auto text-[11px] font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                              🕐 {rec.reportedAt || 'Unknown time'}
+                            </span>
+                          </div>
+
+                          {/* Audio player */}
+                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                          <audio
+                            controls
+                            src={rec.audioUrl}
+                            className="w-full h-10 rounded-xl"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ===== INCIDENT QUEUE & SELECTED DETAILS (BELOW) ===== */}
               <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
                 <IncidentQueueTable
                   incidents={incidents}
@@ -694,70 +759,6 @@ export default function CommandCentrePage() {
                 )}
               </div>
 
-              {/* ===== VOICE SOS RECORDINGS LOG ===== */}
-              {(() => {
-                const sosRecordings = incidents.filter((i) => i.audioUrl);
-                if (!sosRecordings.length) return null;
-                return (
-                  <div className={`${PANEL} p-5 sm:p-6 space-y-4`}>
-                    <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950/50 text-base">🎙️</span>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Voice SOS Recordings</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{sosRecordings.length} recording{sosRecordings.length !== 1 ? 's' : ''} received — Police Command Audio Log</p>
-                      </div>
-                      <span className="ml-auto flex items-center gap-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-                        LIVE
-                      </span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {sosRecordings.map((rec) => (
-                        <div
-                          key={rec.id}
-                          className="rounded-2xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 p-4 space-y-3"
-                        >
-                          {/* Caller info row */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="h-7 w-7 rounded-full bg-rose-200 dark:bg-rose-900/60 flex items-center justify-center text-sm">👤</span>
-                              <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                {rec.citizenName || 'Unknown Caller'}
-                              </span>
-                            </div>
-                            {rec.citizenPhone && (
-                              <a
-                                href={`tel:${rec.citizenPhone}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-800 px-2.5 py-1 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
-                              >
-                                📞 {rec.citizenPhone}
-                              </a>
-                            )}
-                            {rec.location && (
-                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                                📍 {rec.location}
-                              </span>
-                            )}
-                            <span className="ml-auto text-[11px] font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                              🕐 {rec.reportedAt || 'Unknown time'}
-                            </span>
-                          </div>
-
-                          {/* Audio player */}
-                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                          <audio
-                            controls
-                            src={rec.audioUrl}
-                            className="w-full h-10 rounded-xl"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
               <AnalyticsCharts
                 incidentsByType={stats.incidentsByType}
                 responseTimeTrend={stats.responseTimeTrend}
@@ -766,7 +767,6 @@ export default function CommandCentrePage() {
               <AgencyStatusCards agencies={stats.agencies} />
             </div>
           )}
-
 
           {/* ---------- SECTION: HOSPITALS ---------- */}
           {activeMainTab === 'healthcare' && (
