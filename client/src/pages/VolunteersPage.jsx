@@ -577,7 +577,7 @@ export default function VolunteersPage() {
       {/* ======================================================== */}
       {/* SECTION 1: NEARBY VOLUNTEER TEAMS                         */}
       {/* ======================================================== */}
-      <section ref={teamsSectionRef} className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs scroll-mt-24">
+      <section id="volunteer-teams" ref={teamsSectionRef} className="glass-card p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-xs scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-start gap-3">
             <span className="p-3 rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 text-2xl shrink-0">

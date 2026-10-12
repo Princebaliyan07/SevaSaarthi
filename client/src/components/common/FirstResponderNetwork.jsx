@@ -608,7 +608,7 @@ export default function FirstResponderNetwork() {
   const filterObj = SPECIFICATIONS.find((s) => s.value === specFilter);
 
   return (
-    <section className="space-y-6 pt-2">
+    <section id="first-responder-network" className="space-y-6 pt-2 scroll-mt-24">
       <div className="relative overflow-hidden rounded-3xl border border-teal-300/80 dark:border-teal-700/60 bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-cyan-500/15 p-6 sm:p-8 shadow-xl backdrop-blur-2xl">
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-teal-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl" />

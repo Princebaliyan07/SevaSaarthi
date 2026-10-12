@@ -266,7 +266,7 @@ export default function MelaSurakshaPage() {
       </section>
 
       {/* FEATURE 2: UNIFIED MISSING PERSONS DIRECTORY (Citizen View) */}
-      <section className="space-y-4">
+      <section id="mela-missing-persons" className="space-y-4 scroll-mt-24">
         <UnifiedLostFoundDirectory
           reports={scopedReports}
           pagination={reportsData.pagination}

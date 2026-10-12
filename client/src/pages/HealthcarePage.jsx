@@ -337,7 +337,7 @@ export default function HealthcarePage() {
       </section>
 
       {/* 3. Primary Section: Nearby Hospitals (Govt & Private) List (Full Width) */}
-      <section className="space-y-4">
+      <section id="hospitals-list" className="space-y-4 scroll-mt-24">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
