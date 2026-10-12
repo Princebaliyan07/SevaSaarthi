@@ -59,12 +59,19 @@ export default function EmergencyPage() {
         </div>
       </div>
 
-      {/* Main Grid: 9-Tile SOS Grid on Left, Numbers & Location on Right */}
+      {/* Main Grid: 12-Tile SOS Grid on Left, Numbers & Location on Right */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Left Column: 9 Tactile Tiles + Voice SOS */}
+        {/* Left Column: 12 Tactile Tiles + Integrated Push in Emergency Voice SOS */}
         <div className="space-y-6 lg:col-span-7">
           <EmergencyTileGrid onSelectTile={handleTileClick} />
-          <VoiceSosRecorder onRecordComplete={(audio) => console.log('Voice note:', audio)} />
+          <VoiceSosRecorder
+            onDispatchSuccess={(ticket) => {
+              if (ticket) {
+                setCreatedIncident(ticket);
+                setActiveIncident(ticket);
+              }
+            }}
+          />
         </div>
 
         {/* Right Column: Official Numbers, Your Location, Created Report */}

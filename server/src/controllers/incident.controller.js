@@ -82,6 +82,9 @@ export const getIncidents = asyncHandler(async (req, res) => {
           lat: item.latitude || item.location?.coordinates?.[1] || 25.4358,
           lng: item.longitude || item.location?.coordinates?.[0] || 81.8463,
           notes: item.description,
+          audioUrl: item.audioUrl || '',
+          citizenName: item.rawPayload?.citizenName || '',
+          citizenPhone: item.rawPayload?.citizenPhone || '',
           source: item.source,
           sourceUrl: item.sourceUrl,
           verified: item.verified,
@@ -133,6 +136,8 @@ export const reportIncident = asyncHandler(async (req, res) => {
     notes,
     description,
     phone,
+    name,
+    audioUrl,
   } = req.body;
 
   const incidentId = generateIncidentId('EMG');
@@ -154,7 +159,10 @@ export const reportIncident = asyncHandler(async (req, res) => {
     location: typeof location === 'string' ? location : 'City Sector',
     lat: latitude,
     lng: longitude,
-    notes: description || notes || 'Citizen SOS dispatch via SevaSaarthi 112 app',
+    notes: description || notes || (audioUrl ? '🚨 Emergency Voice SOS Dispatch' : 'Citizen SOS dispatch via SevaSaarthi 112 app'),
+    name: name || 'Anonymous Citizen',
+    phone: phone || '',
+    audioUrl: audioUrl || '',
     createdAt: new Date().toISOString(),
   };
 
@@ -176,11 +184,16 @@ export const reportIncident = asyncHandler(async (req, res) => {
         district: 'Prayagraj',
         severity: severity.toLowerCase(),
         status: 'assigned',
-        source: 'Citizen 112 SOS Dispatch',
+        source: 'Citizen 112 Voice SOS Dispatch',
         sourceType: 'citizen_report',
         verified: true,
         assignedAgency: responsePayload.team,
         slaMinutesRemaining: 15,
+        audioUrl: audioUrl || '',
+        rawPayload: {
+          citizenName: name || '',
+          citizenPhone: phone || '',
+        },
       });
     } catch {
       // fallback

@@ -618,6 +618,50 @@ export default function CommandCentrePage() {
                       </div>
                     </dl>
 
+                    {/* Voice SOS Audio Recording & Caller Info (Police Admin View Only) */}
+                    {(selectedIncident.audioUrl || selectedIncident.citizenPhone) && (
+                      <div className="rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/70 dark:bg-rose-950/30 p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-700 dark:text-rose-300">
+                            <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+                            🎙️ Emergency Voice SOS Dispatch
+                          </span>
+                          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
+                            Police Command Audio
+                          </span>
+                        </div>
+
+                        {(selectedIncident.citizenName || selectedIncident.citizenPhone) && (
+                          <div className="flex flex-wrap items-center gap-3 text-xs">
+                            {selectedIncident.citizenName && (
+                              <span className="font-bold text-slate-800 dark:text-slate-200">
+                                Caller: <strong>{selectedIncident.citizenName}</strong>
+                              </span>
+                            )}
+                            {selectedIncident.citizenPhone && (
+                              <a
+                                href={`tel:${selectedIncident.citizenPhone}`}
+                                className="font-mono font-bold text-rose-600 dark:text-rose-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900 flex items-center gap-1 hover:underline"
+                              >
+                                <span>📞</span> {selectedIncident.citizenPhone}
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {selectedIncident.audioUrl && (
+                          <div className="pt-1">
+                            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                            <audio
+                              controls
+                              src={selectedIncident.audioUrl}
+                              className="w-full h-10 rounded-xl"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {selectedIncident.notes && (
                       <p className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
                         📝 {selectedIncident.notes}
