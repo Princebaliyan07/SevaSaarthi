@@ -9,7 +9,6 @@ import FacilityAdminModal from '../components/mela/FacilityAdminModal';
 import CrowdAlertAdminModal from '../components/mela/CrowdAlertAdminModal';
 import ReportDetailModal from '../components/mela/ReportDetailModal';
 import AddGroundMapModal from '../components/mela/AddGroundMapModal';
-import { useLanguage } from '../context/LanguageContext';
 
 import { getIncidents, getCommandStats, updateIncidentStatus } from '../services/incidentService';
 import {
@@ -38,41 +37,42 @@ import { useAuth } from '../context/AuthContext';
 const PANEL =
   'rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900';
 
-/* Sidebar / tab navigation. `id` is the value stored in activeMainTab. */
-const NAV_ITEMS = [
+const getNavItems = (t) => [
   {
     id: 'mela_ops',
     icon: '🕉️',
-    label: 'Mela operations',
-    title: 'Mela operations',
-    desc: 'Manage the ground map, facilities, crowd zones, safety alerts and missing-person reports.',
+    label: t('command.melaOps'),
+    title: t('command.melaOps'),
+    desc: t('command.melaOpsDesc'),
   },
   {
     id: 'volunteer_ops',
     icon: '🤝',
-    label: 'Relief and volunteers',
-    title: 'Relief and volunteers',
-    desc: 'Coordinate disaster relief requests and volunteer teams.',
+    label: t('command.reliefVolunteers'),
+    title: t('command.reliefVolunteers'),
+    desc: t('command.reliefVolunteersDesc'),
   },
   {
     id: 'incidents',
     icon: '🚨',
-    label: 'Emergency incidents',
-    title: 'Emergency incidents',
-    desc: 'Track the SOS queue, assign teams and update incident status.',
+    label: t('command.emergencyIncidents'),
+    title: t('command.emergencyIncidents'),
+    desc: t('command.emergencyIncidentsDesc'),
   },
   {
     id: 'healthcare',
     icon: '🏥',
-    label: 'Hospitals',
-    title: 'Hospitals',
-    desc: 'Monitor hospital beds, ICU capacity, oxygen and trauma centres.',
+    label: t('command.hospitals'),
+    title: t('command.hospitals'),
+    desc: t('command.hospitalsDesc'),
   },
 ];
 
 export default function CommandCentrePage() {
   const { lang, t } = useLanguage();
   const { user, isAdmin, login, logout } = useAuth();
+
+  const NAV_ITEMS = getNavItems(t);
 
   // Admin login form state
   const [adminPhone, setAdminPhone] = useState('');
@@ -81,6 +81,7 @@ export default function CommandCentrePage() {
   const [loginError, setLoginError] = useState(null);
 
   const [activeMainTab, setActiveMainTab] = useState('mela_ops'); // 'mela_ops' | 'volunteer_ops' | 'incidents' | 'healthcare'
+
 
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState(null);
@@ -189,14 +190,14 @@ export default function CommandCentrePage() {
                 🛡️
               </div>
               <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                Command Centre
+                {t('command.title')}
               </h1>
               <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-teal-500/20 bg-teal-50 px-3 py-0.5 text-xs font-bold text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
                 <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-                Administrative Access Only
+                {t('command.adminAccess')}
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Please enter your registered ID / mobile number and administrative password to unlock the operations dashboard.
+                {t('command.loginDesc')}
               </p>
             </div>
 
@@ -212,7 +213,7 @@ export default function CommandCentrePage() {
             <form onSubmit={handleAdminSignIn} className="mt-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  ID / Mobile Number
+                  {t('command.idLabel')}
                 </label>
                 <div className="relative mt-1">
                   <input
@@ -220,7 +221,7 @@ export default function CommandCentrePage() {
                     inputMode="numeric"
                     autoComplete="username"
                     required
-                    placeholder="Enter ID or mobile (e.g. 8920060656)"
+                    placeholder={t('command.idPlaceholder')}
                     value={adminPhone}
                     onChange={(e) => setAdminPhone(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -230,14 +231,14 @@ export default function CommandCentrePage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Password
+                  {t('command.passwordLabel')}
                 </label>
                 <div className="relative mt-1">
                   <input
                     type="password"
                     autoComplete="current-password"
                     required
-                    placeholder="Enter admin password"
+                    placeholder={t('command.passwordPlaceholder')}
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -253,11 +254,11 @@ export default function CommandCentrePage() {
                 {loggingIn ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Verifying Credentials...
+                    {t('command.signingIn')}
                   </>
                 ) : (
                   <>
-                    <span>Sign In to Command Centre</span>
+                    <span>{t('command.signInBtn')}</span>
                     <span aria-hidden="true">→</span>
                   </>
                 )}
@@ -268,6 +269,7 @@ export default function CommandCentrePage() {
       </div>
     );
   }
+
 
   const handleStatusChange = async (id, newStatus) => {
     await updateIncidentStatus(id, newStatus);
@@ -347,9 +349,9 @@ export default function CommandCentrePage() {
   const METRIC_CARDS = [
     { label: t('command.activeEmergencies'), val: stats.activeEmergencies, dot: 'bg-rose-500', num: 'text-rose-600 dark:text-rose-400' },
     { label: t('command.openIncidents'), val: stats.openIncidents, dot: 'bg-amber-500', num: 'text-amber-600 dark:text-amber-400' },
-    { label: 'Mela facilities', val: facilities.length, dot: 'bg-teal-500', num: 'text-teal-600 dark:text-teal-400' },
-    { label: 'Active alerts', val: activeAlerts, dot: 'bg-blue-500', num: 'text-blue-600 dark:text-blue-400' },
-    { label: 'Lost and found', val: reports.length, dot: 'bg-violet-500', num: 'text-violet-600 dark:text-violet-400' },
+    { label: t('command.melaFacilities'), val: facilities.length, dot: 'bg-teal-500', num: 'text-teal-600 dark:text-teal-400' },
+    { label: t('command.activeAlerts'), val: activeAlerts, dot: 'bg-blue-500', num: 'text-blue-600 dark:text-blue-400' },
+    { label: t('command.lostFound'), val: reports.length, dot: 'bg-violet-500', num: 'text-violet-600 dark:text-violet-400' },
     { label: t('command.resolved'), val: stats.resolved, dot: 'bg-emerald-500', num: 'text-emerald-600 dark:text-emerald-400' },
   ];
 
@@ -364,13 +366,26 @@ export default function CommandCentrePage() {
 
   return (
     <div className="container-page py-8">
+      {/* ===== FIXED SIGN OUT BUTTON — always visible top-right ===== */}
+      <div className="fixed top-20 right-4 z-50">
+        <button
+          type="button"
+          onClick={logout}
+          className="flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-600 shadow-md transition hover:bg-rose-100 hover:text-rose-700 hover:shadow-lg active:scale-95 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300 dark:hover:bg-rose-900"
+          title={t('command.signOut')}
+        >
+          <span>🔒</span>
+          <span>{t('command.signOut')}</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
         {/* ============ SIDEBAR (desktop) ============ */}
         <aside className="hidden lg:block">
           <div className={`${PANEL} sticky top-24 p-3`}>
             <div className="px-3 pb-3 pt-2">
-              <p className="text-base font-bold text-slate-900 dark:text-white">Command centre</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Admin dashboard</p>
+              <p className="text-base font-bold text-slate-900 dark:text-white">{t('command.title')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('command.adminDashboard')}</p>
             </div>
 
             <nav className="space-y-1" aria-label="Command centre sections">
@@ -404,12 +419,12 @@ export default function CommandCentrePage() {
             <div className="mt-3 border-t border-slate-200 px-3 pt-3 dark:border-slate-800">
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                 <span className={`h-2 w-2 rounded-full bg-emerald-500 ${refreshing ? 'animate-pulse' : ''}`} />
-                {loadError ? 'Sync problem, retrying' : 'Live sync'}
+                {loadError ? t('command.syncProblem') : t('command.liveSync')}
               </div>
               <p className="mt-1 text-[11px] text-slate-500">
                 {lastUpdated
                   ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                  : 'Waiting for data'}
+                  : t('command.waitingData')}
               </p>
               <button
                 type="button"
@@ -417,12 +432,12 @@ export default function CommandCentrePage() {
                 disabled={refreshing}
                 className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                {refreshing ? 'Refreshing...' : 'Refresh now'}
+                {refreshing ? t('command.refreshing') : t('command.refreshNow')}
               </button>
 
               {/* Admin Officer Info & Sign Out */}
               <div className="mt-3 border-t border-slate-200/80 pt-3 dark:border-slate-800">
-                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Admin Account</p>
+                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{t('command.adminAccount')}</p>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                   {user?.name || 'Command Officer'}
                 </p>
@@ -432,7 +447,7 @@ export default function CommandCentrePage() {
                   onClick={logout}
                   className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
                 >
-                  🔒 Sign out
+                  🔒 {t('command.signOut')}
                 </button>
               </div>
             </div>
@@ -476,21 +491,13 @@ export default function CommandCentrePage() {
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{current.desc}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live sync
+                {t('command.liveSync')}
               </span>
-              <button
-                type="button"
-                onClick={logout}
-                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/90 px-3.5 py-1.5 text-xs font-bold text-rose-600 shadow-xs transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
-                title="Sign out of Command Centre"
-              >
-                <span>🔒</span>
-                <span>Sign out</span>
-              </button>
             </div>
           </header>
+
 
           {/* Summary numbers */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
