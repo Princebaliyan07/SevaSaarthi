@@ -381,124 +381,108 @@ export default function CommandCentrePage() {
   const current = NAV_ITEMS.find((n) => n.id === activeMainTab) || NAV_ITEMS[0];
 
   return (
-    <div className="container-page py-8">
-      {/* ===== FIXED SIGN OUT BUTTON — always visible top-right ===== */}
-      <div className="fixed top-20 right-4 z-50">
-        <button
-          type="button"
-          onClick={logout}
-          className="flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-600 shadow-md transition hover:bg-rose-100 hover:text-rose-700 hover:shadow-lg active:scale-95 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-300 dark:hover:bg-rose-900"
-          title={t('command.signOut')}
-        >
-          <span>🔒</span>
-          <span>{t('command.signOut')}</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
-        {/* ============ SIDEBAR (desktop) ============ */}
-        <aside className="hidden lg:block">
-          <div className={`${PANEL} sticky top-24 p-3`}>
-            <div className="px-3 pb-3 pt-2">
-              <p className="text-base font-bold text-slate-900 dark:text-white">{t('command.title')}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{t('command.adminDashboard')}</p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* ============ TOP HORIZONTAL ADMIN BAR ============ */}
+      <div className={`${PANEL} p-4 sm:p-5 mb-8 space-y-4`}>
+        {/* Top line: Brand + Admin Account + Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-2xl shadow-md shadow-teal-600/20 text-white">
+              🛡️
+            </span>
+            <div>
+              <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                {t('command.title')}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {t('command.adminDashboard')}
+              </p>
             </div>
+          </div>
 
-            <nav className="space-y-1" aria-label="Command centre sections">
-              {NAV_ITEMS.map((item) => {
-                const active = activeMainTab === item.id;
-                const badge = navBadge(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveMainTab(item.id)}
-                    aria-current={active ? 'page' : undefined}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
-                      active
-                        ? 'bg-teal-600 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-base" aria-hidden="true">{item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    {badge && (
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${active ? 'bg-white/25 text-white' : badge.cls}`}>
-                        {badge.n}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="mt-3 border-t border-slate-200 px-3 pt-3 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+          {/* Right section: Sync status, Refresh, Officer profile, Sign out */}
+          <div className="flex flex-wrap items-center gap-3 ml-auto">
+            <div className="hidden sm:flex flex-col text-right">
+              <span className="flex items-center justify-end gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
                 <span className={`h-2 w-2 rounded-full bg-emerald-500 ${refreshing ? 'animate-pulse' : ''}`} />
                 {loadError ? t('command.syncProblem') : t('command.liveSync')}
-              </div>
-              <p className="mt-1 text-[11px] text-slate-500">
+              </span>
+              <span className="text-[10px] text-slate-400">
                 {lastUpdated
                   ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                   : t('command.waitingData')}
-              </p>
-              <button
-                type="button"
-                onClick={loadData}
-                disabled={refreshing}
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                {refreshing ? t('command.refreshing') : t('command.refreshNow')}
-              </button>
+              </span>
+            </div>
 
-              {/* Admin Officer Info & Sign Out */}
-              <div className="mt-3 border-t border-slate-200/80 pt-3 dark:border-slate-800">
-                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{t('command.adminAccount')}</p>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+            <button
+              type="button"
+              onClick={loadData}
+              disabled={refreshing}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 flex items-center gap-1.5"
+            >
+              <span>🔄</span>
+              <span>{refreshing ? t('command.refreshing') : t('command.refreshNow')}</span>
+            </button>
+
+            {/* Officer details badge */}
+            <div className="hidden md:flex items-center gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 dark:border-slate-800 dark:bg-slate-800/60">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 text-teal-800 text-xs font-black dark:bg-teal-950 dark:text-teal-300">
+                👤
+              </span>
+              <div className="text-left leading-tight">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[140px]">
                   {user?.name || 'Command Officer'}
                 </p>
-                <p className="font-mono text-[11px] text-slate-500">{user?.phone || 'Admin'}</p>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
-                >
-                  🔒 {t('command.signOut')}
-                </button>
+                <p className="font-mono text-[10px] text-slate-500">{user?.phone || 'Admin'}</p>
               </div>
             </div>
+
+            {/* Horizontal Sign Out Button */}
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-600 shadow-sm transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300"
+              title={t('command.signOut')}
+            >
+              <span>🔒</span>
+              <span>{t('command.signOut')}</span>
+            </button>
           </div>
-        </aside>
+        </div>
 
-        {/* ============ MAIN ============ */}
-        <div className="min-w-0 space-y-6">
-          {/* Mobile / tablet nav */}
-          <nav
-            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden"
-            aria-label="Command centre sections"
-          >
-            {NAV_ITEMS.map((item) => {
-              const active = activeMainTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveMainTab(item.id)}
-                  aria-current={active ? 'page' : undefined}
-                  className={`flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    active
-                      ? 'border-teal-600 bg-teal-600 text-white'
-                      : 'border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
-                  }`}
-                >
-                  <span aria-hidden="true">{item.icon}</span>
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+        {/* Bottom line: Horizontal Navigation Tabs */}
+        <nav className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1" aria-label="Command centre sections">
+          {NAV_ITEMS.map((item) => {
+            const active = activeMainTab === item.id;
+            const badge = navBadge(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveMainTab(item.id)}
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition shadow-xs ${
+                  active
+                    ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/25'
+                    : 'bg-slate-50 border border-slate-200/80 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:bg-slate-800/60 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span className="text-base" aria-hidden="true">{item.icon}</span>
+                <span>{item.label}</span>
+                {badge && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${active ? 'bg-white/25 text-white' : badge.cls}`}>
+                    {badge.n}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-          {/* Page header */}
+      {/* ============ MAIN CONTENT AREA ============ */}
+      <div className="min-w-0 space-y-6">
+        {/* Page header */}
           <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
@@ -947,7 +931,6 @@ export default function CommandCentrePage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Admin modals */}
       <FacilityAdminModal

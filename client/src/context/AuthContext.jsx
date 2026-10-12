@@ -5,24 +5,27 @@ export const ROLES = ['citizen', 'doctor', 'responder', 'admin'];
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = 'ss_user';
+const SESSION_KEY = 'ss_admin_session';
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes of inactivity auto-logout
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+      // Admin session is strictly bound to the active tab via sessionStorage
+      // If user is admin but has no active tab session token, require login again
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+      if (stored?.role === 'admin') {
+        const activeTabSession = sessionStorage.getItem(SESSION_KEY);
+        if (!activeTabSession) {
+          // New tab or new window -> require admin login again!
+          return null;
+        }
+      }
+      return stored;
     } catch {
       return null;
     }
   });
-
-  useEffect(() => {
-    try {
-      if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, [user]);
 
   // Real backend login
   const login = useCallback(async (phone, password) => {
@@ -47,7 +50,6 @@ export function AuthProvider({ children }) {
 
   // Quick prototype / dev switcher with mock JWT token for API authorization
   const loginAs = useCallback((role = 'citizen') => {
-    // Standard mock token format or payload for rapid preview
     const fakeToken = btoa(JSON.stringify({ role, name: `Demo ${role}`, _id: `user-${role}` }));
     setUser({
       id: `demo-${role}`,
@@ -57,7 +59,74 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const logout = useCallback(() => setUser(null), []);
+  const logout = useCallback(() => {
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem('ss_auth_event', JSON.stringify({ type: 'logout', t: Date.now() }));
+    } catch {
+      /* ignore */
+    }
+    setUser(null);
+  }, []);
+
+  // Sync state to storage
+  useEffect(() => {
+    try {
+      if (user) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        if (user.role === 'admin') {
+          // Mark active session for this specific browser tab
+          sessionStorage.setItem(SESSION_KEY, 'active_' + Date.now());
+        }
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [user]);
+
+  // Security 1: Cross-tab / cross-window synchronization
+  useEffect(() => {
+    const handleStorageEvent = (e) => {
+      if (e.key === 'ss_auth_event') {
+        try {
+          const payload = JSON.parse(e.newValue || '{}');
+          if (payload.type === 'logout') {
+            setUser(null);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+    return () => window.removeEventListener('storage', handleStorageEvent);
+  }, []);
+
+  // Security 2: Auto-logout after 15 minutes of inactivity (mouse, keyboard, scroll, touch)
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+
+    let timeoutId;
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [user, logout]);
   const hasRole = useCallback((...roles) => !!user && roles.includes(user.role), [user]);
 
   const value = useMemo(
