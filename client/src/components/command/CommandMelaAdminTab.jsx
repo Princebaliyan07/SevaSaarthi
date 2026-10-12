@@ -3,14 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import InteractiveMelaMap, { FACILITY_CATEGORIES } from '../mela/InteractiveMelaMap';
 import { PANEL, INPUT, LABEL, BTN, Pill, SectionHead, EmptyState, DataTable, ROW, Tabs } from './commandUi';
 
-/*
- * "Quick Preview" logs in as admin WITHOUT a password. It is only shown while developing
- * (npm run dev). To show it on a deployed demo, set VITE_ALLOW_QUICK_PREVIEW=true in your
- * hosting environment variables. Leave it unset for the real site.
- */
-const ALLOW_QUICK_PREVIEW =
-  import.meta.env.DEV || import.meta.env.VITE_ALLOW_QUICK_PREVIEW === 'true';
-
 const EMPTY_ZONE = { name: '', description: '', advisory: '', status: 'Normal', density: 0 };
 const ZONE_TONE = { Normal: 'green', Moderate: 'amber', High: 'orange', Critical: 'rose' };
 
@@ -36,13 +28,7 @@ export default function CommandMelaAdminTab({
   onOpenReportModal,
   lang = 'en',
 }) {
-  const { user, isAdmin, login, loginAs } = useAuth();
-
-  // Sign-in form (starts empty: no pre-filled phone number)
-  const [adminPhone, setAdminPhone] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [loginError, setLoginError] = useState(null);
+  const { user, isAdmin } = useAuth();
 
   const [activeSubTab, setActiveSubTab] = useState('verification');
   const [updatingZoneId, setUpdatingZoneId] = useState(null);
@@ -72,24 +58,6 @@ export default function CommandMelaAdminTab({
   const scopedAlerts = alerts.filter((a) => isMatchMap(a.mapId));
   const scopedCrowdZones = crowdZones.filter((z) => isMatchMap(z.mapId));
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setLoggingIn(true);
-    setLoginError(null);
-    try {
-      const res = await login(adminPhone, adminPassword);
-      if (!res.success) {
-        setLoginError(res.error || 'Sign in failed. Check your phone number and password.');
-      } else {
-        setAdminPassword('');
-      }
-    } catch (err) {
-      setLoginError(err.message || 'Sign in failed');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
   const resetZoneForm = () => {
     setShowAddZoneForm(false);
     setNewZone(EMPTY_ZONE);
@@ -116,74 +84,14 @@ export default function CommandMelaAdminTab({
             </p>
           </div>
 
-          {/* Sign in / signed in */}
+          {/* Official Administrative Status */}
           <div className="shrink-0">
-            {!isAdmin ? (
-              <form
-                onSubmit={handleAdminLogin}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60"
-              >
-                <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
-                  🔒 Command officer sign in
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="username"
-                    placeholder="Phone number"
-                    value={adminPhone}
-                    onChange={(e) => setAdminPhone(e.target.value)}
-                    className={`${INPUT} !w-36 !py-2`}
-                  />
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="Password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className={`${INPUT} !w-32 !py-2`}
-                  />
-                  <button
-                    type="submit"
-                    disabled={loggingIn || !adminPhone.trim() || !adminPassword}
-                    className={BTN.primary}
-                  >
-                    {loggingIn ? 'Signing in...' : 'Sign in'}
-                  </button>
-                </div>
-                {loginError && (
-                  <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400" role="alert">
-                    {loginError}
-                  </p>
-                )}
-                {ALLOW_QUICK_PREVIEW && (
-                  <button
-                    type="button"
-                    onClick={() => loginAs('admin')}
-                    className="mt-2 text-xs font-semibold text-slate-500 underline hover:text-teal-700"
-                  >
-                    Quick preview (testing only, no password)
-                  </button>
-                )}
-              </form>
-            ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <div className="text-xs">
-                  <p className="font-bold text-emerald-800 dark:text-emerald-300">
-                    Signed in: {user?.name || 'Command officer'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => loginAs('citizen')}
-                    className="font-semibold text-slate-500 underline hover:text-slate-800 dark:hover:text-white"
-                  >
-                    Switch to visitor mode
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs dark:border-emerald-900/50 dark:bg-emerald-950/30">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                {user?.name || 'Command Officer'} (Admin Verified)
+              </span>
+            </div>
           </div>
         </div>
 

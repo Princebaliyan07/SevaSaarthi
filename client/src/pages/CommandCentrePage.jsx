@@ -71,7 +71,13 @@ const NAV_ITEMS = [
 
 export default function CommandCentrePage() {
   const { lang, t } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, login, logout } = useAuth();
+
+  // Admin login form state
+  const [adminPhone, setAdminPhone] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState(null);
 
   const [activeMainTab, setActiveMainTab] = useState('mela_ops'); // 'mela_ops' | 'volunteer_ops' | 'incidents' | 'healthcare'
 
@@ -143,11 +149,130 @@ export default function CommandCentrePage() {
   };
 
   useEffect(() => {
-    loadData();
-    const timer = setInterval(loadData, 20000);
-    return () => clearInterval(timer);
+    if (isAdmin) {
+      loadData();
+      const timer = setInterval(loadData, 20000);
+      return () => clearInterval(timer);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin]);
+
+  const handleAdminSignIn = async (e) => {
+    e.preventDefault();
+    if (!adminPhone.trim() || !adminPassword) return;
+    setLoggingIn(true);
+    setLoginError(null);
+    try {
+      const res = await login(adminPhone.trim(), adminPassword);
+      if (!res.success) {
+        setLoginError(res.error || 'Authentication failed. Please verify credentials.');
+      } else {
+        setAdminPassword('');
+      }
+    } catch (err) {
+      setLoginError(err.message || 'Authentication failed');
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  /* ---------- Admin Login Gate: Only visible after successful sign-in ---------- */
+  if (!isAdmin) {
+    return (
+      <div className="container-page py-12 sm:py-20 flex items-center justify-center min-h-[75vh]">
+        <div className="w-full max-w-md">
+          <div className="relative rounded-3xl border border-slate-200/80 bg-white/95 p-6 sm:p-8 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-none">
+            {/* Header Badge & Title */}
+            <div className="text-center">
+              <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-3xl shadow-lg shadow-teal-500/25">
+                🛡️
+              </div>
+              <h1 className="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+                Command Centre
+              </h1>
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-teal-500/20 bg-teal-50 px-3 py-0.5 text-xs font-bold text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
+                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                Administrative Access Only
+              </div>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                Please enter your registered ID / mobile number and administrative password to unlock the operations dashboard.
+              </p>
+            </div>
+
+            {/* Error Message */}
+            {loginError && (
+              <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+                <span className="text-sm">⚠️</span>
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleAdminSignIn} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  ID / Mobile Number
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="username"
+                    required
+                    placeholder="Enter ID or mobile (e.g. 8920060656)"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    placeholder="Enter admin password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loggingIn || !adminPhone.trim() || !adminPassword}
+                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 px-4 py-3 text-sm font-black text-white shadow-md shadow-teal-600/30 transition hover:from-teal-700 hover:to-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loggingIn ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Verifying Credentials...
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In to Command Centre</span>
+                    <span aria-hidden="true">→</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Quick access hint for configured numbers */}
+            <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50/80 p-3 text-center text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-850 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Authorized Accounts:</span>{' '}
+              <span>8920060656</span> &bull; <span>9084134335</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleStatusChange = async (id, newStatus) => {
     await updateIncidentStatus(id, newStatus);
@@ -299,6 +424,22 @@ export default function CommandCentrePage() {
               >
                 {refreshing ? 'Refreshing...' : 'Refresh now'}
               </button>
+
+              {/* Admin Officer Info & Sign Out */}
+              <div className="mt-3 border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Admin Account</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {user?.name || 'Command Officer'}
+                </p>
+                <p className="font-mono text-[11px] text-slate-500">{user?.phone || 'Admin'}</p>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                >
+                  🔒 Sign out
+                </button>
+              </div>
             </div>
           </div>
         </aside>
@@ -332,17 +473,26 @@ export default function CommandCentrePage() {
           </nav>
 
           {/* Page header */}
-          <header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
                 {current.title}
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{current.desc}</p>
             </div>
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 lg:hidden">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Live sync
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{user?.name || 'Command Officer'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+              >
+                🔒 Sign out
+              </button>
+            </div>
           </header>
 
           {/* Summary numbers */}

@@ -84,6 +84,59 @@ export const register = asyncHandler(async (req, res) => {
   );
 });
 
+// Pre-configured official Command Centre Administrators
+export const OFFICIAL_ADMINS = [
+  {
+    phone: '8920060656',
+    name: 'District Magistrate Command Officer (Primary)',
+    role: 'admin',
+    passwordPlain: 'chhaviprince@03032021',
+  },
+  {
+    phone: '9084134335',
+    name: 'Superintendent of Police Command Officer (Secondary)',
+    role: 'admin',
+    passwordPlain: 'chhaviprince@03032021',
+  },
+];
+
+// Helper: Seed or update official admin users in MongoDB on startup
+export async function seedAdminUsers() {
+  if (mongoose.connection.readyState !== 1) return;
+  try {
+    for (const adm of OFFICIAL_ADMINS) {
+      const existing = await User.findOne({ phone: adm.phone });
+      if (!existing) {
+        await User.create({
+          name: adm.name,
+          phone: adm.phone,
+          password: adm.passwordPlain, // will be hashed by userSchema.pre('save')
+          role: 'admin',
+          isVerified: true,
+        });
+        console.log(`[Admin Seed] Created admin account: ${adm.phone}`);
+      } else {
+        // Ensure role is admin and password matches
+        const matches = await existing.isPasswordCorrect(adm.passwordPlain);
+        if (!matches || existing.role !== 'admin') {
+          existing.password = adm.passwordPlain;
+          existing.role = 'admin';
+          await existing.save();
+          console.log(`[Admin Seed] Updated admin credentials for: ${adm.phone}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Admin Seed Error]', err.message);
+  }
+}
+// Run seed if already connected, or when ready
+if (mongoose.connection.readyState === 1) {
+  seedAdminUsers();
+} else {
+  mongoose.connection.once('connected', () => seedAdminUsers());
+}
+
 export const login = asyncHandler(async (req, res) => {
   const { phone, password } = req.body;
 
@@ -91,11 +144,76 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Phone and password are required');
   }
 
-  const cleanPhone = phone.trim();
+  // Normalize phone number (handle plain 10 digits or with +91)
+  const rawPhone = phone.trim();
+  const digitsOnly = rawPhone.replace(/\D/g, '');
+  const last10 = digitsOnly.slice(-10);
 
+  // 1. Direct check against configured official Command Admins
+  const matchedOfficialAdmin = OFFICIAL_ADMINS.find(
+    (adm) =>
+      adm.phone === rawPhone ||
+      adm.phone === last10 ||
+      `+91${adm.phone}` === rawPhone ||
+      `91${adm.phone}` === rawPhone
+  );
+
+  if (matchedOfficialAdmin) {
+    if (password === matchedOfficialAdmin.passwordPlain) {
+      // Find or create in MongoDB if connected
+      let adminDoc = null;
+      if (mongoose.connection.readyState === 1) {
+        try {
+          adminDoc = await User.findOne({
+            $or: [{ phone: matchedOfficialAdmin.phone }, { phone: last10 }],
+          });
+          if (!adminDoc) {
+            adminDoc = await User.create({
+              name: matchedOfficialAdmin.name,
+              phone: matchedOfficialAdmin.phone,
+              password: matchedOfficialAdmin.passwordPlain,
+              role: 'admin',
+              isVerified: true,
+            });
+          }
+        } catch {
+          // fallback if DB error
+        }
+      }
+
+      const token = generateToken({
+        _id: adminDoc?._id || `admin-${matchedOfficialAdmin.phone}`,
+        phone: matchedOfficialAdmin.phone,
+        name: adminDoc?.name || matchedOfficialAdmin.name,
+        role: 'admin',
+      });
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            user: {
+              _id: adminDoc?._id || `admin-${matchedOfficialAdmin.phone}`,
+              name: adminDoc?.name || matchedOfficialAdmin.name,
+              phone: matchedOfficialAdmin.phone,
+              role: 'admin',
+            },
+            token,
+          },
+          'Logged in successfully as Administrator'
+        )
+      );
+    } else {
+      throw new ApiError(401, 'Invalid mobile number or password');
+    }
+  }
+
+  // 2. Normal database lookup
   if (mongoose.connection.readyState === 1) {
     try {
-      const user = await User.findOne({ phone: cleanPhone });
+      const user = await User.findOne({
+        $or: [{ phone: rawPhone }, { phone: last10 }, { phone: `+91${last10}` }],
+      });
       if (user) {
         const isPasswordValid = await user.isPasswordCorrect(password);
         if (!isPasswordValid) {
@@ -117,27 +235,8 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   // In-Memory Fallback check
-  const memUser = inMemoryUsers.get(cleanPhone);
+  const memUser = inMemoryUsers.get(rawPhone) || inMemoryUsers.get(last10);
   if (!memUser) {
-    // Admin default fallback account
-    if (cleanPhone === '+919999999999' && password === 'AdminPassword123!') {
-      const token = generateToken({
-        _id: 'admin-001',
-        phone: cleanPhone,
-        name: 'District Magistrate Command Officer',
-        role: 'admin',
-      });
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          {
-            user: { _id: 'admin-001', name: 'District Magistrate Command Officer', phone: cleanPhone, role: 'admin' },
-            token,
-          },
-          'Logged in successfully as Administrator'
-        )
-      );
-    }
     throw new ApiError(404, 'User not found with this mobile number');
   }
 

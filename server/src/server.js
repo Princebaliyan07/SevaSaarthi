@@ -15,6 +15,7 @@ import { initNotificationService } from './services/notification.service.js';
 import { startDisasterSyncJob } from './jobs/disasterSync.job.js';
 import { startCleanupJob } from './jobs/cleanup.job.js';
 import { startNotificationJob } from './jobs/notification.job.js';
+import { seedAdminUsers } from './controllers/auth.controller.js';
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ async function startServer(port) {
 async function bootstrap() {
   // 1. Connect MongoDB
   await connectDB();
+  await seedAdminUsers();
 
   // 2. Initial synchronization on boot
   try {
