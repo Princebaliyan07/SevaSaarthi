@@ -9,6 +9,7 @@ import FacilityAdminModal from '../components/mela/FacilityAdminModal';
 import CrowdAlertAdminModal from '../components/mela/CrowdAlertAdminModal';
 import ReportDetailModal from '../components/mela/ReportDetailModal';
 import AddGroundMapModal from '../components/mela/AddGroundMapModal';
+import { useLanguage } from '../context/LanguageContext';
 
 import { getIncidents, getCommandStats, updateIncidentStatus } from '../services/incidentService';
 import {
@@ -474,17 +475,19 @@ export default function CommandCentrePage() {
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{current.desc}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Live sync
               </span>
               <button
                 type="button"
                 onClick={logout}
-                className="lg:hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/90 px-3.5 py-1.5 text-xs font-bold text-rose-600 shadow-xs transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/50"
+                title="Sign out of Command Centre"
               >
-                🔒 Sign out
+                <span>🔒</span>
+                <span>Sign out</span>
               </button>
             </div>
           </header>
