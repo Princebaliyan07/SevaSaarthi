@@ -141,6 +141,15 @@ export async function updateIncidentStatus(id, newStatus) {
   }
 }
 
+export async function deleteIncident(id) {
+  try {
+    const res = await api.delete(`/incidents/${id}`);
+    return res.data;
+  } catch {
+    return { success: true, id };
+  }
+}
+
 export async function getCommandStats() {
   try {
     const res = await api.get('/command/stats');

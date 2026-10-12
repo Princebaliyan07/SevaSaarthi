@@ -6,6 +6,7 @@ export default function IncidentQueueTable({
   selectedId,
   onSelectIncident,
   onStatusChange,
+  onDeleteIncident,
 }) {
   const { lang, t } = useLanguage();
 
@@ -25,6 +26,7 @@ export default function IncidentQueueTable({
               <th className="py-3 px-4">Incident</th>
               <th className="py-3 px-4">Severity</th>
               <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -60,6 +62,17 @@ export default function IncidentQueueTable({
                       <option value="Responding">Responding</option>
                       <option value="Resolved">Resolved</option>
                     </select>
+                  </td>
+                  <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteIncident?.(inc.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                      title="Delete incident report"
+                    >
+                      <span>🗑️</span>
+                      <span>Delete</span>
+                    </button>
                   </td>
                 </tr>
               );

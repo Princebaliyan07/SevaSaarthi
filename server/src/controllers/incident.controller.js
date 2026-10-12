@@ -373,10 +373,33 @@ export async function getIncidentStats(req, res) {
       lastUpdated: live.lastSyncTimestamp,
       data: stats,
     });
-  } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'Error aggregating disaster telemetry stats',
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * DELETE /api/v1/incidents/:id
+ */
+export async function deleteIncident(req, res) {
+  try {
+    const { id } = req.params;
+    const deleted = await Incident.findOneAndDelete({
+      $or: [{ incidentId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Incident deleted successfully',
+      data: deleted,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error deleting incident',
       error: error.message,
     });
   }
@@ -391,4 +414,5 @@ export default {
   getIncidentById,
   triggerSync,
   getIncidentStats,
+  deleteIncident,
 };

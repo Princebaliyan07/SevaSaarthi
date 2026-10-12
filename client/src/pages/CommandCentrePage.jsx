@@ -10,7 +10,7 @@ import CrowdAlertAdminModal from '../components/mela/CrowdAlertAdminModal';
 import ReportDetailModal from '../components/mela/ReportDetailModal';
 import AddGroundMapModal from '../components/mela/AddGroundMapModal';
 
-import { getIncidents, getCommandStats, updateIncidentStatus } from '../services/incidentService';
+import { getIncidents, getCommandStats, updateIncidentStatus, deleteIncident } from '../services/incidentService';
 import {
   getMelaFacilities,
   createMelaFacility,
@@ -286,6 +286,19 @@ export default function CommandCentrePage() {
 
   const handleAction = (actionName) => {
     setComingSoonAction(actionName);
+  };
+
+  const handleDeleteIncident = async (id) => {
+    if (!window.confirm('Delete this incident / SOS report from database?')) return;
+    try {
+      await deleteIncident(id);
+      setIncidents((prev) => prev.filter((item) => item.id !== id));
+      if (selectedIncident?.id === id) {
+        setSelectedIncident(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete incident:', err);
+    }
   };
 
   // Mela ops handlers
@@ -582,79 +595,91 @@ export default function CommandCentrePage() {
           {/* ---------- SECTION: INCIDENTS ---------- */}
           {activeMainTab === 'incidents' && (
             <div className="space-y-6">
-              {/* ===== VOICE SOS RECORDINGS LOG (TOP) ===== */}
-              {(() => {
-                const sosRecordings = incidents.filter((i) => i.audioUrl);
-                if (!sosRecordings.length) return null;
-                return (
-                  <div className={`${PANEL} p-5 sm:p-6 space-y-4`}>
-                    <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950/50 text-base">🎙️</span>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Voice SOS Recordings</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{sosRecordings.length} recording{sosRecordings.length !== 1 ? 's' : ''} received — Police Command Audio Log</p>
-                      </div>
-                      <span className="ml-auto flex items-center gap-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-                        LIVE
-                      </span>
-                    </div>
-
-                    <div className="space-y-3">
-                      {sosRecordings.map((rec) => (
-                        <div
-                          key={rec.id}
-                          className="rounded-2xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 p-4 space-y-3"
-                        >
-                          {/* Caller info row */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="h-7 w-7 rounded-full bg-rose-200 dark:bg-rose-900/60 flex items-center justify-center text-sm">👤</span>
-                              <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                {rec.citizenName || 'Unknown Caller'}
-                              </span>
-                            </div>
-                            {rec.citizenPhone && (
-                              <a
-                                href={`tel:${rec.citizenPhone}`}
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-800 px-2.5 py-1 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
-                              >
-                                📞 {rec.citizenPhone}
-                              </a>
-                            )}
-                            {rec.location && (
-                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                                📍 {rec.location}
-                              </span>
-                            )}
-                            <span className="ml-auto text-[11px] font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                              🕐 {rec.reportedAt || 'Unknown time'}
-                            </span>
-                          </div>
-
-                          {/* Audio player */}
-                          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                          <audio
-                            controls
-                            src={rec.audioUrl}
-                            className="w-full h-10 rounded-xl"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ===== INCIDENT QUEUE & SELECTED DETAILS (BELOW) ===== */}
+              {/* ===== TOP ROW: VOICE SOS RECORDINGS & SELECTED INCIDENT DETAIL SIDE-BY-SIDE ===== */}
               <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
-                <IncidentQueueTable
-                  incidents={incidents}
-                  selectedId={selectedIncident?.id}
-                  onSelectIncident={(inc) => setSelectedIncident(inc)}
-                  onStatusChange={handleStatusChange}
-                />
+                {/* Voice SOS Recordings Panel */}
+                {(() => {
+                  const sosRecordings = incidents.filter((i) => i.audioUrl);
+                  return (
+                    <div className={`${PANEL} p-5 sm:p-6 space-y-4`}>
+                      <div className="flex items-center gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950/50 text-base">🎙️</span>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Voice SOS Recordings</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {sosRecordings.length} recording{sosRecordings.length !== 1 ? 's' : ''} received — Police Command Audio Log
+                          </p>
+                        </div>
+                        <span className="ml-auto flex items-center gap-1.5 rounded-full bg-rose-100 dark:bg-rose-950/50 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                          LIVE
+                        </span>
+                      </div>
 
+                      {sosRecordings.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-slate-400">
+                          No voice recordings in the emergency log yet.
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+                          {sosRecordings.map((rec) => (
+                            <div
+                              key={rec.id}
+                              className="rounded-2xl border border-rose-200/70 dark:border-rose-900/40 bg-rose-50/50 dark:bg-rose-950/20 p-4 space-y-3 transition hover:border-rose-300 dark:hover:border-rose-800"
+                            >
+                              {/* Caller info row */}
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="h-7 w-7 rounded-full bg-rose-200 dark:bg-rose-900/60 flex items-center justify-center text-sm">👤</span>
+                                  <span className="text-sm font-bold text-slate-900 dark:text-white">
+                                    {rec.citizenName || 'Unknown Caller'}
+                                  </span>
+                                  {rec.citizenPhone && (
+                                    <a
+                                      href={`tel:${rec.citizenPhone}`}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-800 px-2 py-0.5 font-mono text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                                    >
+                                      📞 {rec.citizenPhone}
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                                    🕐 {rec.reportedAt || 'Recent'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteIncident(rec.id)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2 py-1 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/50 dark:bg-slate-800 dark:text-rose-400"
+                                    title="Delete voice recording"
+                                  >
+                                    🗑️ Delete
+                                  </button>
+                                </div>
+                              </div>
+
+                              {rec.location && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                  📍 {rec.location}
+                                </p>
+                              )}
+
+                              {/* Audio player */}
+                              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                              <audio
+                                controls
+                                src={rec.audioUrl}
+                                className="w-full h-10 rounded-xl"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Selected Incident Detail Panel */}
                 {selectedIncident ? (
                   <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
@@ -666,9 +691,19 @@ export default function CommandCentrePage() {
                           {selectedIncident.severity?.toUpperCase()}
                         </Badge>
                       </div>
-                      <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {selectedIncident.id}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {selectedIncident.id}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteIncident(selectedIncident.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+                          title="Delete selected incident report"
+                        >
+                          🗑️ Delete Alert
+                        </button>
+                      </div>
                     </div>
 
                     <dl className="grid grid-cols-3 gap-3 rounded-xl bg-slate-50 p-4 text-xs dark:bg-slate-800/60">
@@ -753,10 +788,22 @@ export default function CommandCentrePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className={`${PANEL} p-8 text-center text-sm text-slate-500`}>
-                    Select an incident from the queue to see its details.
+                  <div className={`${PANEL} p-12 text-center text-sm text-slate-500 flex flex-col items-center justify-center min-h-[300px]`}>
+                    <span className="text-3xl mb-2">📋</span>
+                    <span>Select an incident from the queue table below to view and manage details.</span>
                   </div>
                 )}
+              </div>
+
+              {/* ===== FULL-WIDTH WIDE INCIDENT QUEUE TABLE (WITH DELETE ON EVERY ALERT) ===== */}
+              <div className="w-full">
+                <IncidentQueueTable
+                  incidents={incidents}
+                  selectedId={selectedIncident?.id}
+                  onSelectIncident={(inc) => setSelectedIncident(inc)}
+                  onStatusChange={handleStatusChange}
+                  onDeleteIncident={handleDeleteIncident}
+                />
               </div>
 
               <AnalyticsCharts

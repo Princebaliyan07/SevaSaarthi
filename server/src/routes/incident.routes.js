@@ -7,6 +7,7 @@ import {
   getIncidentById,
   triggerSync,
   getIncidentStats,
+  deleteIncident,
 } from '../controllers/incident.controller.js';
 import { emergencyLimiter } from '../middlewares/rateLimit.middleware.js';
 import { validateIncidentReport } from '../validators/incident.validator.js';
@@ -30,6 +31,9 @@ router.post('/sync', triggerSync);
 
 // PATCH /api/v1/incidents/:id/status - Update incident status
 router.patch('/:id/status', updateIncidentStatus);
+
+// DELETE /api/v1/incidents/:id - Delete an incident
+router.delete('/:id', deleteIncident);
 
 // GET /api/v1/incidents/:id - Single incident details
 router.get('/:id', getIncidentById);
