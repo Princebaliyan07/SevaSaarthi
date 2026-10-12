@@ -6,7 +6,7 @@ import TriageActionCard from '../components/ai/TriageActionCard';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function AiSaarthiPage() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read ?query=... once, then remove it from the URL so a refresh starts a clean chat.
