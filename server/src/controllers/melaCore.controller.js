@@ -1155,9 +1155,6 @@ export const createMelaMap = asyncHandler(async (req, res) => {
 
 export const deleteMelaMap = asyncHandler(async (req, res) => {
   const { mapId } = req.params;
-  if (mapId === 'prayagraj_kumbh') {
-    throw new ApiError(400, 'Cannot delete the default Prayagraj Kumbh map');
-  }
 
   if (mongoose.connection.readyState === 1) {
     try {

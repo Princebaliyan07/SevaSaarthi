@@ -328,14 +328,26 @@ export default function CommandCentrePage() {
   };
 
   const handleResolveAlert = async (id) => {
-    await resolveMelaAlert(id);
-    await loadData();
+    try {
+      setAlerts((prev) => prev.map((a) => (a.alertId === id || a._id === id ? { ...a, status: 'Resolved' } : a)));
+      await resolveMelaAlert(id);
+    } catch (err) {
+      console.error('Failed to resolve alert:', err);
+    } finally {
+      await loadData();
+    }
   };
 
   const handleDeleteAlert = async (id) => {
     if (!window.confirm('Are you sure you want to delete this alert?')) return;
-    await deleteMelaAlert(id);
-    await loadData();
+    try {
+      setAlerts((prev) => prev.filter((a) => a.alertId !== id && a._id !== id));
+      await deleteMelaAlert(id);
+    } catch (err) {
+      console.error('Failed to delete alert:', err);
+    } finally {
+      await loadData();
+    }
   };
 
   const handleUpdateReportStatus = async (id, status) => {

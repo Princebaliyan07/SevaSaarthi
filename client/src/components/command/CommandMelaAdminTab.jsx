@@ -117,13 +117,13 @@ export default function CommandMelaAdminTab({
                     <span aria-hidden="true">{isSelected ? '📍' : '🗺️'}</span>
                     {m.name}
                   </button>
-                  {isAdmin && onDeleteMap && m.mapId !== 'prayagraj_kumbh' && (
+                  {isAdmin && onDeleteMap && (
                     <button
                       type="button"
                       title={`Delete map: ${m.name}`}
                       aria-label={`Delete map ${m.name}`}
                       onClick={() => onDeleteMap(m.mapId)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-xs text-rose-600 opacity-60 transition hover:bg-rose-100 hover:opacity-100 group-hover:opacity-100"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-50 text-xs text-rose-600 opacity-80 transition hover:bg-rose-100 hover:opacity-100 group-hover:opacity-100"
                     >
                       🗑
                     </button>
