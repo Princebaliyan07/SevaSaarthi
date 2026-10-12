@@ -402,6 +402,7 @@ export async function getIncidentStats(req, res) {
       lastUpdated: live.lastSyncTimestamp,
       data: stats,
     });
+  } catch (error) {
     return res.status(500).json({
       success: false,
       message: 'Error aggregating disaster telemetry stats',
