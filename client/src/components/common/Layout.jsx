@@ -2,8 +2,9 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import AiLiveChatbotWidget from '../ai/AiLiveChatbotWidget';
 
-// Shell used by every page: navbar + page content + footer.
+// Shell used by every page: navbar + page content + footer + global AI chatbot widget.
 export default function Layout() {
   const { pathname } = useLocation();
 
@@ -24,6 +25,8 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      {/* Global AI Saarthi Live Chatbot Widget (All Pages) */}
+      <AiLiveChatbotWidget />
     </div>
   );
 }
