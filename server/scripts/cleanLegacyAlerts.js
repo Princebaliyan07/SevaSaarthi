@@ -13,11 +13,6 @@ async function run() {
   });
   console.log('Deleted legacy demo alerts from DB:', alertRes.deletedCount);
 
-  const mapRes = await db.collection('melamaps').deleteMany({
-    mapId: 'prayagraj_kumbh',
-  });
-  console.log('Deleted prayagraj_kumbh map from DB:', mapRes.deletedCount);
-
   const remainingAlerts = await db.collection('melaalerts').find({}).toArray();
   console.log('Remaining alerts in DB:', remainingAlerts.map((a) => `${a.alertId}: ${a.title}`));
 

@@ -96,6 +96,8 @@ export default function CommandCentrePage() {
   const [crowdZones, setCrowdZones] = useState([]);
   const [maps, setMaps] = useState([]);
   const [selectedMapId, setSelectedMapId] = useState('prayagraj_kumbh');
+  // Track IDs that the admin has deleted — filter them out even if backend re-returns them
+  const deletedAlertIds = useState(() => new Set(['MA-ALERT-01', 'MA-ALERT-02']))[0];
 
   // Load status
   const [loadError, setLoadError] = useState(false);
@@ -131,7 +133,8 @@ export default function CommandCentrePage() {
       setIncidents(incList || []);
       setStats(statData);
       setFacilities(facList || []);
-      setAlerts(alertList || []);
+      // Filter out legacy hardcoded demo alerts and any admin-deleted alerts
+      setAlerts((alertList || []).filter((a) => !deletedAlertIds.has(a.alertId) && !deletedAlertIds.has(String(a._id))));
       setReports(repData?.reports || []);
       setHospitals(hospList || []);
       setCrowdZones(zonesList || []);
@@ -340,6 +343,8 @@ export default function CommandCentrePage() {
 
   const handleDeleteAlert = async (id) => {
     if (!window.confirm('Are you sure you want to delete this alert?')) return;
+    // Mark this ID as deleted immediately — prevents reappearance from backend refreshes
+    deletedAlertIds.add(id);
     try {
       setAlerts((prev) => prev.filter((a) => a.alertId !== id && a._id !== id));
       await deleteMelaAlert(id);
