@@ -75,7 +75,17 @@ export const getIncidents = asyncHandler(async (req, res) => {
           category: item.disasterType?.charAt(0).toUpperCase() + item.disasterType?.slice(1) || 'Emergency',
           severity: item.severity,
           status: item.status?.charAt(0).toUpperCase() + item.status?.slice(1) || 'Active',
-          reportedAt: new Date(item.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          reportedAt: item.reportedAt
+            ? new Date(item.reportedAt).toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              })
+            : 'Recent',
+          dateTime: item.reportedAt || item.createdAt || new Date().toISOString(),
           team: item.assignedAgency || '112 Rapid Police & SDRF',
           eta: `${item.slaMinutesRemaining || 12} min`,
           location: item.locationName || item.district || item.state || 'Sangam Sector',
@@ -105,7 +115,17 @@ export const getIncidents = asyncHandler(async (req, res) => {
     category: item.disasterType?.charAt(0).toUpperCase() + item.disasterType?.slice(1) || 'Emergency',
     severity: item.severity,
     status: item.status?.charAt(0).toUpperCase() + item.status?.slice(1) || 'Active',
-    reportedAt: new Date(item.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    reportedAt: item.reportedAt
+      ? new Date(item.reportedAt).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      : 'Recent',
+    dateTime: item.reportedAt || item.createdAt || new Date().toISOString(),
     team: item.assignedAgency || '112 Rapid Police & SDRF',
     eta: `${item.slaMinutesRemaining || 12} min`,
     location: item.locationName || item.district || item.state || 'Sangam Sector',

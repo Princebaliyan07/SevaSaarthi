@@ -644,8 +644,9 @@ export default function CommandCentrePage() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
-                                    🕐 {rec.reportedAt || 'Recent'}
+                                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                    <span>📅</span>
+                                    <span>{rec.reportedAt || 'Recent'}</span>
                                   </span>
                                   <button
                                     type="button"
