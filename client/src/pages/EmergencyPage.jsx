@@ -57,16 +57,27 @@ export default function EmergencyPage() {
         </div>
       </div>
 
-      {/* Main Grid: Quick Access on Left, Numbers + Voice SOS on Right */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
-        {/* Left Column: Emergency Quick Access Tiles */}
+      {/* Top: Emergency Quick Access Tiles */}
+      <div>
+        <EmergencyTileGrid onSelectTile={handleTileClick} />
+      </div>
+
+      {/* Lower Section: Voice SOS Recorder & Official Numbers side by side */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start pt-2">
+        {/* Voice SOS Recorder (Left, 7 columns) */}
         <div className="lg:col-span-7">
-          <EmergencyTileGrid onSelectTile={handleTileClick} />
+          <VoiceSosRecorder
+            onDispatchSuccess={(ticket) => {
+              if (ticket) {
+                setCreatedIncident(ticket);
+                setActiveIncident(ticket);
+              }
+            }}
+          />
         </div>
 
-        {/* Right Column: Official Numbers + Voice SOS */}
-        <div className="space-y-6 lg:col-span-5">
-          {/* Official Numbers List */}
+        {/* Official Numbers List (Right, 5 columns) */}
+        <div className="lg:col-span-5">
           <div className="glass-card p-6 space-y-4">
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span>📞</span>
@@ -96,16 +107,6 @@ export default function EmergencyPage() {
               ))}
             </div>
           </div>
-
-          {/* Voice SOS Recorder */}
-          <VoiceSosRecorder
-            onDispatchSuccess={(ticket) => {
-              if (ticket) {
-                setCreatedIncident(ticket);
-                setActiveIncident(ticket);
-              }
-            }}
-          />
         </div>
       </div>
     </div>

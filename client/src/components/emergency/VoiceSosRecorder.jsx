@@ -8,8 +8,9 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
   const { user } = useAuth();
   const hi = lang === 'hi';
 
-  const [callerName, setCallerName] = useState(user?.name || '');
-  const [callerPhone, setCallerPhone] = useState(user?.phone || '');
+  // Start empty as requested - do not pre-fill any default or officer name
+  const [callerName, setCallerName] = useState('');
+  const [callerPhone, setCallerPhone] = useState('');
   const [coords, setCoords] = useState(null);
   const [locStatus, setLocStatus] = useState('detecting'); // 'detecting' | 'ready' | 'fallback'
   const [locAddress, setLocAddress] = useState('Detecting GPS location...');
@@ -23,7 +24,7 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
 
-  // Auto-detect GPS location on mount
+  // Auto-detect GPS location on mount & reverse geocode to exact area name (e.g. Greater Noida)
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocStatus('fallback');
@@ -32,11 +33,36 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
         setCoords({ lat: latitude, lng: longitude });
         setLocStatus('ready');
-        setLocAddress(`GPS: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`);
+        const coordsText = `${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`;
+        setLocAddress(`GPS: ${coordsText}`);
+
+        // Reverse geocoding to detect exact place name
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16&addressdetails=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const neighborhood = addr.suburb || addr.neighbourhood || addr.residential || addr.road || '';
+            const city = addr.city || addr.town || addr.city_district || addr.county || '';
+            const state = addr.state || '';
+            
+            const areaParts = [neighborhood, city, state].filter(Boolean);
+            const areaName = areaParts.length > 0 ? areaParts.join(', ') : (data.display_name?.split(',').slice(0, 3).join(',') || '');
+            
+            if (areaName) {
+              setLocAddress(`${areaName} (GPS: ${coordsText})`);
+            }
+          }
+        } catch (err) {
+          console.warn('Reverse geocoding failed, using coordinates:', err);
+        }
       },
       () => {
         setLocStatus('fallback');
@@ -162,11 +188,11 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         <div>
           <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
-            {hi ? 'आपका नाम (वैकल्पिक)' : 'Your Name / Identifier'}
+            {hi ? 'आपका नाम' : 'Your Name'}
           </label>
           <input
             type="text"
-            placeholder={hi ? 'नाम दर्ज करें' : 'Enter your name'}
+            placeholder={hi ? 'अपना नाम दर्ज करें' : 'Enter your name'}
             value={callerName}
             onChange={(e) => setCallerName(e.target.value)}
             disabled={isRecording || isDispatching}
@@ -176,11 +202,11 @@ export default function VoiceSosRecorder({ onDispatchSuccess }) {
 
         <div>
           <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
-            {hi ? 'मोबाइल नंबर (कॉल बैक हेतु)' : 'Mobile Number (For Call Back)'}
+            {hi ? 'मोबाइल नंबर' : 'Mobile number'}
           </label>
           <input
             type="tel"
-            placeholder={hi ? '10-अंकों का नंबर' : '10-digit mobile number'}
+            placeholder={hi ? 'मोबाइल नंबर' : 'Mobile number'}
             value={callerPhone}
             onChange={(e) => setCallerPhone(e.target.value)}
             disabled={isRecording || isDispatching}
