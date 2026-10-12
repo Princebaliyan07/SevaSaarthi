@@ -105,31 +105,96 @@ const MOCK_ANALYTICS = {
 };
 
 export async function reportIncident(data) {
+  const newId = `SS-EMG-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+  const now = new Date();
+  const formattedDateTime = now.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const incidentRecord = {
+    id: newId,
+    incidentId: newId,
+    title: data.title || `🎙️ Voice SOS: ${data.name || 'Emergency'}`,
+    category: data.category || 'Medical',
+    severity: data.severity || 'critical',
+    status: 'Assigned',
+    reportedAt: formattedDateTime,
+    dateTime: now.toISOString(),
+    createdAt: now.toISOString(),
+    team: '112 Rapid Police & 108 ALS Ambulance',
+    eta: '12 min',
+    location: data.location || 'Reported Location',
+    lat: data.lat,
+    lng: data.lng,
+    notes: data.description || 'Emergency Voice SOS Dispatch',
+    audioUrl: data.audioUrl || '',
+    citizenName: data.name || '',
+    citizenPhone: data.phone || '',
+    ...data,
+  };
+
+  // Always save to localStorage so it instantly reflects in admin on client
+  try {
+    const existing = JSON.parse(localStorage.getItem('ss_local_incidents') || '[]');
+    localStorage.setItem('ss_local_incidents', JSON.stringify([incidentRecord, ...existing]));
+  } catch {
+    // ignore
+  }
+
   try {
     const res = await api.post('/incidents', data);
     return res.data;
   } catch {
-    const newId = `SS-EMG-2026-${Math.floor(10000 + Math.random() * 90000)}`;
-    const mockCreated = {
-      id: newId,
-      incidentId: newId,
-      ...data,
-      status: 'Reported',
-      createdAt: new Date().toISOString(),
-      slaDeadline: '15 min',
-    };
-    return { success: true, data: mockCreated };
+    return { success: true, data: incidentRecord };
   }
 }
 
 export async function getIncidents() {
+  let localList = [];
+  try {
+    localList = JSON.parse(localStorage.getItem('ss_local_incidents') || '[]');
+  } catch {
+    localList = [];
+  }
+
   try {
     const res = await api.get('/incidents');
-    if (res.data?.data) return res.data.data;
+    if (res.data?.data) {
+      const serverList = res.data.data;
+      // Merge localList on top of serverList avoiding duplicate IDs
+      const serverIds = new Set(serverList.map((i) => i.id));
+      const extraLocal = localList.filter((i) => !serverIds.has(i.id));
+      return [...extraLocal, ...serverList];
+    }
   } catch {
     // fallback
   }
-  return MOCK_INCIDENTS;
+
+  const serverIds = new Set(MOCK_INCIDENTS.map((i) => i.id));
+  const extraLocal = localList.filter((i) => !serverIds.has(i.id));
+  return [...extraLocal, ...MOCK_INCIDENTS];
+}
+
+export async function deleteIncident(id) {
+  try {
+    const existing = JSON.parse(localStorage.getItem('ss_local_incidents') || '[]');
+    const updated = existing.filter((item) => item.id !== id && item.incidentId !== id);
+    localStorage.setItem('ss_local_incidents', JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+
+  try {
+    const res = await api.delete(`/incidents/${id}`);
+    return res.data;
+  } catch {
+    return { success: true, id };
+  }
 }
 
 export async function updateIncidentStatus(id, newStatus) {
@@ -138,15 +203,6 @@ export async function updateIncidentStatus(id, newStatus) {
     return res.data;
   } catch {
     return { success: true, id, status: newStatus };
-  }
-}
-
-export async function deleteIncident(id) {
-  try {
-    const res = await api.delete(`/incidents/${id}`);
-    return res.data;
-  } catch {
-    return { success: true, id };
   }
 }
 

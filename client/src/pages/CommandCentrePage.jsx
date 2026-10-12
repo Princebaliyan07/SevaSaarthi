@@ -726,10 +726,28 @@ export default function CommandCentrePage() {
                       </div>
                     </div>
 
-                    <dl className="grid grid-cols-3 gap-3 rounded-xl bg-slate-50 p-4 text-xs dark:bg-slate-800/60">
+                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl bg-slate-50 p-4 text-xs dark:bg-slate-800/60">
                       <div>
                         <dt className="font-medium text-slate-400">{t('command.reported')}</dt>
-                        <dd className="mt-0.5 font-bold text-slate-900 dark:text-white">{selectedIncident.reportedAt}</dd>
+                        <dd className="mt-0.5 font-bold text-slate-900 dark:text-white">
+                          {(() => {
+                            const raw = selectedIncident.reportedAt || selectedIncident.createdAt || selectedIncident.dateTime;
+                            if (!raw) return 'Recent';
+                            if (typeof raw === 'string' && raw.includes(',')) return raw;
+                            const parsed = new Date(raw);
+                            if (!isNaN(parsed.getTime())) {
+                              return parsed.toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                              });
+                            }
+                            return raw;
+                          })()}
+                        </dd>
                       </div>
                       <div>
                         <dt className="font-medium text-slate-400">{t('command.team')}</dt>
@@ -739,7 +757,26 @@ export default function CommandCentrePage() {
                         <dt className="font-medium text-slate-400">{t('command.eta')}</dt>
                         <dd className="mt-0.5 font-bold text-teal-600 dark:text-teal-400">{selectedIncident.eta}</dd>
                       </div>
+                      <div>
+                        <dt className="font-medium text-slate-400">Caller</dt>
+                        <dd className="mt-0.5 font-bold text-rose-600 dark:text-rose-400 truncate">
+                          {selectedIncident.citizenName || selectedIncident.name || 'Citizen'}
+                        </dd>
+                      </div>
                     </dl>
+
+                    {/* Full Address / Location Banner */}
+                    {selectedIncident.location && (
+                      <div className="flex items-start gap-2 rounded-xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/70 dark:bg-teal-950/30 p-3 text-xs text-teal-950 dark:text-teal-200">
+                        <span className="text-base shrink-0">📍</span>
+                        <div>
+                          <strong className="block font-bold">Location & Coordinates:</strong>
+                          <span className="font-semibold text-teal-800 dark:text-teal-300">
+                            {selectedIncident.location}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Voice SOS Audio Recording & Caller Info (Police Admin View Only) */}
                     {(selectedIncident.audioUrl || selectedIncident.citizenPhone) && (
