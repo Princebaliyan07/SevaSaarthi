@@ -5,6 +5,7 @@ import { useEmergency } from '../../context/EmergencyContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
 import VoiceSearchModal from './VoiceSearchModal';
+import CandidateProfileModal from './CandidateProfileModal';
 
 const NAV_ITEMS = [
   { to: '/', key: 'nav.home', end: true },
@@ -23,6 +24,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const linkClass = ({ isActive }) =>
     `relative whitespace-nowrap rounded-xl px-2.5 xl:px-3 py-1.5 text-xs xl:text-[13px] font-bold transition-all duration-200 ${
@@ -86,18 +88,19 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Profile Link (Desktop / Tablet) */}
-          <Link
-            to="/profile"
+          {/* Candidate & Citizen Profile Button (Desktop / Tablet) */}
+          <button
+            type="button"
+            onClick={() => setShowProfile(true)}
             className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 p-1.5 text-slate-700 shadow-xs backdrop-blur-md transition-all hover:scale-105 hover:bg-slate-100 hover:text-brand dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-brand-light"
-            title="Profile"
-            aria-label="Profile"
+            title="Candidate & Citizen Profile"
+            aria-label="Candidate & Citizen Profile"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
-          </Link>
+          </button>
 
           {/* Language Switcher (Desktop / Tablet) */}
           <div className="hidden sm:block">
@@ -150,14 +153,17 @@ export default function Navbar() {
                 <span>Voice</span>
               </button>
 
-              <Link
-                to="/profile"
-                onClick={() => setOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setShowProfile(true);
+                }}
                 className="flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
               >
                 <span>👤</span>
                 <span>Profile</span>
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -175,6 +181,9 @@ export default function Navbar() {
 
       {/* Voice Search Modal */}
       <VoiceSearchModal isOpen={showVoice} onClose={() => setShowVoice(false)} />
+
+      {/* Candidate & Citizen Profile Card Modal */}
+      <CandidateProfileModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
     </header>
   );
 }
