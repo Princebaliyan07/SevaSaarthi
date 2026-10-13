@@ -139,6 +139,66 @@ export const CIVIC_GUIDES = {
       { name: 'Sangam Health Camp', num: '108' },
     ],
   },
+
+  'earthquake-guide': {
+    filename: 'SevaSaarthi_Earthquake_Preparedness_Response_Guide.html',
+    title: 'Earthquake Preparedness & Response Guide',
+    titleHi: 'भूकंप पूर्व तैयारी एवं आपातकालीन सुरक्षा निर्देश',
+    agency: 'National Disaster Management Authority (NDMA) Standards',
+    version: '2026 Seismic Resilience Edition',
+    sections: [
+      {
+        heading: '1. During Shaking: Drop, Cover, and Hold On / भूकंप के दौरान: झुकें, ढकें और पकड़ें',
+        en: '1) DROP onto your hands and knees immediately before the earthquake knocks you down. 2) COVER your head and neck under a sturdy table or desk. If no shelter is nearby, drop next to an interior wall and cover your head with your arms. 3) HOLD ON to your shelter until shaking completely stops. Do NOT run outside during shaking or use elevators.',
+        hi: '1) भूकंप के झटके आते ही तुरंत घुटनों के बल बैठें (ड्रॉप)। 2) किसी मजबूत मेज या डेस्क के नीचे सिर और गर्दन को सुरक्षित ढकें (कवर)। यदि मेज न हो, तो भीतरी दीवार के पास बैठकर हाथों से सिर को ढकें। 3) जब तक झटके बंद न हों, मेज को कसकर पकड़े रहें (होल्ड ऑन)। झटकों के दौरान बाहर भागने या लिफ्ट का उपयोग करने से बचें।',
+      },
+      {
+        heading: '2. Outdoor & Driving Safety / खुले मैदान एवं वाहन चलाते समय सावधानियां',
+        en: '1) If outdoors, stay in open areas away from buildings, glass facades, power poles, overhead wires, and flyovers. 2) If in a vehicle, pull over safely away from underpasses and utility poles, engage handbrake, and remain inside until shaking stops.',
+        hi: '1) यदि खुले मैदान में हों, तो इमारतों, कांच के मुखौटों, बिजली के खंभों, तारों और फ्लाईओवरों से दूर खुले स्थान पर रुकें। 2) यदि वाहन चला रहे हों, तो पुलों व खंभों से दूर सुरक्षित किनारे गाड़ी रोकें, हैंडब्रेक लगाएं और झटके थमने तक अंदर ही रहें।',
+      },
+      {
+        heading: '3. Post-Quake Hazards & Gas/Electric Safety / भूकंप के तुरंत बाद जरूरी कदम',
+        en: '1) Check for gas leaks; if smelled, turn off main cylinder valve and open windows (never switch on electrical lights or matchsticks). 2) Expect aftershocks. 3) Evacuate via stairs in an orderly fashion. Do not re-enter cracked or structurally compromised buildings until inspected by structural engineers.',
+        hi: '1) गैस रिसाव की जांच करें; गंध आने पर तुरंत मुख्य वॉल्व बंद करें और खिड़कियां खोलें (माचिस या बिजली स्विच न जलाएं)। 2) पश्च-झटकों (आफ्टरशॉक्स) के लिए तैयार रहें। 3) सीढ़ियों से सुरक्षित बाहर निकलें। दरार पड़ी या क्षतिग्रस्त इमारतों में जांच से पहले दोबारा प्रवेश न करें।',
+      },
+    ],
+    helplines: [
+      { name: 'National Emergency', num: '112' },
+      { name: 'Disaster Management Helpline', num: '1078' },
+      { name: 'Ambulance Service', num: '108' },
+    ],
+  },
+
+  'cyclone-guide': {
+    filename: 'SevaSaarthi_Cyclone_High_Wind_Safety_Handbook.html',
+    title: 'Cyclone & High-Wind Safety Handbook',
+    titleHi: 'चक्रवात एवं तेज आंधी-तूफान सुरक्षा निर्देशिका',
+    agency: 'India Meteorological Department (IMD) & NDMA Protocol',
+    version: '2026 Coastal & Inland Safety Edition',
+    sections: [
+      {
+        heading: '1. Pre-Cyclone Preparation & Home Hardening / चक्रवात पूर्व सुरक्षा तैयारी',
+        en: '1) Fasten or remove loose outdoor items (corrugated tin sheets, solar panel loose fixtures, flower pots). 2) Tape windowpanes diagonally with adhesive tape to prevent flying glass splinters. 3) Store at least 4-5 days of drinking water and dry food rations in sealed waterproof containers.',
+        hi: '1) टीन की चादरें, गमले व छतों पर रखे ढीले सामान को मजबूती से बांधें या नीचे उतारें। 2) खिड़कियों के शीशों पर तिरछी टेप लगाएं ताकि तेज हवा में शीशा टूटने पर कांच न उड़े। 3) कम से कम 4-5 दिनों का पीने का पानी और सूखा राशन वाटरप्रूफ डिब्बों में सुरक्षित रखें।',
+      },
+      {
+        heading: '2. During Cyclone & Eye of the Storm / चक्रवात के दौरान सतर्कता एवं आंख का भ्रम',
+        en: '1) Stay strictly indoors in the strongest, windowless central room or bathroom. 2) Disconnect electrical appliances and main breaker. 3) BEWARE THE EYE OF THE STORM: If winds suddenly become calm, do NOT step outside—the opposite-direction cyclone wall will hit violently within minutes.',
+        hi: '1) घर के सबसे मजबूत, बिना खिड़की वाले कमरे या हॉल में रहें। 2) मुख्य बिजली का स्विच बंद रखें और सभी उपकरण अनप्लग करें। 3) चक्रवात की आंख (Eye of Storm) से सावधान: हवा शांत होने पर बाहर न निकलें—कुछ ही मिनटों में विपरीत दिशा से भीषण आंधी दोबारा टकराएगी।',
+      },
+      {
+        heading: '3. Evacuation & Storm Surge Precautions / सुरक्षित निकासी एवं तूफानी लहरों से बचाव',
+        en: '1) If residing in low-lying coastal or riverbed zones, heed SDRF/NDRF evacuation warnings immediately and relocate to designated cyclone pucca shelters. 2) Never go near sea beaches, ports, or flooded rivers to observe tides or waves.',
+        hi: '1) यदि निचले तटीय या नदी कछार क्षेत्र में रहते हैं, तो प्रशासन की चेतावनी मिलते ही पक्के चक्रवात राहत शिविर में जाएं। 2) ऊंची लहरें देखने के लिए समुद्र तट, बंदरगाह या उफनती नदियों के पास कभी न जाएं।',
+      },
+    ],
+    helplines: [
+      { name: 'IMD Cyclone Warning Center', num: '1800-180-1717' },
+      { name: 'Disaster Helpline', num: '1078' },
+      { name: 'Emergency Control Room', num: '112' },
+    ],
+  },
 };
 
 /**
