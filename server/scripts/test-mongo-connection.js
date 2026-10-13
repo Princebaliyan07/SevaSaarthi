@@ -34,7 +34,7 @@ try {
 } catch (err) {
   console.error(`\n❌ [CONNECTION FAILED] ${err.message}`);
   if (err.message.includes('bad auth') || err.message.includes('Authentication failed')) {
-    console.error(`👉 Note: Check username & password. Ensure '@' in password is encoded as '%40' (e.g. Soram%4001).`);
+    console.error(`👉 Note: Check username & password. Ensure special characters in password are URL-encoded.`);
   } else if (err.message.includes('querySrv') || err.message.includes('ENOTFOUND')) {
     console.error(`👉 Note: Check your cluster hostname (e.g. cluster0.xxxxx.mongodb.net).`);
   } else if (err.message.includes('whitelist') || err.message.includes('timed out') || err.message.includes('ECONNREFUSED')) {

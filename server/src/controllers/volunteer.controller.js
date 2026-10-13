@@ -614,10 +614,10 @@ export const unlockTeamContacts = asyncHandler(async (req, res) => {
     }
   }
 
-  // 3. Admin bypass key for command center demo / verification testing
-  if (!isKeyValid && cleanKey === 'SEC-ADMIN999') {
+  // 3. Official Admin authorization check (strictly authenticated administrators only)
+  if (!isKeyValid && req.user?.role === 'admin') {
     isKeyValid = true;
-    matchingMember = { fullName: 'Command Center Lead', role: 'HQ Supervisor' };
+    matchingMember = { fullName: req.user.name || 'Command Center Administrator', role: 'HQ Supervisor' };
   }
 
   if (isPendingApproval) {

@@ -23,22 +23,52 @@ import { reportIncident, getIncidents } from './controllers/incident.controller.
 
 import { errorHandler } from './middlewares/error.middleware.js';
 
+import { apiLimiter } from './middlewares/rateLimit.middleware.js';
+
 const app = express();
 
+// Security Hardening: Allowed Origins Whitelist
+const allowedOrigins = new Set([
+  'https://sevasaarthiindia.vercel.app',
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()) : []),
+  // Safe localhost origins for development
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000']
+    : []),
+].filter(Boolean));
+
 // Security and utility middlewares
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+
 app.use(
   cors({
-    origin: true,
+    origin: function (origin, callback) {
+      // Allow non-browser requests (mobile apps, server-to-server curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS policy violation: Origin [${origin}] is not authorized.`));
+    },
     credentials: true,
   })
 );
-app.use(morgan('dev'));
-app.use(express.json({ limit: '16mb' }));
-app.use(express.urlencoded({ extended: true, limit: '16mb' }));
 
-// Static uploads directory
-app.use('/uploads', express.static(path.resolve('uploads')));
+// Apply Global API Rate Limiter
+app.use('/api', apiLimiter);
+
+app.use(morgan('dev'));
+app.use(express.json({ limit: '4mb' }));
+app.use(express.urlencoded({ extended: true, limit: '4mb' }));
+
+// Static uploads directory with directory listing prevention
+app.use('/uploads', express.static(path.resolve('uploads'), { dotfiles: 'ignore', index: false }));
 
 // Favicon handler
 app.get('/favicon.ico', (req, res) => res.status(204).end());

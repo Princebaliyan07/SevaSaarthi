@@ -11,6 +11,8 @@ import {
   rejectFirstResponder,
   deleteFirstResponder,
 } from '../controllers/firstResponder.controller.js';
+import { verifyJwt } from '../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = express.Router();
 
@@ -21,11 +23,10 @@ router.patch('/:id/toggle', toggleActive);
 router.post('/aadhaar-otp/send', sendAadhaarOtp);
 router.post('/aadhaar-otp/verify', verifyAadhaarOtp);
 
-// Admin routes
-router.get('/admin/all', getAdminResponders);
-router.patch('/:id/approve', approveFirstResponder);
-router.patch('/:id/reject', rejectFirstResponder);
-router.delete('/:id', deleteFirstResponder);
+// Protected Admin Routes — Strictly require verified administrator token
+router.get('/admin/all', verifyJwt, authorizeRoles('admin'), getAdminResponders);
+router.patch('/:id/approve', verifyJwt, authorizeRoles('admin'), approveFirstResponder);
+router.patch('/:id/reject', verifyJwt, authorizeRoles('admin'), rejectFirstResponder);
+router.delete('/:id', verifyJwt, authorizeRoles('admin'), deleteFirstResponder);
 
 export default router;
-

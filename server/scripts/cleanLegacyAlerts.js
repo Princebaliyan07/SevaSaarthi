@@ -1,10 +1,18 @@
 import dns from 'dns';
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 
-const URI = 'mongodb+srv://SevaSaarthi:Soram01@cluster0.r9y7r3n.mongodb.net/sevasaarthi?retryWrites=true&w=majority&appName=Cluster0';
+dotenv.config();
+
+const URI = process.env.MONGODB_URI;
 
 async function run() {
+  if (!URI) {
+    console.error('MONGODB_URI environment variable is required to run this script.');
+    process.exit(1);
+  }
+
   await mongoose.connect(URI);
   const db = mongoose.connection.db;
 

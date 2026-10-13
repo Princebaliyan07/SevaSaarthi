@@ -20,6 +20,9 @@ export const register = asyncHandler(async (req, res) => {
   const { name, phone, email, password, role, bloodGroup, emergencyContact } = req.body;
   const cleanPhone = phone.trim();
 
+  // Security Hardening: Prevent Privilege Escalation (Ordinary registration can never claim admin role)
+  const safeRole = role === 'admin' ? 'citizen' : (role || 'citizen');
+
   if (mongoose.connection.readyState === 1) {
     try {
       const existingUser = await User.findOne({ phone: cleanPhone });
@@ -32,7 +35,7 @@ export const register = asyncHandler(async (req, res) => {
         phone: cleanPhone,
         email: email ? email.trim() : undefined,
         password,
-        role: role || 'citizen',
+        role: safeRole,
         bloodGroup: bloodGroup || 'Unknown',
         emergencyContact: emergencyContact || {},
       });
@@ -62,7 +65,7 @@ export const register = asyncHandler(async (req, res) => {
     phone: cleanPhone,
     email: email ? email.trim() : undefined,
     password: hashedPassword,
-    role: role || 'citizen',
+    role: safeRole,
     bloodGroup: bloodGroup || 'Unknown',
     emergencyContact: emergencyContact || {},
     createdAt: new Date().toISOString(),
@@ -84,28 +87,25 @@ export const register = asyncHandler(async (req, res) => {
   );
 });
 
-// Pre-configured official Command Centre Administrators (loaded securely from environment variables)
+// Pre-configured official Command Centre Administrators (loaded strictly from environment variables)
 export function getOfficialAdmins() {
-  const p1 = (process.env.ADMIN_PHONE_1 || '8920060656').trim();
-  const p2 = (process.env.ADMIN_PHONE_2 || '9084134335').trim();
-  const pass = (process.env.ADMIN_PASSWORD || 'chhaviprince@03032021').trim();
+  const p1 = (process.env.ADMIN_PHONE_1 || '').trim();
+  const p2 = (process.env.ADMIN_PHONE_2 || '').trim();
+  const pass = (process.env.ADMIN_PASSWORD || '').trim();
   const name1 = (process.env.ADMIN_NAME_1 || 'District Magistrate Command Officer').trim();
   const name2 = (process.env.ADMIN_NAME_2 || 'Superintendent of Police Command Officer').trim();
 
-  return [
-    {
-      phone: p1,
-      name: name1,
-      role: 'admin',
-      passwordPlain: pass,
-    },
-    {
-      phone: p2,
-      name: name2,
-      role: 'admin',
-      passwordPlain: pass,
-    },
-  ];
+  // If no admin password configured in environment, fail closed (do not expose hardcoded fallback credentials)
+  if (!pass) return [];
+
+  const list = [];
+  if (p1) {
+    list.push({ phone: p1, name: name1, role: 'admin', passwordPlain: pass });
+  }
+  if (p2) {
+    list.push({ phone: p2, name: name2, role: 'admin', passwordPlain: pass });
+  }
+  return list;
 }
 
 // Helper: Seed or update official admin users in MongoDB on startup, and clean up any old demo admin accounts

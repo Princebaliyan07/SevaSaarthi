@@ -134,13 +134,12 @@ export async function sendAadhaarOtp(req, res) {
       aadhaarLast4: cleanAadhaar.slice(-4),
     }).catch((err) => console.error('[SMS send background]:', err.message));
 
-    console.log(`[Aadhaar OTP] Mobile: +91${cleanMobile} | Aadhaar: XXXX-XXXX-${cleanAadhaar.slice(-4)} | OTP: ${generatedOtp}`);
+    const isProd = process.env.NODE_ENV === 'production';
 
     return res.status(200).json({
       success: true,
       message: `Aadhaar verification OTP generated for mobile +91 ${cleanMobile.slice(0, 2)}XXXXXX${cleanMobile.slice(-2)}.`,
-      otp: generatedOtp,
-      demoOtp: generatedOtp,
+      ...(isProd ? {} : { demoOtp: generatedOtp }),
     });
   } catch (error) {
     console.error('Error sending Aadhaar OTP:', error);
@@ -168,11 +167,12 @@ export async function verifyAadhaarOtp(req, res) {
     const cleanAadhaar = aadhaarNumber.replace(/\s/g, '');
     const cleanOtp = String(otp).trim();
     const entry = otpStore.get(cleanAadhaar);
+    const isProd = process.env.NODE_ENV === 'production';
+    const isMasterDemoAllowed = !isProd && cleanOtp === '123456';
 
     if (
       (entry && entry.otp === cleanOtp && Date.now() <= entry.expiresAt) ||
-      cleanOtp === '123456' ||
-      (entry && cleanOtp === entry.otp)
+      isMasterDemoAllowed
     ) {
       otpStore.delete(cleanAadhaar);
       return res.status(200).json({
@@ -360,6 +360,7 @@ export async function searchFirstResponders(req, res) {
     }
 
     let responders = await FirstResponder.find(filter)
+      .select('-aadhaarNumber -govtIdNumber -proofCertificate')
       .sort({ registeredAt: -1 })
       .limit(50)
       .lean();
@@ -435,6 +436,7 @@ export async function getAllFirstResponders(req, res) {
     }
 
     const responders = await FirstResponder.find(filter)
+      .select('-aadhaarNumber -govtIdNumber -proofCertificate')
       .sort({ registeredAt: -1 })
       .limit(50)
       .lean();

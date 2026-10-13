@@ -14,10 +14,6 @@ api.interceptors.request.use(
       const user = JSON.parse(localStorage.getItem('ss_user') || 'null');
       if (user?.token) {
         config.headers.Authorization = `Bearer ${user.token}`;
-      } else if (user?.role === 'admin') {
-        // Fallback for admin session if token was somehow omitted
-        const fakeToken = btoa(JSON.stringify({ role: 'admin', name: user.name || 'Demo Administrator', _id: user.id || 'admin-user-id' }));
-        config.headers.Authorization = `Bearer demo-jwt-${fakeToken}`;
       }
     } catch {
       // ignore

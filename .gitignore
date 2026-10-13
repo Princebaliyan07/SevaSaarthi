@@ -1,17 +1,51 @@
-# Root level
-node_modules/
-.DS_Store
-*.log
-
-# Server
+# Environment & Secrets (Never commit secrets to repository)
+.env
+.env.*
+!.env.example
 server/.env
-server/uploads/
-server/node_modules/
-
-# Client
+server/.env.*
+!server/.env.example
 client/.env
-client/.env.local
-client/node_modules/
-client/dist/
+client/.env.*
+!client/.env.example
 
-.vercel
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Production Builds & Bundles
+dist/
+build/
+client/dist/
+.vercel/
+client/.vercel/
+
+# Private Uploads, Temp & Data Dumps
+uploads/
+server/uploads/
+public/temp/
+server/public/temp/
+*.dump
+*.sql
+*.tar.gz
+
+# Private Certificates, Keys & Error Logs
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
