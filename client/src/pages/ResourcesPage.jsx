@@ -6,7 +6,8 @@ import DisasterProtectionVideos from '../components/DisasterProtectionVideos';
 import HealthcareActionCenter from '../components/resources/HealthcareActionCenter';
 import MelaReadinessHub from '../components/resources/MelaReadinessHub';
 import DisasterReadinessScore from '../components/resources/DisasterReadinessScore';
-import { downloadBilingualGuide } from '../utils/guideGenerator';
+import { EmergencyHelplineSection } from '../components/common/EmergencyHelplineSection';
+import { downloadBilingualGuide, downloadAllHelplinesPdf } from '../utils/guideGenerator';
 
 const DOWNLOADS = [
   {
@@ -538,7 +539,10 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      {/* 5. SMALL EXTRA FEATURE: PERSONAL DISASTER READINESS SCORE */}
+      {/* 5. ALL INDIA EMERGENCY HELPLINE DIRECTORY */}
+      <EmergencyHelplineSection lang={lang} onDownloadPdf={downloadAllHelplinesPdf} />
+
+      {/* 6. PERSONAL DISASTER READINESS SCORE */}
       <DisasterReadinessScore />
     </div>
   );

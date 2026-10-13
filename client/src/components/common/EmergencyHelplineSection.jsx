@@ -2,9 +2,7 @@
  * ALL_HELPLINES — Complete India Emergency & Citizen Helpline Directory
  * Categorized, verified official numbers
  *
- * Design: one theme colour (rose, about 48% lighter than full strength) for every
- * category, with a green call button. To change the theme, find-and-replace "rose" with another Tailwind
- * colour. The icon and color fields are kept in the data; "color" is no longer used here.
+ * Emergency Red / Crimson design theme for authentic national emergency readiness.
  */
 export const ALL_HELPLINES_CATEGORIES = [
   {
@@ -12,7 +10,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Core Emergency Services',
     titleHi: 'मुख्य आपातकालीन सेवाएं',
     icon: '🚨',
-    color: 'rose',
     helplines: [
       { name: 'National Unified Emergency', nameHi: 'राष्ट्रीय आपातकालीन सेवा', num: '112', note: '24×7 Toll Free' },
       { name: 'Ambulance Emergency', nameHi: 'एम्बुलेंस सेवा', num: '108', note: 'Medical' },
@@ -25,7 +22,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Disaster & Relief',
     titleHi: 'आपदा एवं राहत',
     icon: '🌊',
-    color: 'blue',
     helplines: [
       { name: 'NDMA Disaster Helpline', nameHi: 'राष्ट्रीय आपदा प्रबंधन', num: '1078', note: 'Disaster' },
       { name: 'State Disaster Helpline', nameHi: 'राज्य आपदा राहत', num: '1070', note: 'SDMA' },
@@ -38,7 +34,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Women Safety & Protection',
     titleHi: 'महिला सुरक्षा एवं संरक्षण',
     icon: '👩‍⚕️',
-    color: 'pink',
     helplines: [
       { name: 'Women Helpline (National)', nameHi: 'महिला राष्ट्रीय हेल्पलाइन', num: '1091', note: 'Safety' },
       { name: 'Domestic Violence Helpline', nameHi: 'घरेलू हिंसा हेल्पलाइन', num: '181', note: 'NCW' },
@@ -51,7 +46,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Child Safety & Labour',
     titleHi: 'बाल सुरक्षा एवं बाल श्रम',
     icon: '👶',
-    color: 'amber',
     helplines: [
       { name: 'Childline India (24×7)', nameHi: 'चाइल्डलाइन इंडिया', num: '1098', note: 'Children' },
       { name: 'Child Labour Helpline', nameHi: 'बाल श्रम हेल्पलाइन', num: '1800-425-8888', note: 'Labour' },
@@ -64,7 +58,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Health & Mental Wellness',
     titleHi: 'स्वास्थ्य एवं मानसिक स्वास्थ्य',
     icon: '🏥',
-    color: 'teal',
     helplines: [
       { name: 'Health Helpline (NHM)', nameHi: 'स्वास्थ्य हेल्पलाइन', num: '104', note: 'Medical' },
       { name: 'iCall Mental Health', nameHi: 'मानसिक स्वास्थ्य सहायता', num: '9152987821', note: 'Mental' },
@@ -77,7 +70,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Senior Citizens & Disability',
     titleHi: 'वरिष्ठ नागरिक एवं दिव्यांग',
     icon: '🧓',
-    color: 'purple',
     helplines: [
       { name: 'Elder Line (Senior Citizens)', nameHi: 'वरिष्ठ नागरिक हेल्पलाइन', num: '14567', note: 'Elders' },
       { name: 'Disability Helpline (NCPEDP)', nameHi: 'दिव्यांग हेल्पलाइन', num: '011-45121609', note: 'PwD' },
@@ -89,7 +81,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Citizen Services & Anti-Corruption',
     titleHi: 'नागरिक सेवाएं एवं भ्रष्टाचार विरोध',
     icon: '🏛️',
-    color: 'indigo',
     helplines: [
       { name: 'PM Helpline (PMO India)', nameHi: 'प्रधानमंत्री हेल्पलाइन', num: '1800-11-7000', note: 'PMO' },
       { name: 'Anti-Corruption Helpline (CBI)', nameHi: 'भ्रष्टाचार विरोध CBI', num: '1800-11-0180', note: 'CBI' },
@@ -102,7 +93,6 @@ export const ALL_HELPLINES_CATEGORIES = [
     title: 'Road, Rail & Other Safety',
     titleHi: 'सड़क, रेल एवं अन्य सुरक्षा',
     icon: '🚔',
-    color: 'orange',
     helplines: [
       { name: 'Railway Emergency (RPF)', nameHi: 'रेलवे सुरक्षा बल', num: '182', note: 'Rail' },
       { name: 'Road Accident Emergency', nameHi: 'सड़क दुर्घटना सहायता', num: '1073', note: 'Road' },
@@ -118,12 +108,12 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
       {/* Section Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 rounded-full border border-rose-300 bg-rose-100 px-3 py-1 text-xs font-bold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-            {lang === 'hi' ? '24×7 आपातकालीन हेल्पलाइन' : '24×7 Emergency Helplines — India'}
+          <div className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-bold text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
+            <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
+            {lang === 'hi' ? '24×7 राष्ट्रीय आपातकालीन हेल्पलाइन' : '24×7 All-India Emergency Helplines'}
           </div>
-          <h2 className="border-l-4 border-rose-400 pl-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
-            {lang === 'hi' ? 'भारत की सभी हेल्पलाइन नंबर' : 'All India Emergency Helpline Numbers'}
+          <h2 className="border-l-4 border-red-600 pl-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-white">
+            {lang === 'hi' ? 'भारत की सभी आपातकालीन हेल्पलाइन नंबर' : 'All India Emergency Helpline Directory'}
           </h2>
           <p className="pl-4 text-sm font-medium text-slate-500 sm:text-base dark:text-slate-400">
             {lang === 'hi'
@@ -136,7 +126,7 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
         <button
           type="button"
           onClick={onDownloadPdf}
-          className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-5 py-2.5 text-sm font-black text-emerald-950 shadow-lg shadow-emerald-500/20 transition hover:opacity-90 hover:shadow-xl active:scale-95"
+          className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-red-600/20 transition hover:from-red-700 hover:to-red-800 hover:shadow-xl active:scale-95"
         >
           <svg className="h-4 w-4 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" strokeLinecap="round" strokeLinejoin="round" />
@@ -150,19 +140,19 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
         {ALL_HELPLINES_CATEGORIES.map((cat) => (
           <div
             key={cat.id}
-            className="overflow-hidden rounded-2xl border border-rose-400 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-500 hover:shadow-lg hover:shadow-rose-500/15 dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-rose-500/40"
+            className="overflow-hidden rounded-2xl border border-red-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-red-500 hover:shadow-lg hover:shadow-red-500/15 dark:border-slate-800 dark:bg-slate-900/90 dark:hover:border-red-600/50"
           >
-            {/* Card header */}
-            <div className="flex items-center gap-3 bg-gradient-to-r from-rose-500 to-rose-500 px-4 py-3 dark:from-rose-600 dark:to-rose-400">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/90 text-lg shadow-sm">
+            {/* Authentic Emergency Red Card Header */}
+            <div className="flex items-center gap-3 bg-gradient-to-r from-red-600 via-red-600 to-red-700 px-4 py-3 dark:from-red-700 dark:to-red-800">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg text-white shadow-xs backdrop-blur-xs ring-1 ring-white/30">
                 {cat.icon}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-black leading-tight text-rose-950">
+                <p className="text-sm font-black leading-tight text-white">
                   {lang === 'hi' ? cat.titleHi : cat.title}
                 </p>
-                <p className="mt-0.5 text-[11px] font-semibold text-rose-950/75">
-                  {cat.helplines.length} numbers
+                <p className="mt-0.5 text-[11px] font-semibold text-red-100">
+                  {cat.helplines.length} {lang === 'hi' ? 'हेल्पलाइन' : 'numbers'}
                 </p>
               </div>
             </div>
@@ -172,19 +162,19 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
               {cat.helplines.map((h) => (
                 <div
                   key={h.num + h.name}
-                  className="flex items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-rose-50 dark:hover:bg-rose-500/5"
+                  className="flex items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-red-50/50 dark:hover:bg-red-950/20"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold leading-tight text-slate-800 dark:text-slate-100">
                       {lang === 'hi' ? h.nameHi : h.name}
                     </p>
-                    <span className="mt-1 inline-block rounded border border-rose-300 bg-rose-200/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-900 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
+                    <span className="mt-1 inline-block rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
                       {h.note}
                     </span>
                   </div>
                   <a
                     href={`tel:${h.num.replace(/[-\s]/g, '')}`}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-200/70 px-2.5 py-1.5 font-mono text-sm font-black text-emerald-900 transition-all duration-200 hover:border-emerald-400 hover:bg-emerald-400 hover:text-emerald-950 dark:border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500 dark:hover:text-white"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 font-mono text-xs sm:text-sm font-black text-emerald-800 transition-all duration-200 hover:border-emerald-600 hover:bg-emerald-600 hover:text-white dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-600 dark:hover:text-white"
                   >
                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M6.6 10.8a15.2 15.2 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" />
@@ -198,10 +188,10 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
         ))}
       </div>
 
-      {/* Bottom PDF banner */}
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-rose-300 bg-gradient-to-r from-rose-200/70 to-rose-300/50 p-5 sm:flex-row dark:border-rose-500/20 dark:from-rose-950/30 dark:to-rose-900/20">
+      {/* Bottom Offline PDF banner */}
+      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 via-white to-amber-50/40 p-5 sm:flex-row dark:border-red-900/40 dark:from-slate-900 dark:to-red-950/20">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-300 to-rose-400 text-2xl shadow-lg shadow-rose-500/20">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 to-red-700 text-2xl text-white shadow-lg shadow-red-600/20">
             📄
           </div>
           <div>
@@ -218,7 +208,7 @@ export function EmergencyHelplineSection({ lang = 'en', onDownloadPdf }) {
         <button
           type="button"
           onClick={onDownloadPdf}
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-black text-emerald-950 transition hover:bg-emerald-500 hover:shadow-lg active:scale-95"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-black text-white shadow-md shadow-red-600/20 transition hover:bg-red-700 hover:shadow-lg active:scale-95"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />
