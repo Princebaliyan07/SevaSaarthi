@@ -1266,7 +1266,7 @@ export const deleteMelaMap = asyncHandler(async (req, res) => {
 
   if (mongoose.connection.readyState === 1) {
     try {
-      await MelaMap.findOneAndDelete({ mapId });
+      await MelaMap.deleteMany({ mapId });
     } catch (err) {
       console.error('[Delete Map DB Error]', err);
     }

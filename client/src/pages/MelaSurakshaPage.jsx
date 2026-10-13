@@ -75,8 +75,12 @@ export default function MelaSurakshaPage() {
       if (overviewRes) setData(overviewRes);
       setFacilities(facilitiesRes || []);
       setAlerts(alertsRes || []);
-      setReportsData(reportsRes || { reports: [], pagination: {} });
-      setMaps(mapsRes || []);
+      const loadedMaps = mapsRes || [];
+      setMaps(loadedMaps);
+      setSelectedMapId((prev) => {
+        if (prev && loadedMaps.some((m) => m.mapId === prev)) return prev;
+        return loadedMaps[0]?.mapId || 'prayagraj_kumbh';
+      });
       setCrowdZones(zonesRes || []);
       setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err) {

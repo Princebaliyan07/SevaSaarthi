@@ -152,7 +152,12 @@ export default function CommandCentrePage() {
       setReports(repData?.reports || []);
       setHospitals(hospList || []);
       setCrowdZones(zonesList || []);
-      setMaps(mapsList || []);
+      const loadedMaps = mapsList || [];
+      setMaps(loadedMaps);
+      setSelectedMapId((prev) => {
+        if (prev && loadedMaps.some((m) => m.mapId === prev)) return prev;
+        return loadedMaps[0]?.mapId || '';
+      });
 
       // Keep the selected incident across auto-refreshes (and refresh its data);
       // only fall back to the first incident when nothing is selected yet.
