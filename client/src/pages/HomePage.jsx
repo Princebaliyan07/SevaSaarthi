@@ -359,6 +359,21 @@ export default function HomePage() {
 
       {/* 2. Stats Metric Bar */}
       <section className="glass-card p-5 sm:p-6 shadow-sm border-slate-200/80 dark:border-slate-800">
+        {/* DEMO Section Heading */}
+        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-xs font-black tracking-wider text-white shadow-xs">
+              DEMO
+            </span>
+            <h2 className="text-xs sm:text-sm font-black tracking-wide text-slate-800 dark:text-slate-200 uppercase">
+              {hi ? 'डेमो टेलीमेट्री एवं प्लेटफ़ॉर्म आंकड़े' : 'Live Platform Telemetry & Overview'}
+            </h2>
+          </div>
+          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+            {hi ? 'सिम्युलेटेड डेमो डेटा' : 'Simulated Demo Data'}
+          </span>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-800">
           <div className="flex items-center gap-3 pt-2 sm:pt-0 sm:px-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-xl text-rose-600 dark:text-rose-400">
