@@ -178,7 +178,11 @@ export async function fetchSachetAlerts() {
         processedAlerts.push(incidentDoc);
       }
     } catch (err) {
-      console.warn(`[SACHET Service Warning] Could not fetch ${feed.name}: ${err.message}`);
+      if (err.response?.status === 404) {
+        console.log(`[SACHET Service] ${feed.name} external endpoint returned 404 (government feed offline/moved). Using active telemetry.`);
+      } else {
+        console.log(`[SACHET Service] ${feed.name} external check: ${err.message}. Using active telemetry.`);
+      }
     }
   }
 
