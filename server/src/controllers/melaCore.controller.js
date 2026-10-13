@@ -290,12 +290,16 @@ let inMemoryReports = [
 
 export function sanitizeReportForPublic(report) {
   const doc = report.toObject ? report.toObject() : { ...report };
+  // Hide complainant/reporter personal details from public
+  delete doc.reporterName;
   delete doc.reporterPhone;
   delete doc.reporterEmail;
   delete doc.secretAccessKey;
+  delete doc.finderSecretKey;
   delete doc.foundFinderContact;
   return doc;
 }
+
 
 // ==========================================
 // FEATURE 1: MELA FACILITIES
@@ -671,22 +675,82 @@ export const getReportDetails = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Report not found');
   }
 
-  const isOwner = secretKey && report.secretAccessKey === secretKey;
-  if (!isAdmin && !isOwner) {
-    return res.status(200).json(new ApiResponse(200, sanitizeReportForPublic(report), 'Public report details'));
+  // 1. Admin always has full access
+  if (isAdmin) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...report,
+          isAuthorizedViewer: true,
+          viewerType: 'admin',
+        },
+        'Full report details (Admin)'
+      )
+    );
   }
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        ...report,
-        isAuthorizedViewer: true,
-      },
-      'Full report details'
-    )
-  );
+  // 2. Original complainant / family secret key check
+  const isComplainantOwner = secretKey && report.secretAccessKey && report.secretAccessKey === secretKey.trim();
+
+  // 3. Finder secret key check (only authorized if admin has marked 'Verified Match' or 'Resolved')
+  const isFinderKeyMatch = secretKey && report.finderSecretKey && report.finderSecretKey === secretKey.trim();
+  const isFinderApproved = isFinderKeyMatch && (report.status === 'Verified Match' || report.status === 'Resolved');
+
+  if (isComplainantOwner) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...report,
+          isAuthorizedViewer: true,
+          viewerType: 'complainant',
+        },
+        'Full report details (Family / Complainant)'
+      )
+    );
+  }
+
+  if (isFinderKeyMatch) {
+    if (!isFinderApproved) {
+      // Finder entered valid key, but Admin has NOT verified the match yet (still 'Possible Match' or 'Rejected')
+      const publicData = sanitizeReportForPublic(report);
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            ...publicData,
+            isAuthorizedViewer: false,
+            finderStatusPending: true,
+            finderVerificationState: report.status === 'Rejected' ? 'rejected' : 'pending_admin_approval',
+            message:
+              report.status === 'Rejected'
+                ? 'Admin rejected the photo comparison match. Contact details cannot be unlocked.'
+                : 'Found report recorded! Secret Key will unlock family contact details once Admin verifies the match.',
+          },
+          'Pending Admin verification'
+        )
+      );
+    }
+
+    // Admin has approved ("Verified Match" or "Resolved") -> Reveal contact details to the finder!
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...report,
+          isAuthorizedViewer: true,
+          viewerType: 'verified_finder',
+        },
+        'Full report details unlocked by Admin verified match'
+      )
+    );
+  }
+
+  // Default: Public viewer without matching secret key
+  return res.status(200).json(new ApiResponse(200, sanitizeReportForPublic(report), 'Public report details'));
 });
+
 
 // SUBMIT FOUND PERSON REPORT / PHOTO MATCH CLAIM
 export const submitPossibleMatch = asyncHandler(async (req, res) => {
@@ -703,6 +767,9 @@ export const submitPossibleMatch = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Found location is required');
   }
 
+  // Generate unique secret key for finder
+  const finderSecretKey = `fnd_${crypto.randomBytes(4).toString('hex')}_${Date.now().toString().slice(-4)}`;
+
   const systemNote = `Person Found Reported by ${finderName}: Located at "${foundLocation}". Notes: ${notes}`;
 
   const updateFields = {
@@ -710,6 +777,7 @@ export const submitPossibleMatch = asyncHandler(async (req, res) => {
     foundLocation: foundLocation.trim(),
     foundFinderName: finderName.trim(),
     foundFinderContact: finderContact.trim(),
+    finderSecretKey,
     matchNotes: systemNote,
   };
   if (foundPhotoUrl && foundPhotoUrl.trim()) {
@@ -739,7 +807,16 @@ export const submitPossibleMatch = asyncHandler(async (req, res) => {
           reportRefId: updated.reportRefId,
           foundLocation,
         });
-        return res.status(200).json(new ApiResponse(200, sanitizeReportForPublic(updated), 'Person found claim recorded'));
+        return res.status(200).json(
+          new ApiResponse(
+            200,
+            {
+              ...sanitizeReportForPublic(updated),
+              finderSecretKey,
+            },
+            'Person found claim recorded. Finder secret key issued.'
+          )
+        );
       }
     } catch (err) {
       console.error('[Submit Found Person DB Error]', err);
@@ -756,11 +833,21 @@ export const submitPossibleMatch = asyncHandler(async (req, res) => {
       text: `PERSON FOUND UPDATE: Located at "${foundLocation}". Dual photo comparison available for admin verification.`,
       timestamp: new Date(),
     });
-    return res.status(200).json(new ApiResponse(200, sanitizeReportForPublic(rep), 'Person found claim recorded (memory)'));
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          ...sanitizeReportForPublic(rep),
+          finderSecretKey,
+        },
+        'Person found claim recorded. Finder secret key issued (memory).'
+      )
+    );
   }
 
   throw new ApiError(404, 'Report not found');
 });
+
 
 // ADMIN REVIEW WORKFLOW: VERIFY DUAL PHOTOS & UPDATE STATUS
 export const updateReportStatus = asyncHandler(async (req, res) => {
@@ -870,6 +957,33 @@ export const sendReportMessage = asyncHandler(async (req, res) => {
   report.messages.push(newMsg);
   return res.status(201).json(new ApiResponse(201, newMsg, 'Message sent (memory)'));
 });
+
+// ADMIN ACTION: PERMANENTLY DELETE MISSING PERSON REPORT CASE
+export const deleteLostFoundReport = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const deleted = await LostFoundReport.findOneAndDelete({
+        $or: [{ reportRefId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
+      });
+      if (deleted) {
+        return res.status(200).json(new ApiResponse(200, { reportRefId: deleted.reportRefId }, 'Missing person report deleted permanently'));
+      }
+    } catch (err) {
+      console.error('[Delete Report DB Error]', err);
+    }
+  }
+
+  const prevLen = inMemoryReports.length;
+  inMemoryReports = inMemoryReports.filter((r) => r.reportRefId !== id && r._id !== id);
+  if (inMemoryReports.length < prevLen) {
+    return res.status(200).json(new ApiResponse(200, { id }, 'Missing person report deleted (memory)'));
+  }
+
+  return res.status(200).json(new ApiResponse(200, { id }, 'Report removed'));
+});
+
 
 // ==========================================
 // FEATURE 3: MELA CROWD SAFETY & ALERTS

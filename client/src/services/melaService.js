@@ -80,10 +80,16 @@ export async function updateReportStatus(id, data) {
   return res.data?.data;
 }
 
+export async function deleteLostFoundReport(id) {
+  const res = await api.delete(`/mela/reports/${id}`);
+  return res.data?.data;
+}
+
 export async function submitPossibleMatch(id, data) {
   const res = await api.post(`/mela/reports/${id}/match`, data);
   return res.data?.data;
 }
+
 
 export async function sendReportMessage(id, data) {
   const res = await api.post(`/mela/reports/${id}/messages`, data);

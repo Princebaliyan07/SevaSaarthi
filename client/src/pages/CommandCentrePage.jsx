@@ -23,6 +23,7 @@ import {
   deleteMelaAlert,
   getLostFoundReports,
   updateReportStatus,
+  deleteLostFoundReport,
   getMelaMaps,
   createMelaMap,
   deleteMelaMap,
@@ -373,6 +374,21 @@ export default function CommandCentrePage() {
     await loadData();
   };
 
+  const handleDeleteReport = async (id, name = 'this person') => {
+    if (!window.confirm(`Are you sure you want to permanently delete the missing person case for "${name}" (${id})?\nThis action cannot be undone.`)) {
+      return;
+    }
+    try {
+      setReports((prev) => prev.filter((r) => r.reportRefId !== id && r._id !== id));
+      await deleteLostFoundReport(id);
+    } catch (err) {
+      console.error('Failed to delete report:', err);
+    } finally {
+      await loadData();
+    }
+  };
+
+
   /* ---------- Loading / error states ---------- */
   if (!stats) {
     return (
@@ -603,10 +619,12 @@ export default function CommandCentrePage() {
                 onResolveAlert={handleResolveAlert}
                 onDeleteAlert={handleDeleteAlert}
                 onUpdateReportStatus={handleUpdateReportStatus}
+                onDeleteReport={handleDeleteReport}
                 onOpenReportModal={(id) => {
                   setSelectedReportId(id);
                   setDetailModalOpen(true);
                 }}
+
                 lang={lang}
               />
             </section>

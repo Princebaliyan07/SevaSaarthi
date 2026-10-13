@@ -210,18 +210,33 @@ export default function UnifiedLostFoundDirectory({
 
                 {/* Bottom Action Footer */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-slate-400 font-semibold">
-                    🔒 Contacts Protected
+                  <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                    <span>🔒</span>
+                    <span>{lang === 'hi' ? 'संपर्क सुरक्षित' : 'Contacts Protected'}</span>
                   </span>
 
-                  <button
-                    type="button"
-                    onClick={() => onOpenReportModal(rep.reportRefId || rep._id)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 shadow-xs transition-all"
-                  >
-                    Compare & Details →
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onOpenReportModal(rep.reportRefId || rep._id, true)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm transition-all flex items-center gap-1.5 active:scale-95"
+                      title={lang === 'hi' ? 'यह व्यक्ति मिल गया है तो रिपोर्ट करें' : 'Report this person found / located'}
+                    >
+                      <span>🤝</span>
+                      <span>{lang === 'hi' ? 'मिला (Found)' : 'Found'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onOpenReportModal(rep.reportRefId || rep._id, false)}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-all"
+                      title={lang === 'hi' ? 'विवरण देखें' : 'View case details'}
+                    >
+                      {lang === 'hi' ? 'विवरण' : 'Details'} →
+                    </button>
+                  </div>
                 </div>
+
               </div>
             );
           })}

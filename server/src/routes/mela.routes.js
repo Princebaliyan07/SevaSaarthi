@@ -16,6 +16,7 @@ import {
   updateReportStatus,
   submitPossibleMatch,
   sendReportMessage,
+  deleteLostFoundReport,
   getMelaAlerts,
   createMelaAlert,
   updateMelaAlert,
@@ -61,7 +62,9 @@ router.get('/reports', getLostFoundReports);
 router.get('/reports/:id', getReportDetails);
 router.post('/reports/:id/match', submitPossibleMatch);
 router.patch('/reports/:id/status', verifyJwt, authorizeRoles('admin'), updateReportStatus);
+router.delete('/reports/:id', verifyJwt, authorizeRoles('admin'), deleteLostFoundReport);
 router.post('/reports/:id/messages', sendReportMessage);
+
 
 // ==========================================
 // FEATURE 3: ADMIN-CONTROLLED CROWD ALERTS

@@ -55,8 +55,10 @@ export default function MelaSurakshaPage() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [openFoundMode, setOpenFoundMode] = useState(false);
 
   const [alertModalOpen, setAlertModalOpen] = useState(false);
+
 
   // Load all live Mela data from MongoDB
   const fetchAllData = useCallback(async () => {
@@ -272,8 +274,9 @@ export default function MelaSurakshaPage() {
           pagination={reportsData.pagination}
           loading={reportsLoading}
           isAdmin={false}
-          onOpenReportModal={(id) => {
+          onOpenReportModal={(id, isFoundMode = false) => {
             setSelectedReportId(id);
+            setOpenFoundMode(Boolean(isFoundMode));
             setDetailModalOpen(true);
           }}
           onOpenNewReport={() => setReportModalOpen(true)}
@@ -312,9 +315,11 @@ export default function MelaSurakshaPage() {
         reportId={selectedReportId}
         isOpen={detailModalOpen}
         isAdmin={false}
+        initialOpenFound={openFoundMode}
         onClose={() => {
           setDetailModalOpen(false);
           setSelectedReportId(null);
+          setOpenFoundMode(false);
         }}
         onStatusUpdated={fetchAllData}
         lang={lang}
@@ -322,3 +327,4 @@ export default function MelaSurakshaPage() {
     </div>
   );
 }
+

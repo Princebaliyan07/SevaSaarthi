@@ -7,21 +7,24 @@ export default function ReportDetailModal({
   onClose,
   isAdmin = false,
   onStatusUpdated = null,
+  initialOpenFound = false,
   lang = 'en',
 }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [secretKeyInput, setSecretKeyInput] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [keyNotice, setKeyNotice] = useState(null); // { type: 'error' | 'warning' | 'info', text: string }
 
   // Found Person Intake Form
-  const [showFoundForm, setShowFoundForm] = useState(false);
+  const [showFoundForm, setShowFoundForm] = useState(initialOpenFound);
   const [foundLocation, setFoundLocation] = useState('');
   const [foundPhotoUrl, setFoundPhotoUrl] = useState('');
   const [finderName, setFinderName] = useState('');
   const [finderContact, setFinderContact] = useState('');
   const [foundNotes, setFoundNotes] = useState('');
   const [submittingFound, setSubmittingFound] = useState(false);
+  const [issuedFinderKey, setIssuedFinderKey] = useState('');
 
   // Private chat message
   const [chatMessage, setChatMessage] = useState('');
@@ -29,16 +32,36 @@ export default function ReportDetailModal({
 
   useEffect(() => {
     if (isOpen && reportId) {
+      if (initialOpenFound) setShowFoundForm(true);
       loadReportData();
     }
-  }, [isOpen, reportId]);
+  }, [isOpen, reportId, initialOpenFound]);
 
   const loadReportData = async (key = '') => {
     setLoading(true);
+    setKeyNotice(null);
     try {
       const data = await getReportDetails(reportId, key || secretKeyInput);
       setReport(data);
       setIsAuthorized(Boolean(data.isAuthorizedViewer || isAdmin));
+
+      if (data.finderStatusPending) {
+        if (data.finderVerificationState === 'rejected') {
+          setKeyNotice({
+            type: 'error',
+            text: lang === 'hi'
+              ? '❌ एडमिन ने इस मैच को अस्वीकार (Rejected) कर दिया है। गुप्त कुंजी (Secret Key) अमान्य हो गई है और संपर्क विवरण नहीं देखा जा सकता।'
+              : '❌ Admin has rejected this match. Your Secret Key is invalid and contact details remain locked.',
+          });
+        } else {
+          setKeyNotice({
+            type: 'warning',
+            text: lang === 'hi'
+              ? '⏳ आपकी रिपोर्ट दर्ज है! परंतु एडमिन द्वारा "Verified Match" अनुमोदित होने के बाद ही यह सीक्रेट की परिवार के नंबर को अनलॉक करेगी।'
+              : '⏳ Found report recorded! This Secret Key will unlock family contact details once Admin reviews both photos and approves "Verified Match".',
+          });
+        }
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -55,22 +78,22 @@ export default function ReportDetailModal({
   const handleSubmitFound = async (e) => {
     e.preventDefault();
     if (!foundLocation.trim()) {
-      alert('Please provide the location where the person was found.');
+      alert(lang === 'hi' ? 'कृपया बताएं कि व्यक्ति कहां मिला।' : 'Please provide the location where the person was found.');
       return;
     }
     setSubmittingFound(true);
     try {
-      await submitPossibleMatch(reportId, {
+      const res = await submitPossibleMatch(reportId, {
         foundLocation: foundLocation.trim(),
         foundPhotoUrl: foundPhotoUrl.trim(),
         finderName: finderName.trim() || 'Volunteer / Police Post',
         finderContact: finderContact.trim(),
         notes: foundNotes.trim(),
       });
+      if (res?.finderSecretKey) {
+        setIssuedFinderKey(res.finderSecretKey);
+      }
       setShowFoundForm(false);
-      setFoundLocation('');
-      setFoundPhotoUrl('');
-      setFoundNotes('');
       await loadReportData();
       if (onStatusUpdated) onStatusUpdated();
     } catch (err) {
@@ -79,6 +102,7 @@ export default function ReportDetailModal({
       setSubmittingFound(false);
     }
   };
+
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -252,6 +276,53 @@ export default function ReportDetailModal({
               )}
             </div>
 
+            {/* Finder Key Issued Banner */}
+            {issuedFinderKey && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:to-teal-950/30 border-2 border-emerald-400 text-emerald-950 dark:text-emerald-200 space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🎉</span>
+                  <div>
+                    <h4 className="font-black text-xs text-emerald-900 dark:text-emerald-100">
+                      {lang === 'hi' ? 'सूचना दर्ज! आपकी गुप्त कुंजी (Finder Secret Key):' : 'Found Report Saved! Your Finder Secret Key:'}
+                    </h4>
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                      {lang === 'hi'
+                        ? 'कृपया इस कुंजी को सुरक्षित रखें। जब एडमिन दोनों फ़ोटो मिलाकर "Verified Match" पर मंज़ूरी देगा, तभी यह कुंजी परिवार के नंबर को खोलेगी। यदि एडमिन अस्वीकार (Reject) करेगा तो यह काम नहीं करेगी।'
+                        : 'Keep this key safe. Once Admin verifies the match against missing records, this key will unlock the family contact details. If Admin rejects the match, access remains locked.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-emerald-400/60 font-mono text-sm font-black text-emerald-700 dark:text-emerald-300 select-all">
+                  <span>🔑</span>
+                  <span className="flex-1">{issuedFinderKey}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(issuedFinderKey);
+                      alert(lang === 'hi' ? 'सीक्रेट कुंजी कॉपी हो गई!' : 'Secret Key copied to clipboard!');
+                    }}
+                    className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    {lang === 'hi' ? 'कॉपी' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Notice when secret key is entered but status is not yet Verified Match */}
+            {keyNotice && (
+              <div
+                className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-start gap-2.5 ${
+                  keyNotice.type === 'error'
+                    ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-200'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200'
+                }`}
+              >
+                <span className="text-base shrink-0">{keyNotice.type === 'error' ? '🛑' : '⏳'}</span>
+                <p className="leading-relaxed">{keyNotice.text}</p>
+              </div>
+            )}
+
             {/* Private Contact Isolation Box */}
             {isAuthorized ? (
               <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 space-y-2">
@@ -306,10 +377,12 @@ export default function ReportDetailModal({
               <div className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span>🔒</span> Reporter Contacts Protected
+                    <span>🔒</span> {lang === 'hi' ? 'कॉन्टैक्ट्स सुरक्षित' : 'Reporter Contacts Protected'}
                   </span>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Are you the family reporter? Enter Secret Key to unlock contact & private messages.
+                    {lang === 'hi'
+                      ? 'क्या आप परिवार या खोजकर्ता हैं? विवरण अनलॉक करने के लिए Secret Key डालें (केवल एडमिन अनुमोदन के बाद कार्य करेगी)।'
+                      : 'Are you the family or finder? Enter your Secret Key (unlocks contacts once Admin approves match).'}
                   </p>
                 </div>
                 <form onSubmit={handleUnlockWithKey} className="flex items-center gap-1.5 w-full sm:w-auto">
@@ -329,6 +402,7 @@ export default function ReportDetailModal({
                 </form>
               </div>
             )}
+
 
             {/* ACTION: REPORT THIS PERSON AS FOUND BY VOLUNTEER OR POLICE */}
             <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">

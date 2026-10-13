@@ -26,6 +26,7 @@ export default function CommandMelaAdminTab({
   onResolveAlert,
   onDeleteAlert = null,
   onUpdateReportStatus,
+  onDeleteReport = null,
   onOpenReportModal,
   lang = 'en',
 }) {
@@ -292,6 +293,18 @@ export default function CommandMelaAdminTab({
                         >
                           Open case file and chat
                         </button>
+
+                        {isAdmin && onDeleteReport && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteReport(rep.reportRefId || rep._id, rep.personName)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 active:scale-95 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
+                            title="Delete this missing person case"
+                          >
+                            <span>🗑️</span>
+                            <span>Delete Case</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </article>

@@ -99,14 +99,21 @@ const lostFoundReportSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
-    // Secret Access Key
+    // Secret Access Key for original complainant / family
     secretAccessKey: {
       type: String,
       required: true,
       index: true,
     },
+    // Secret Key issued to the finder who reported person found (only unlocks contact details after admin approves "Verified Match")
+    finderSecretKey: {
+      type: String,
+      default: '',
+      index: true,
+    },
     // Workflow status
     status: {
+
       type: String,
       enum: ['Submitted', 'Under Review', 'Possible Match', 'Verified Match', 'Resolved', 'Rejected'],
       default: 'Submitted',
