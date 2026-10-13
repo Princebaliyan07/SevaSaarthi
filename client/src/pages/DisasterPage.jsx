@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import LiveSituationBoard from '../components/common/LiveSituationBoard';
 import DisasterProtectionVideos from '../components/DisasterProtectionVideos';
 import { DisasterSchemesSection } from '../components/common/DisasterSchemesSection';
@@ -14,6 +15,16 @@ const DOWNLOADS = [
 
 export default function DisasterPage() {
   const { lang, t } = useLanguage();
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash === '#situation-radar' || pathname.includes('live-board')) {
+      const el = document.getElementById('situation-radar');
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    }
+  }, [pathname, hash]);
 
   return (
     <div className="container-page py-6 sm:py-8 space-y-12">

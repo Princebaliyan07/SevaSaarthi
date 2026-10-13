@@ -38,6 +38,7 @@ export default function App() {
         <Route path="command-centre" element={<CommandCentrePage />} />
         <Route path="resources" element={<ResourcesPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="live-board" element={<DisasterPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

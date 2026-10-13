@@ -1,23 +1,13 @@
 /*
  * AI Saarthi knowledge base.
- * Ye file AI ka "dimaag" hai. Naya topic add karna ho to INTENTS me ek naya object jodo.
- *
- * Har intent:
- *   keywords : ye words/phrases message me milen to intent chalta hai (lowercase)
- *   reply    : Hinglish jawab
- *   replyHi  : Hindi (Devanagari) jawab
- *   actions  : buttons. type 'link' = site ka page, 'call' = phone call, 'prompt' = chat me ye text bhejo
- *
- * Intents upar se neeche check hote hain. Pehla match jeetta hai.
- *
- * NOTE: Site ke sirf wahi pages likhe hain jo code me dikhe: /healthcare, /disaster, /mela, /emergency.
- * Baaki features (pages, services) neeche TODO jagah par apne hisaab se jodo.
+ * Comprehensive symptom-based disease detection, OTC medication guidance, and civic emergency routing.
  */
 
 export const RED_FLAG_KEYWORDS = [
   'chest pain',
   'seene mein dard',
   'seene me dard',
+  'seena dard',
   'dil ka daura',
   'heart attack',
   'unconscious',
@@ -38,107 +28,257 @@ export const RED_FLAG_KEYWORDS = [
   'zeher',
   'poison',
   'overdose',
+  'snake bite',
+  'saap',
   'सीने में दर्द',
   'बेहोश',
   'सांस नहीं',
 ];
 
+export const RED_FLAG_RESPONSE = {
+  reply:
+    '⚠️ CRITICAL EMERGENCY ALERT: These symptoms (severe chest pain, unconsciousness, severe breathing distress) indicate a life-threatening medical emergency. Do NOT wait for medicines.\n\n' +
+    '• Immediately call 112 or 108 for an emergency ambulance.\n' +
+    '• Rush to the nearest hospital trauma / cardiac center.\n' +
+    '• Keep the patient sitting upright in an airy place and loosen tight clothing.',
+  replyHi:
+    '⚠️ गंभीर आपातकालीन चेतावनी: यह लक्षण (सीने में दर्द, सांस लेने में अत्यधिक तकलीफ, बेहोशी) जीवन के लिए घातक आपात स्थिति का संकेत हैं। दवाइयों का इंतजार न करें।\n\n' +
+    '• तुरंत 112 या 108 डायल करके एम्बुलेंस बुलाएं।\n' +
+    '• निकटतम अस्पताल के इमरजेंसी / ट्रॉमा सेंटर पहुंचें।\n' +
+    '• मरीज को शांत रखें और खुली हवा में बैठाएं।',
+  isRedFlag: true,
+  actions: [
+    { label: 'Call 112', type: 'call', value: '112', danger: true },
+    { label: 'Call 108 (Ambulance)', type: 'call', value: '108', danger: true },
+    { label: 'Nearest Emergency Hospital', type: 'link', value: '/healthcare' },
+  ],
+};
+
+export const DEFAULT_RESPONSE = {
+  reply:
+    'Hello! I am AI Saarthi, your 24/7 civic emergency and symptom detection assistant.\n\n' +
+    'Tell me your symptoms (e.g. "I had fever", "cough and cold", "stomach pain", "loose motion") and I will detect potential conditions, recommend safe OTC medicines with Jan Aushadhi generic options, and guide you to nearby healthcare.',
+  replyHi:
+    'नमस्ते! मैं AI सारथी हूँ, आपका 24/7 आपातकालीन एवं लक्षण जांच सहायक।\n\n' +
+    'मुझे अपने लक्षण बताएं (जैसे "बुखार है", "खांसी और जुकाम", "पेट दर्द", "दस्त और उल्टी") और मैं संभावित बीमारी की पहचान कर उचित दवाइयाँ व नजदीकी अस्पताल की जानकारी दूंगा।',
+  isRedFlag: false,
+  actions: [
+    { label: '🏥 Find 24x7 Hospitals', type: 'link', value: '/healthcare' },
+    { label: '💊 Jan Aushadhi Generic Medicines', type: 'link', value: '/healthcare' },
+    { label: '🗺️ Live Disaster & Situation Map', type: 'link', value: '/live-board' },
+    { label: '🚨 Report SOS Emergency', type: 'link', value: '/emergency' },
+  ],
+};
+
 export const INTENTS = [
-  // ---------- 1. Fever ----------
+  // ---------- 1. Fever & Temperature (Disease Detection + Medicine Guidance) ----------
   {
     id: 'fever',
     keywords: [
       'fever', 'bukhar', 'bukhaar', 'taap', 'temperature', 'tez bukhar',
-      'paracetamol', 'crocin', 'dolo', 'बुखार', 'ताप',
+      'i had fever', 'i have fever', 'fever medicine', 'fever dawai',
+      'paracetamol', 'crocin', 'dolo', 'calpol', 'बुखार', 'ताप',
     ],
     reply:
-      'Bukhar me main dawai prescribe nahi kar sakta, par general jaankari de sakta hoon:\n\n' +
-      '• Aaram karein, khoob paani, ORS ya nimbu paani piyein, halke kapde pehnein.\n' +
-      '• Bukhar kam karne ke liye aam taur par paracetamol (OTC) use hoti hai. Kitni leni hai ye packet ke label ya pharmacist/doctor se poochkar hi tay karein.\n' +
-      '• Dengue ya malaria ka shak ho to aspirin ya ibuprofen jaisi dard-nivarak dawai bina doctor ke na lein. Bachon ko aspirin kabhi na dein.\n\n' +
-      'Doctor ko turant dikhayein agar: bukhar 3 din se zyada ho, 103°F (39.4°C) se upar ho, saans me takleef ho, tez sar dard ya gardan akdi ho, daane nikalein, baar-baar ulti ho, behoshi lage, ya mareez bachcha, boodha ya pregnant ho.\n\n' +
-      'Main doctor nahi hoon. Kya main nazdeeki hospital ya Jan Aushadhi store dikhaun?',
+      '🩺 Symptom & Disease Analysis: Likely Viral Fever, Seasonal Flu, or early infection.\n' +
+      '(If accompanied by shivering/chills, consider Malaria or Dengue. Monitor platelets if fever persists).\n\n' +
+      '💊 Recommended Medicines You Can Take:\n' +
+      '• First-Line Antipyretic: Paracetamol 650mg (Dolo 650 / Calpol 650 / Crocin) or Jan Aushadhi Generic Paracetamol (₹8–₹14 / 10 tablets).\n' +
+      '• Dosage: 1 tablet after meals every 6–8 hours as needed (do NOT exceed 3 tablets in 24 hours).\n' +
+      '• Hydration Support: Drink ORS (Electral), coconut water, or fresh lime water regularly.\n' +
+      '• Physical Care: Place damp cold cloth strips on forehead if body temperature crosses 101°F.\n\n' +
+      '⚠️ Caution: Avoid Aspirin or Ibuprofen if Dengue is suspected (risk of internal bleeding).\n' +
+      '🚨 Hospital Alert: Rush to hospital if fever exceeds 103°F, lasts over 3 days, or is accompanied by breathlessness or extreme dizziness.',
     replyHi:
-      'बुखार में मैं दवा प्रिस्क्राइब नहीं कर सकता, लेकिन सामान्य जानकारी दे सकता हूँ:\n\n' +
-      '• आराम करें, खूब पानी, ORS या नींबू पानी पिएं, हल्के कपड़े पहनें।\n' +
-      '• बुखार कम करने के लिए आम तौर पर पैरासिटामोल (बिना पर्चे वाली) इस्तेमाल होती है। कितनी लेनी है, यह पैकेट के लेबल या फार्मासिस्ट/डॉक्टर से पूछकर ही तय करें।\n' +
-      '• डेंगू या मलेरिया का शक हो तो एस्पिरिन या इबुप्रोफेन जैसी दर्द की दवा बिना डॉक्टर के न लें। बच्चों को एस्पिरिन कभी न दें।\n\n' +
-      'डॉक्टर को तुरंत दिखाएं अगर: बुखार 3 दिन से ज़्यादा हो, 103°F (39.4°C) से ऊपर हो, सांस में तकलीफ हो, तेज़ सिरदर्द या गर्दन अकड़ी हो, दाने निकलें, बार-बार उल्टी हो, बेहोशी लगे, या मरीज़ बच्चा, बुज़ुर्ग या गर्भवती हो।\n\n' +
-      'मैं डॉक्टर नहीं हूँ। क्या मैं नज़दीकी अस्पताल या जन औषधि स्टोर दिखाऊँ?',
+      '🩺 लक्षण एवं संभावित बीमारी: वायरल बुखार (Viral Fever) या मौसमी फ्लू (Seasonal Flu)।\n' +
+      '(यदि कंपकंपी व ठंड लगे तो मलेरिया या डेंगू की भी जांच आवश्यक हो सकती है)।\n\n' +
+      '💊 आप कौन सी दवा ले सकते हैं:\n' +
+      '• बुखार कम करने हेतु: पैरासिटामोल 650mg (Dolo 650 / Calpol / Crocin) या जन औषधि केंद्र से जेनेरिक पैरासिटामोल (₹8–₹14 में 10 गोलियां)।\n' +
+      '• खुराक: खाना खाने के बाद 1 गोली (6–8 घंटे के अंतराल पर, 24 घंटे में अधिकतम 3 गोलियां)।\n' +
+      '• घरेलू देखभाल: खूब पानी, ORS घोल और नारियल पानी पिएं। बुखार 101°F से ऊपर हो तो माथे पर ठंडे पानी की पट्टी रखें।\n\n' +
+      '⚠️ चेतावनी: डेंगू की आशंका में एस्पिरिन (Aspirin) या ब्रूफेन न लें।\n' +
+      '🚨 अस्पताल कब जाएं: यदि बुखार 3 दिन से अधिक रहे, 103°F से अधिक हो या सांस लेने में परेशानी हो तो तुरंत डॉक्टर को दिखाएं।',
     actions: [
-      { label: 'Nearest hospital', type: 'link', value: '/healthcare' },
-      { label: 'Jan Aushadhi store', type: 'link', value: '/healthcare' },
-      { label: 'Call 112', type: 'call', value: '112', danger: true },
+      { label: '💊 Jan Aushadhi Paracetamol Prices', type: 'link', value: '/healthcare' },
+      { label: '🏥 Nearest 24/7 Hospital', type: 'link', value: '/healthcare' },
+      { label: '👨‍⚕️ Book Doctor Consultation', type: 'link', value: '/healthcare' },
     ],
   },
 
-  // ---------- 2. Cold / cough ----------
+  // ---------- 2. Cold, Cough, Sore Throat, Sneezing ----------
   {
     id: 'cold_cough',
-    keywords: ['cold', 'cough', 'khansi', 'khasi', 'zukam', 'jukam', 'sardi', 'gale mein dard', 'sore throat', 'खांसी', 'जुकाम', 'सर्दी'],
+    keywords: [
+      'cold', 'cough', 'khansi', 'khasi', 'zukam', 'jukam', 'sardi', 'gale mein dard',
+      'sore throat', 'sneezing', 'chheenk', 'chheenkain', 'खांसी', 'जुकाम', 'सर्दी', 'गले में दर्द',
+    ],
     reply:
-      'Sardi-khansi me aam taur par aaram, garam paani, bhaap lena aur gunguna paani ya namak ke gargle se aaram milta hai. Koi bhi dawai lene se pehle pharmacist ya doctor se poochein, main khud dawai nahi bata sakta.\n\n' +
-      'Doctor ko dikhayein agar: 7 din se zyada rahe, saans phoolne lage, seene me dard ho, tez bukhar ho, ya khansi me khoon aaye.',
+      '🩺 Symptom & Disease Analysis: Upper Respiratory Tract Infection (URTI), Common Cold, or Pharyngitis.\n\n' +
+      '💊 Recommended Medicines You Can Take:\n' +
+      '• Running Nose & Sneezing: Cetirizine 10mg (Cetzine / Okacet) or Levocetirizine 5mg (1 tablet at bedtime).\n' +
+      '• Dry Cough: Dextromethorphan syrup (Ascoril D / Benadryl DR) - 10ml thrice daily.\n' +
+      '• Wet / Productive Cough with Phlegm: Ambroxol + Guaifenesin syrup (Ascoril / Grilinctus-BM) - 10ml thrice daily.\n' +
+      '• Sore Throat: Warm salt water gargles 3 times a day or Betadine 2% gargle + Strepsils lozenges.\n' +
+      '• Steam Inhalation: 2 times daily for chest and nasal clearance.\n\n' +
+      '🚨 Consult Doctor if: Cough lasts over 1 week, produces blood, or causes wheezing / chest tightness.',
     replyHi:
-      'सर्दी-खांसी में आम तौर पर आराम, गरम पानी, भाप लेना और गुनगुने पानी या नमक के गरारे से आराम मिलता है। कोई भी दवा लेने से पहले फार्मासिस्ट या डॉक्टर से पूछें, मैं खुद दवा नहीं बता सकता।\n\n' +
-      'डॉक्टर को दिखाएं अगर: 7 दिन से ज़्यादा रहे, सांस फूलने लगे, सीने में दर्द हो, तेज़ बुखार हो, या खांसी में खून आए।',
+      '🩺 लक्षण एवं संभावित बीमारी: सामान्य सर्दी-जुकाम (Common Cold) या ऊपरी श्वसन नली का संक्रमण (URTI)।\n\n' +
+      '💊 आप कौन सी दवा ले सकते हैं:\n' +
+      '• बहती नाक व छींकों के लिए: सेटिरिज़िन 10mg (Cetirizine / Okacet) - रात को 1 गोली।\n' +
+      '• सूखी खांसी के लिए: डेक्सट्रोमेथॉर्फ़न सिरप (Ascoril D / Benadryl DR) - 10ml दिन में 3 बार।\n' +
+      '• बलगम वाली खांसी के लिए: एम्ब्रॉक्सोल + गुआइफेनेसिन सिरप (Ascoril / Grilinctus) - 10ml दिन में 3 बार।\n' +
+      '• गले में खराश/दर्द: गुनगुने नमक पानी के गरारे या बीटाडीन गार्गल और स्ट्रेप्सिल्स (Strepsils)।\n\n' +
+      '🚨 डॉक्टर को दिखाएं यदि: खांसी में खून आए, सांस फूलने लगे या 7 दिन से ज़्यादा रहे।',
     actions: [
-      { label: 'Nearest hospital', type: 'link', value: '/healthcare' },
-      { label: 'Book doctor appointment', type: 'link', value: '/healthcare' },
+      { label: '💊 Cough & Cold Generic Meds', type: 'link', value: '/healthcare' },
+      { label: '🏥 Nearest Hospital', type: 'link', value: '/healthcare' },
     ],
   },
 
-  // ---------- 3. Loose motion / dehydration ----------
+  // ---------- 3. Stomach Pain, Acidity, Gas, Indigestion ----------
+  {
+    id: 'stomach_pain',
+    keywords: [
+      'stomach', 'pet dard', 'pet mein dard', 'pet me dard', 'acidity', 'gas',
+      'jalan', 'heartburn', 'cramp', 'indigestion', 'पेट दर्द', 'गैस', 'एसिडिटी',
+    ],
+    reply:
+      '🩺 Symptom & Disease Analysis: Acute Gastritis, Acid Reflux (GERD), or Abdominal Muscle Spasm.\n\n' +
+      '💊 Recommended Medicines You Can Take:\n' +
+      '• For Acidity & Heartburn: Pantoprazole 40mg (Pan-40) or Omeprazole 20mg - Take 1 tablet empty stomach in the morning.\n' +
+      '• Instant Acid Relief: Antacid Gel (Digene / Gelusil suspension) - 2 tablespoons 15 mins after meals.\n' +
+      '• For Stomach Cramps & Spasms: Dicyclomine + Paracetamol (Meftal-Spas) or Drotaverine 40mg (Drotin).\n' +
+      '• Dietary Advice: Avoid oily, spicy food and tea/coffee. Drink warm water and buttermilk.\n\n' +
+      '🚨 Warning: Seek emergency care if stomach pain is sudden and severe (lower right abdomen could indicate Appendicitis).',
+    replyHi:
+      '🩺 लक्षण एवं संभावित बीमारी: गैस्ट्राइटिस (Gastritis), एसिडिटी (Acid Reflux) या पेट की ऐंठन।\n\n' +
+      '💊 आप कौन सी दवा ले सकते हैं:\n' +
+      '• एसिडिटी व जलन के लिए: पैंटोप्राजोल 40mg (Pan-40) - सुबह खाली पेट 1 गोली।\n' +
+      '• तुरंत राहत के लिए सिरप: डाइजीन (Digene) या जेलुसिल (Gelusil) सिरप - 2 चम्मच खाने के बाद।\n' +
+      '• पेट दर्द व ऐंठन के लिए: मेफ्टाल-स्पास (Meftal-Spas) या ड्रोटिन 40mg (Drotin)।\n' +
+      '• खान-पान: तीखा, तला-भुना और चाय-कॉफी बंद रखें। छाछ और हल्का सुपाच्य भोजन लें।\n\n' +
+      '🚨 चेतावनी: यदि पेट में अचानक बहुत तेज़ असहनीय दर्द हो तो तुरंत अस्पताल जाएं (अपेंडिक्स का खतरा हो सकता है)।',
+    actions: [
+      { label: '💊 Check Antacid & Spas Meds', type: 'link', value: '/healthcare' },
+      { label: '🏥 Nearest Emergency Hospital', type: 'link', value: '/healthcare' },
+    ],
+  },
+
+  // ---------- 4. Loose Motion, Diarrhea, Vomiting ----------
   {
     id: 'loose_motion',
-    keywords: ['loose motion', 'dast', 'diarrhea', 'diarrhoea', 'ulti', 'vomiting', 'dehydration', 'दस्त', 'उल्टी'],
+    keywords: [
+      'loose motion', 'dast', 'diarrhea', 'diarrhoea', 'ulti', 'vomiting', 'vomit',
+      'dehydration', 'food poisoning', 'दस्त', 'उल्टी', 'फूड पॉइजनिंग',
+    ],
     reply:
-      'Dast ya ulti me sabse zaroori hai paani ki kami na hone dena. Thoda-thoda ORS, saaf paani aur nariyal paani lete rahein.\n\n' +
-      'Turant doctor ke paas jayein agar: potty me khoon ho, 2 din se zyada chale, bahut kamzori ya chakkar ho, peshab kam aaye, ya mareez chhota bachcha ya boodha ho.',
+      '🩺 Symptom & Disease Analysis: Acute Gastroenteritis, Food Poisoning, or Stomach Infection.\n\n' +
+      '💊 Recommended Medicines You Can Take:\n' +
+      '• Mandatory Rehydration: ORS (Oral Rehydration Salts - Electral) - Mix 1 packet in 1 liter clean water; sip constantly to prevent dehydration.\n' +
+      '• For Vomiting / Nausea: Ondansetron 4mg (Emeset 4 / Ondem 4) - 1 tablet 20 mins before food.\n' +
+      '• Gut Recovery: Probiotic capsules (Sporlac / Darolac) + Zinc 20mg tablet daily.\n' +
+      '• Loose Motion Control: Loperamide 2mg (only for adults with non-bloody watery stools).\n\n' +
+      '🚨 Hospital Alert: Immediately see a doctor if there is blood in stool, severe dry mouth, absence of urination for 8 hours, or continuous vomiting.',
     replyHi:
-      'दस्त या उल्टी में सबसे ज़रूरी है पानी की कमी न होने देना। थोड़ा-थोड़ा ORS, साफ पानी और नारियल पानी लेते रहें।\n\n' +
-      'तुरंत डॉक्टर के पास जाएं अगर: पॉटी में खून हो, 2 दिन से ज़्यादा चले, बहुत कमज़ोरी या चक्कर हो, पेशाब कम आए, या मरीज़ छोटा बच्चा या बुज़ुर्ग हो।',
+      '🩺 लक्षण एवं संभावित बीमारी: गैस्ट्रोएंटेराइटिस (Gastroenteritis), फ़ूड पॉइज़निंग (Food Poisoning) या पेट का संक्रमण।\n\n' +
+      '💊 आप कौन सी दवा ले सकते हैं:\n' +
+      '• सबसे ज़रूरी (ORS घोल): इलेक्ट्रल (ORS) का 1 पैकेट 1 लीटर पानी में घोलें और थोड़ा-थोड़ा लगातार पीते रहें।\n' +
+      '• उल्टी व जी मिचलाने पर: ओन्डेनसेट्रॉन 4mg (Emeset 4 / Ondem) - खाने से 20 मिनट पहले 1 गोली।\n' +
+      '• आंतों के सुधार के लिए: प्रोबायोटिक (Sporlac / Darolac) और जिंक की गोली।\n' +
+      '• दस्त रोकने के लिए: लोपेरामाइड 2mg (Loperamide - केवल बड़ों के लिए)।\n\n' +
+      '🚨 तुरंत अस्पताल जाएं: यदि शौच में खून आए, पेशाब बंद हो जाए या लगातार अत्यधिक कमजोरी महसूस हो।',
     actions: [
-      { label: 'Find ORS / medicine store', type: 'link', value: '/healthcare' },
-      { label: 'Nearest hospital', type: 'link', value: '/healthcare' },
+      { label: '💊 Jan Aushadhi ORS & Meds', type: 'link', value: '/healthcare' },
+      { label: '🏥 Nearest Emergency Hospital', type: 'link', value: '/healthcare' },
+      { label: '🚨 Call 108 Ambulance', type: 'call', value: '108', danger: true },
     ],
   },
 
-  // ---------- 4. Ambulance ----------
+  // ---------- 5. Headache, Migraine, Body & Joint Pain ----------
   {
-    id: 'ambulance',
-    keywords: ['ambulance', '108', 'emergency', 'आपातकाल', 'एम्बुलेंस'],
+    id: 'headache_pain',
+    keywords: [
+      'headache', 'sar dard', 'sir dard', 'migraine', 'body pain', 'badan dard',
+      'joint pain', 'jod dard', 'kamar dard', 'back pain', 'सर दर्द', 'बदन दर्द',
+    ],
     reply:
-      'Emergency me turant 112 (national emergency) ya 108 (ambulance) par call karein. Agar aap safe hain to apni location bata dein, main madad ke raste dikhaunga.',
+      '🩺 Symptom & Disease Analysis: Tension Headache, Eye Strain, Dehydration, or Myalgia (Muscle Fatigue).\n\n' +
+      '💊 Recommended Medicines You Can Take:\n' +
+      '• For Headache & Body Ache: Paracetamol 650mg (Dolo 650) or Naproxen 250mg with plenty of water.\n' +
+      '• For Joint & Muscle Pain: Aceclofenac + Paracetamol (Zerodol-P) after food.\n' +
+      '• Topical Pain Relief: Diclofenac Gel (Volini / Moov) applied gently on affected area.\n' +
+      '• Non-Medical Relief: Rest in a dark, quiet room, stay hydrated, and massage temples gently.\n\n' +
+      '🚨 Red Flag: Sudden thunderclap headache, stiff neck with fever, or visual disturbances requires immediate medical triage.',
     replyHi:
-      'आपातकाल में तुरंत 112 (राष्ट्रीय आपातकालीन) या 108 (एम्बुलेंस) पर कॉल करें। अगर आप सुरक्षित हैं तो अपनी लोकेशन बताएं, मैं मदद के रास्ते दिखाऊंगा।',
+      '🩺 लक्षण एवं संभावित बीमारी: तनाव सिरदर्द (Tension Headache), माइग्रेन, मांसपेशियों में खिंचाव या बदन दर्द।\n\n' +
+      '💊 आप कौन सी दवा ले सकते हैं:\n' +
+      '• सिरदर्द व बदन दर्द: पैरासिटामोल 650mg (Dolo 650) पानी के साथ लें।\n' +
+      '• जोड़ों व मांसपेशियों में दर्द: एसेक्लोफेनाक + पैरासिटामोल (Zerodol-P) खाने के बाद लें।\n' +
+      '• दर्द निवारक जेल: डाइक्लोफेनाक जेल (Volini / Moov) दर्द वाली जगह पर लगाएं।\n' +
+      '• आराम: शांत, अंधेरे कमरे में आराम करें और भरपूर पानी पिएं।',
     actions: [
-      { label: 'Call 112', type: 'call', value: '112', danger: true },
-      { label: 'Call 108 (Ambulance)', type: 'call', value: '108', danger: true },
-      { label: 'Emergency page', type: 'link', value: '/emergency' },
+      { label: '💊 Generic Pain Relief Meds', type: 'link', value: '/healthcare' },
+      { label: '👨‍⚕️ Consult Doctor Online', type: 'link', value: '/healthcare' },
     ],
   },
 
-  // ---------- 5. Flood / disaster ----------
+  // ---------- 6. Flood & Disaster (Links to Live Disaster Situation Map) ----------
   {
     id: 'disaster',
     keywords: [
-      'flood', 'baadh', 'badh aayi', 'doob', 'sailab', 'cyclone', 'disaster', 'aapda', 'आपदा',
-      'shelter', 'relief camp', 'aashray', 'pani bhar', 'paani bhar', 'pani aa gaya', 'paani aa gaya',
-      'ghar mein pani', 'ghar me pani', 'बाढ़', 'आश्रय',
+      'flood', 'baadh', 'badh aayi', 'doob', 'sailab', 'cyclone', 'disaster', 'aapda',
+      'shelter', 'relief camp', 'aashray', 'pani bhar', 'paani bhar', 'बाढ़', 'आश्रय',
+      'live situation map', 'situation map', 'disaster map', 'नक्शा', 'आपदा',
     ],
     reply:
-      'Pehle batayein, kya aap abhi safe hain? Agar evacuation order hai to use follow karein, aur unchi jagah par jaiye. Main nearest shelter dhoondh sakta hoon.',
+      '🗺️ Live Disaster & Situation Radar Alert:\n\n' +
+      'Please verify your immediate safety. If an evacuation alert is active in your district:\n' +
+      '• Move to designated high-ground shelters or official relief camps.\n' +
+      '• Do not walk or drive through submerged flood roads or bridges.\n' +
+      '• You can view real-time IMD rain, satellite flood telemetry, and safe shelter locations on our Live Situation Map.',
     replyHi:
-      'पहले बताएं, क्या आप अभी सुरक्षित हैं? यदि निकासी आदेश है तो उसका पालन करें, और ऊंचे स्थान पर जाएं। मैं निकटतम आश्रय ढूंढ सकता हूँ।',
+      '🗺️ लाइव आपदा एवं स्थिति रडार अलर्ट:\n\n' +
+      'कृपया तुरंत अपनी सुरक्षा सुनिश्चित करें। यदि आपके क्षेत्र में बाढ़ या आपदा निकासी का आदेश है:\n' +
+      '• ऊंचे स्थान पर बने राहत शिविरों (Relief Shelters) की ओर जाएं।\n' +
+      '• जलभराव वाले रास्तों, पुलों और बिजली के खंभों से दूर रहें।\n' +
+      '• हमारे लाइव सिचुएशन मैप पर आप वास्तविक समय का उपग्रह डेटा, मौसम चेतावनी और सुरक्षित शिविर देख सकते हैं।',
     actions: [
-      { label: 'Find shelter', type: 'link', value: '/disaster' },
-      { label: 'Medicine request banao', type: 'link', value: '/healthcare' },
-      { label: 'Call 112', type: 'call', value: '112', danger: true },
+      { label: '🗺️ Live Disaster & Situation Map', type: 'link', value: '/live-board' },
+      { label: '⛺ View Safe Relief Shelters', type: 'link', value: '/disaster' },
+      { label: '🚨 Call 112 (National Disaster Line)', type: 'call', value: '112', danger: true },
     ],
   },
 
-  // ---------- 6. Missing person / Mela ----------
+  // ---------- 7. General Medicine & Jan Aushadhi ----------
+  {
+    id: 'medicine',
+    keywords: [
+      'medicine', 'medicines', 'dawa', 'dawai', 'davai', 'jan aushadhi', 'generic',
+      'tablet', 'pharmacy', 'chemist', 'दवा', 'दवाई', 'जन औषधि',
+    ],
+    reply:
+      'Pradhan Mantri Jan Aushadhi generic medicines provide the exact same chemical formulation and therapeutic efficacy as branded medicines at 50% to 90% lower cost.\n\n' +
+      'Common OTC Jan Aushadhi equivalents:\n' +
+      '• Paracetamol 650mg: ₹12 (vs ₹35 branded Dolo)\n' +
+      '• Cetirizine 10mg: ₹9 (vs ₹38 branded Cetzine)\n' +
+      '• Pantoprazole 40mg: ₹22 (vs ₹110 branded Pan-40)\n' +
+      '• ORS Electral sachet: ₹9 (vs ₹24 branded)\n\n' +
+      'Search our Jan Aushadhi generic directory on the Healthcare page.',
+    replyHi:
+      'प्रधानमंत्री जन औषधि जेनेरिक दवाएं ब्रांडेड दवाओं के समान गुणवत्ता वाली होती हैं, लेकिन 50% से 90% तक सस्ती मिलती हैं।\n\n' +
+      'प्रमुख जेनेरिक दवाएं:\n' +
+      '• पैरासिटामोल 650mg: ₹12 (ब्रांडेड ₹35)\n' +
+      '• सेटिरिज़िन 10mg: ₹9 (ब्रांडेड ₹38)\n' +
+      '• पैंटोप्राजोल 40mg: ₹22 (ब्रांडेड ₹110)\n' +
+      '• ओआरएस (ORS): ₹9 (ब्रांडेड ₹24)\n\n' +
+      'आप हेल्थकेयर पेज पर नजदीकी जन औषधि केंद्र और दवाओं की कीमतें देख सकते हैं।',
+    actions: [
+      { label: '💊 Check Jan Aushadhi Generic Prices', type: 'link', value: '/healthcare' },
+      { label: '🏥 Find Nearest Hospital', type: 'link', value: '/healthcare' },
+    ],
+  },
+
+  // ---------- 8. Missing person / Kumbh Mela ----------
   {
     id: 'missing',
     keywords: ['missing', 'kho gaya', 'kho gayi', 'gum ho', 'gumshuda', 'lapata', 'bichhad', 'mela', 'kumbh', 'लापता', 'खो गया', 'मेला'],
@@ -152,198 +292,18 @@ export const INTENTS = [
     ],
   },
 
-  // ---------- 7. Appointment ----------
-  {
-    id: 'appointment',
-    keywords: ['appointment', 'book doctor', 'doctor se milna', 'अपॉइंटमेंट'],
-    reply:
-      'Doctor appointment book karne ke liye Healthcare page par jayein. Booking se pehle main aapse confirm karunga.',
-    replyHi:
-      'डॉक्टर अपॉइंटमेंट बुक करने के लिए हेल्थकेयर पेज पर जाएं। बुकिंग से पहले मैं आपसे पुष्टि करूँगा।',
-    actions: [{ label: 'Open Healthcare', type: 'link', value: '/healthcare' }],
-  },
-
-  // ---------- 8. Hospital / doctor ----------
+  // ---------- 9. Hospital / Ambulance ----------
   {
     id: 'hospital',
-    keywords: ['hospital', 'aspatal', 'doctor', 'clinic', 'nearest hospital', 'अस्पताल', 'डॉक्टर'],
+    keywords: ['hospital', 'aspatal', 'doctor', 'clinic', 'nearest hospital', 'ambulance', '108', 'अस्पताल', 'डॉक्टर', 'एम्बुलेंस'],
     reply:
-      'Nazdeeki hospital aur doctor ki list Healthcare page par hai. Kya main wahan khol dun?',
+      'Nazdeeki 24/7 hospitals aur emergency trauma center ki list Healthcare page par uplabdh hai. Emergency ambulance ke liye turant 108 par call karein.',
     replyHi:
-      'नज़दीकी अस्पताल और डॉक्टर की सूची हेल्थकेयर पेज पर है। क्या मैं वहां खोल दूँ?',
+      'नज़दीकी 24/7 अस्पताल और इमरजेंसी ट्रॉमा सेंटर की सूची हेल्थकेयर पेज पर उपलब्ध है। इमरजेंसी एम्बुलेंस के लिए तुरंत 108 पर कॉल करें।',
     actions: [
-      { label: 'Yes, open Healthcare', type: 'link', value: '/healthcare' },
+      { label: '🏥 Find Hospitals', type: 'link', value: '/healthcare' },
       { label: 'Call 108 (Ambulance)', type: 'call', value: '108', danger: true },
-    ],
-  },
-
-  // ---------- 9. Medicine / Jan Aushadhi ----------
-  {
-    id: 'medicine',
-    keywords: ['medicine', 'medicines', 'dawa', 'dawai', 'davai', 'jan aushadhi', 'generic', 'tablet', 'दवा', 'दवाई', 'जन औषधि'],
-    reply:
-      'Aap Jan Aushadhi generic medicines check kar sakte hain, jo branded dawaon se 50-90% tak sasti ho sakti hain. Main dawai prescribe nahi karta. Prescription wali dawaon ke liye doctor ka parcha zaroori hai.',
-    replyHi:
-      'आप जन औषधि जेनेरिक दवाएं देख सकते हैं, जो ब्रांडेड दवाओं से 50-90% तक सस्ती हो सकती हैं। मैं दवा प्रिस्क्राइब नहीं करता। पर्चे वाली दवाओं के लिए डॉक्टर का पर्चा ज़रूरी है।',
-    actions: [
-      { label: 'Compare generic prices', type: 'link', value: '/healthcare' },
-      { label: 'Nearby Jan Aushadhi store', type: 'link', value: '/healthcare' },
-    ],
-  },
-
-  // ---------- 10. What can you do / about site ----------
-  {
-    id: 'about',
-    keywords: ['kya kar sakte', 'what can you do', 'help', 'madad', 'sevasaarthi', 'seva saarthi', 'about', 'features', 'मदद'],
-    reply:
-      'SevaSaarthi me main in cheezon me madad kar sakta hoon:\n' +
-      '• Healthcare: nazdeeki hospital, Jan Aushadhi dawa store, doctor appointment\n' +
-      '• Disaster: flood/bhukamp/mausam alerts, shelter aur madad request\n' +
-      '• Mela: missing person report\n' +
-      '• Emergency: 112, 108, police aur fire par seedha call, incident report\n' +
-      '• Volunteers aur Resources: madad karna ya safety guides dekhna\n' +
-      '• Aam bimaariyon (bukhar, sardi-khansi, dast) ki basic jaankari. Main doctor nahi hoon aur dawai prescribe nahi karta.',
-    replyHi:
-      'सेवासारथी में मैं इन चीज़ों में मदद कर सकता हूँ:\n' +
-      '• हेल्थकेयर: नज़दीकी अस्पताल, जन औषधि दवा स्टोर, डॉक्टर अपॉइंटमेंट\n' +
-      '• आपदा: बाढ़/भूकंप/मौसम अलर्ट, आश्रय और मदद अनुरोध\n' +
-      '• मेला: लापता व्यक्ति की रिपोर्ट\n' +
-      '• आपातकाल: 112, 108, पुलिस और फायर पर सीधा कॉल, घटना रिपोर्ट\n' +
-      '• वॉलंटियर्स और रिसोर्सेज़: मदद करना या सेफ्टी गाइड देखना\n' +
-      '• आम बीमारियों (बुखार, सर्दी-खांसी, दस्त) की बुनियादी जानकारी। मैं डॉक्टर नहीं हूँ और दवा प्रिस्क्राइब नहीं करता।',
-    actions: [
-      { label: 'Find hospital', type: 'link', value: '/healthcare' },
-      { label: 'Flood shelters', type: 'link', value: '/disaster' },
-      { label: 'Emergency 112', type: 'link', value: '/emergency' },
-    ],
-  },
-
-  // =====================================================================
-  // Neeche ke intents aapke project ki files (pages/ aur services/) ke naam dekhkar banaye gaye hain.
-  // Routes ('/volunteers', '/resources', '/profile', '/') aapke App.jsx ke routes se match karwa lena.
-  // =====================================================================
-
-  // ---------- Earthquake (earthquakeService) ----------
-  {
-    id: 'earthquake',
-    keywords: ['earthquake', 'bhukamp', 'bhookamp', 'quake', 'tremor', 'भूकंप'],
-    reply:
-      'Bhukamp aaye to: khuli jagah par jayein. Andar hain to table ya mazboot furniture ke neeche "Drop, Cover, Hold" karein, khidki aur sheeshe se door rahein, lift ka use na karein. Jhatke ruk jayein to saavdhani se bahar niklein.\n\n' +
-      'Latest earthquake alerts aur nazdeeki madad Disaster page par dekh sakte hain.',
-    replyHi:
-      'भूकंप आए तो: खुली जगह पर जाएं। अंदर हैं तो टेबल या मज़बूत फर्नीचर के नीचे "झुको, ढको, पकड़ो" करें, खिड़की और शीशे से दूर रहें, लिफ्ट का इस्तेमाल न करें। झटके रुक जाएं तो सावधानी से बाहर निकलें।\n\n' +
-      'ताज़ा भूकंप अलर्ट और नज़दीकी मदद आपदा पेज पर देख सकते हैं।',
-    actions: [
-      { label: 'Disaster alerts', type: 'link', value: '/disaster' },
       { label: 'Call 112', type: 'call', value: '112', danger: true },
     ],
   },
-
-  // ---------- Weather (weatherService) ----------
-  {
-    id: 'weather',
-    keywords: ['weather', 'mausam', 'barish', 'baarish', 'rain', 'heatwave', 'heat wave', 'garmi', 'thand', 'मौसम', 'बारिश'],
-    reply:
-      'Mausam aur disaster se judi taaza jaankari Disaster page par milti hai. Tez barish ya baadh ka khatra ho to nichli jagah se door rahein aur zaroori saman ek bag me taiyar rakhein.',
-    replyHi:
-      'मौसम और आपदा से जुड़ी ताज़ा जानकारी आपदा पेज पर मिलती है। तेज़ बारिश या बाढ़ का खतरा हो तो निचली जगह से दूर रहें और ज़रूरी सामान एक बैग में तैयार रखें।',
-    actions: [
-      { label: 'Open Disaster page', type: 'link', value: '/disaster' },
-      { label: 'Find shelter', type: 'link', value: '/disaster' },
-    ],
-  },
-
-  // ---------- First responders: police / fire / rescue (firstResponderService) ----------
-  {
-    id: 'first_responder',
-    keywords: [
-      'first responder', 'police', 'fire brigade', 'aag lag', 'aag lagi', 'fire', 'ndrf', 'sdrf',
-      'rescue', 'bachao', 'पुलिस', 'आग', 'बचाव',
-    ],
-    reply:
-      'Turant madad ke liye: Police 100, Fire 101, Ambulance 108, ya sab ke liye 112 par call karein. Aag lage to pehle bahar niklein, phir call karein. Pehle khud surakshit hona zaroori hai.',
-    replyHi:
-      'तुरंत मदद के लिए: पुलिस 100, फायर 101, एम्बुलेंस 108, या सबके लिए 112 पर कॉल करें। आग लगे तो पहले बाहर निकलें, फिर कॉल करें। पहले खुद सुरक्षित होना ज़रूरी है।',
-    actions: [
-      { label: 'Call 112', type: 'call', value: '112', danger: true },
-      { label: 'Call Police 100', type: 'call', value: '100', danger: true },
-      { label: 'Call Fire 101', type: 'call', value: '101', danger: true },
-    ],
-  },
-
-  // ---------- Report incident / alerts (incidentService, alertService) ----------
-  {
-    id: 'incident',
-    keywords: ['incident', 'report incident', 'alert', 'alerts', 'complaint', 'accident', 'durghatna', 'दुर्घटना', 'अलर्ट'],
-    reply:
-      'Kisi ghatna ya durghatna ki report karne ke liye Emergency page par jayein. Agar kisi ki jaan khatre me hai to pehle 112 ya 108 par call karein.',
-    replyHi:
-      'किसी घटना या दुर्घटना की रिपोर्ट करने के लिए आपातकाल पेज पर जाएं। अगर किसी की जान खतरे में है तो पहले 112 या 108 पर कॉल करें।',
-    actions: [
-      { label: 'Open Emergency page', type: 'link', value: '/emergency' },
-      { label: 'Call 112', type: 'call', value: '112', danger: true },
-    ],
-  },
-
-  // ---------- Volunteers (VolunteersPage, volunteerService) ----------
-  {
-    id: 'volunteer',
-    keywords: ['volunteer', 'volunteers', 'volunteering', 'swayamsevak', 'sevak', 'seva karna', 'स्वयंसेवक', 'वालंटियर'],
-    reply:
-      'Madad karna chahte hain? Volunteers page par aap volunteer ban sakte hain ya zaroorat par volunteers se madad le sakte hain.',
-    replyHi:
-      'मदद करना चाहते हैं? वॉलंटियर्स पेज पर आप वॉलंटियर बन सकते हैं या ज़रूरत पर वॉलंटियर्स से मदद ले सकते हैं।',
-    actions: [{ label: 'Open Volunteers', type: 'link', value: '/volunteers' }],
-  },
-
-  // ---------- Resources / guides (ResourcesPage) ----------
-  {
-    id: 'resources',
-    keywords: ['resources', 'resource', 'guide', 'guides', 'safety tips', 'tips', 'checklist', 'sansadhan', 'गाइड', 'संसाधन'],
-    reply:
-      'Safety guides, checklists aur zaroori resources Resources page par hain.',
-    replyHi:
-      'सेफ्टी गाइड, चेकलिस्ट और ज़रूरी संसाधन रिसोर्सेज़ पेज पर हैं।',
-    actions: [{ label: 'Open Resources', type: 'link', value: '/resources' }],
-  },
-
-  // ---------- Profile (ProfilePage) ----------
-  {
-    id: 'profile',
-    keywords: ['profile', 'my account', 'account', 'login', 'sign in', 'signup', 'sign up', 'प्रोफाइल'],
-    reply:
-      'Apna profile dekhne ya badalne ke liye Profile page par jayein.',
-    replyHi:
-      'अपनी प्रोफाइल देखने या बदलने के लिए प्रोफाइल पेज पर जाएं।',
-    actions: [{ label: 'Open Profile', type: 'link', value: '/profile' }],
-  },
-
-  // TODO: aur features jodne ke liye yahan naya object likho:
-  // { id: 'xyz', keywords: [...], reply: '...', replyHi: '...', actions: [...] }
 ];
-
-export const RED_FLAG_RESPONSE = {
-  reply:
-    '⚠️ EMERGENCY ALERT: Ye symptom jaanleva emergency ho sakta hai. Intezaar na karein. Turant 112 ya 108 par call karein aur kisi ko apne paas bula lein.',
-  replyHi:
-    '⚠️ आपातकालीन चेतावनी: यह लक्षण जानलेवा आपात स्थिति हो सकता है। इंतज़ार न करें। तुरंत 112 या 108 पर कॉल करें और किसी को अपने पास बुला लें।',
-  isRedFlag: true,
-  actions: [
-    { label: 'Call 112 Now', type: 'call', value: '112', danger: true },
-    { label: 'Call 108 (Ambulance)', type: 'call', value: '108', danger: true },
-    { label: 'Nearest hospital', type: 'link', value: '/healthcare' },
-  ],
-};
-
-export const DEFAULT_RESPONSE = {
-  reply:
-    'Main madad kar sakta hoon: nazdeeki hospital, Jan Aushadhi dawa store, flood/aapda shelter, missing person report, aur bukhar-sardi jaisi aam bimaariyon ki basic jaankari. Aap kya chahte hain?',
-  replyHi:
-    'मैं मदद कर सकता हूँ: नज़दीकी अस्पताल, जन औषधि दवा स्टोर, बाढ़/आपदा आश्रय, लापता व्यक्ति रिपोर्ट, और बुखार-सर्दी जैसी आम बीमारियों की बुनियादी जानकारी। आप क्या चाहते हैं?',
-  isRedFlag: false,
-  actions: [
-    { label: 'Find hospital', type: 'link', value: '/healthcare' },
-    { label: 'Flood shelters', type: 'link', value: '/disaster' },
-    { label: 'Emergency 112', type: 'link', value: '/emergency' },
-  ],
-};
