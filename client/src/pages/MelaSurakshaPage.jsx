@@ -75,6 +75,7 @@ export default function MelaSurakshaPage() {
       if (overviewRes) setData(overviewRes);
       setFacilities(facilitiesRes || []);
       setAlerts(alertsRes || []);
+      setReportsData(reportsRes || { reports: [], pagination: {} });
       const loadedMaps = mapsRes || [];
       setMaps(loadedMaps);
       setSelectedMapId((prev) => {
