@@ -111,7 +111,6 @@ const reliefCampaignSchema = new mongoose.Schema(
 );
 
 reliefCampaignSchema.index({ affectedState: 1, affectedDistrict: 1 });
-reliefCampaignSchema.index({ status: 1 });
 
 const ReliefCampaign = mongoose.model('ReliefCampaign', reliefCampaignSchema);
 export default ReliefCampaign;

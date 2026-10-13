@@ -144,7 +144,6 @@ const volunteerRegistrationSchema = new mongoose.Schema(
 );
 
 volunteerRegistrationSchema.index({ state: 1, district: 1 });
-volunteerRegistrationSchema.index({ applicationStatus: 1 });
 
 const VolunteerRegistration = mongoose.model('VolunteerRegistration', volunteerRegistrationSchema);
 export default VolunteerRegistration;
