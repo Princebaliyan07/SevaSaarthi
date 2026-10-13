@@ -27,6 +27,9 @@ import { apiLimiter } from './middlewares/rateLimit.middleware.js';
 
 const app = express();
 
+// Trust reverse proxy (Vercel, Render, AWS ALB, Cloudflare)
+app.set('trust proxy', 1);
+
 // Security Hardening: Allowed Origins Whitelist
 const allowedOrigins = new Set([
   'https://sevasaarthiindia.vercel.app',

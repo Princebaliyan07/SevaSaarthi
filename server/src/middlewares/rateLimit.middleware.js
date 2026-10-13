@@ -1,24 +1,26 @@
 import rateLimit from 'express-rate-limit';
 
-// General API Rate Limiting (150 requests per 15 minutes)
+// General API Rate Limiting (3,000 requests per 15 minutes for real-time dashboards)
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150,
+  max: process.env.NODE_ENV === 'production' ? 3000 : 10000,
+  skip: (req) => req.method === 'OPTIONS' || req.path.includes('/health'),
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again after 15 minutes.',
+    message: 'Too many requests from this IP, please try again after a few minutes.',
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Auth Rate Limiter (Brute-force protection: 20 attempts per 15 minutes)
+// Auth Rate Limiter (Brute-force protection: 100 attempts per 15 minutes; ignore successful logins)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 100,
+  skipSuccessfulRequests: true,
   message: {
     success: false,
-    message: 'Too many authentication attempts. Please try again after 15 minutes.',
+    message: 'Too many failed login attempts. Please try again after 15 minutes.',
   },
   standardHeaders: true,
   legacyHeaders: false,
