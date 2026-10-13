@@ -6,6 +6,10 @@ import {
   toggleActive,
   sendAadhaarOtp,
   verifyAadhaarOtp,
+  getAdminResponders,
+  approveFirstResponder,
+  rejectFirstResponder,
+  deleteFirstResponder,
 } from '../controllers/firstResponder.controller.js';
 
 const router = express.Router();
@@ -17,4 +21,11 @@ router.patch('/:id/toggle', toggleActive);
 router.post('/aadhaar-otp/send', sendAadhaarOtp);
 router.post('/aadhaar-otp/verify', verifyAadhaarOtp);
 
+// Admin routes
+router.get('/admin/all', getAdminResponders);
+router.patch('/:id/approve', approveFirstResponder);
+router.patch('/:id/reject', rejectFirstResponder);
+router.delete('/:id', deleteFirstResponder);
+
 export default router;
+

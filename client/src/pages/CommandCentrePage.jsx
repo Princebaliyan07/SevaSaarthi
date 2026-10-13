@@ -5,6 +5,7 @@ import AnalyticsCharts from '../components/command/AnalyticsCharts';
 import AgencyStatusCards from '../components/command/AgencyStatusCards';
 import CommandMelaAdminTab from '../components/command/CommandMelaAdminTab';
 import CommandReliefAdminTab from '../components/command/CommandReliefAdminTab';
+import CommandHealthcareAdminTab from '../components/command/CommandHealthcareAdminTab';
 import FacilityAdminModal from '../components/mela/FacilityAdminModal';
 import CrowdAlertAdminModal from '../components/mela/CrowdAlertAdminModal';
 import ReportDetailModal from '../components/mela/ReportDetailModal';
@@ -898,81 +899,12 @@ export default function CommandCentrePage() {
             </div>
           )}
 
-          {/* ---------- SECTION: HOSPITALS ---------- */}
+          {/* ---------- SECTION: HEALTHCARE & FIRST RESPONDERS ADMIN ---------- */}
           {activeMainTab === 'healthcare' && (
-            <div className={`${PANEL} space-y-5 p-5 sm:p-6`}>
-              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                <span className="text-base" aria-hidden="true">ℹ️</span>
-                <p className="leading-relaxed">
-                  <strong className="font-bold">About this data: </strong>
-                  Hospital names, addresses and Google Maps links are real. Emergency phone numbers and bed or oxygen availability are demonstration data.
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-xs text-slate-600 dark:text-slate-300">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                      <th className="px-3 py-3">Hospital</th>
-                      <th className="px-3 py-3">Location</th>
-                      <th className="px-3 py-3">ICU beds</th>
-                      <th className="px-3 py-3">Oxygen beds</th>
-                      <th className="px-3 py-3">Trauma centre</th>
-                      <th className="px-3 py-3">Doctors on duty</th>
-                      <th className="px-3 py-3 text-right">Directions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {hospitals.slice(0, 15).map((h) => (
-                      <tr key={h.id} className="transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        <td className="px-3 py-3">
-                          <strong className="block text-slate-900 dark:text-white">{h.name}</strong>
-                          <span className="text-[11px] text-slate-400">{h.type}</span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span>{h.city || h.district}</span>
-                          <span className="block text-[11px] text-slate-400">{h.address}</span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 font-bold ${
-                              (h.icuBedsAvailable || 0) > 5
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                            }`}
-                          >
-                            {h.icuBedsAvailable || 0} free
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 font-semibold">{h.oxygenBedsAvailable || 0}</td>
-                        <td className="px-3 py-3">
-                          {h.traumaCenterActive ? (
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">Active 24x7</span>
-                          ) : (
-                            <span className="text-slate-400">Standard ER</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 font-semibold">{h.doctorsOnDuty || 12}</td>
-                        <td className="px-3 py-3 text-right">
-                          {h.googleMapsUrl && (
-                            <a
-                              href={h.googleMapsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-50 px-3 py-1 font-bold text-teal-700 transition hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-300"
-                            >
-                              Open map
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <CommandHealthcareAdminTab hospitals={hospitals} />
           )}
         </div>
+
 
       {/* Admin modals */}
       <FacilityAdminModal

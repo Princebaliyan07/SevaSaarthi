@@ -69,6 +69,50 @@ const firstResponderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Valid Govt ID details
+    govtIdType: {
+      type: String,
+      default: 'Medical Council Reg ID',
+      enum: [
+        'Medical Council Reg ID',
+        'Nursing Council Reg ID',
+        'NCC/NSS Certificate',
+        'Ex-Servicemen Identity Card',
+        'Paramedic Certification',
+        'Disaster Management Volunteer ID',
+        'Aadhaar Card',
+        'Other Govt ID',
+      ],
+    },
+    govtIdNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    // Admin Approval & Verification Status
+    isApproved: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+      index: true,
+    },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    approvedBy: {
+      type: String,
+      default: '',
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
     // Proof & Photo URLs (base64 or storage url)
     profilePhoto: {
       type: String,

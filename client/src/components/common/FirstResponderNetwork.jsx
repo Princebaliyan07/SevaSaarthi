@@ -145,6 +145,17 @@ const GENDER_OPTIONS = [
 ];
 const GENDER_HI = { Male: 'पुरुष', Female: 'महिला', Other: 'अन्य' };
 
+export const GOVT_ID_TYPES = [
+  { value: 'Medical Council Reg ID', label: 'Medical Council Registration (MCI / State NMC)', labelHi: 'मेडिकल काउंसिल रजिस्ट्रेशन (MCI / राज्य NMC)' },
+  { value: 'Nursing Council Reg ID', label: 'State Nursing Council Registration ID', labelHi: 'राज्य नर्सिंग काउंसिल रजिस्ट्रेशन ID' },
+  { value: 'Paramedic Certification', label: 'State Paramedic Board / EMS Council Certificate', labelHi: 'राज्य पैरामेडिक बोर्ड / EMS काउंसिल प्रमाणपत्र' },
+  { value: 'Ex-Servicemen Identity Card', label: 'Ex-Servicemen Identity Card / Defence Discharge Book', labelHi: 'पूर्व सैनिक पहचान पत्र / डिस्चार्ज बुक' },
+  { value: 'NCC/NSS Certificate', label: 'NCC "C" Certificate / NSS Disaster Volunteer Award', labelHi: 'NCC "C" प्रमाणपत्र / NSS आपदा स्वयंसेवक प्रमाणपत्र' },
+  { value: 'Disaster Management Volunteer ID', label: 'NDRF / SDRF / Civil Defence Enrolment ID', labelHi: 'NDRF / SDRF / नागरिक सुरक्षा नामांकन ID' },
+  { value: 'Aadhaar Card', label: 'Govt Aadhaar ID Card (UIDAI)', labelHi: 'सरकारी आधार कार्ड (UIDAI)' },
+  { value: 'Other Govt ID', label: 'Other Valid Govt / Official Medical ID', labelHi: 'अन्य वैध सरकारी / मेडिकल पहचान पत्र' },
+];
+
 const EMPTY_FORM = {
   name: '',
   contactNumber: '',
@@ -157,11 +168,14 @@ const EMPTY_FORM = {
   lng: null,
   aadhaarNumber: '',
   isAadhaarVerified: false,
+  govtIdType: 'Medical Council Reg ID',
+  govtIdNumber: '',
   profilePhoto: '',
   proofCertificate: '',
   videoCallAllowed: false,
   videoCallLink: '',
 };
+
 
 // ─── Sub-component: Responder Card ──────────────────────────────────────────
 
@@ -518,12 +532,30 @@ export default function FirstResponderNetwork() {
     try {
       const res = await registerFirstResponder(form);
       if (res.success) {
+        // Also persist to local admin responders cache so Admin Command Centre has immediate visibility
+        try {
+          const cached = JSON.parse(localStorage.getItem('ss_admin_responders_cache') || '[]');
+          const newDoc = res.data || {
+            _id: 'local_' + Date.now(),
+            ...form,
+            isApproved: false,
+            approvalStatus: 'pending',
+            registeredAt: new Date().toISOString(),
+          };
+          // Prepend so admin sees it first
+          const updated = [newDoc, ...cached.filter((c) => String(c._id) !== String(newDoc._id))];
+          localStorage.setItem('ss_admin_responders_cache', JSON.stringify(updated));
+        } catch (e) {
+          // ignore cache error
+        }
+
         setSuccessName(form.name);
         setForm(EMPTY_FORM);
         setAadhaarInput('');
         setOtpSent(false);
         setOtpInput('');
         setActiveTab('search');
+
         setTimeout(() => setSuccessName(''), 8000);
       } else {
         setRegError(res.message || tx('Registration failed.', 'पंजीकरण विफल रहा।'));
@@ -694,29 +726,30 @@ export default function FirstResponderNetwork() {
 
         {/* Success Alert Banner */}
         {successName && (
-          <div className="relative z-10 mt-5 flex items-center gap-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm font-bold text-emerald-800 dark:text-emerald-300 shadow-md">
-            <span className="text-2xl">🎉</span>
+          <div className="relative z-10 mt-5 flex items-start gap-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-sm font-bold text-emerald-800 dark:text-emerald-300 shadow-md">
+            <span className="text-2xl shrink-0">⏳</span>
             <div>
               <p>
                 {hi ? (
                   <>
-                    स्वागत है <strong>{successName}</strong>! प्रमाण के साथ आपका पंजीकरण लाइव हो गया है।
+                    पंजीकरण प्राप्त हुआ, <strong>{successName}</strong>! आपके सरकारी ID प्रमाण की समीक्षा <strong>कमांड सेंटर एडमिन (Command Centre Admin)</strong> द्वारा की जा रही है। एडमिन द्वारा मंज़ूरी मिलते ही आप आसपास के नागरिकों की खोज में लाइव दिखाई देंगे।
                   </>
                 ) : (
                   <>
-                    Welcome <strong>{successName}</strong>! Your registration with verified proof is live.
+                    Application Submitted, <strong>{successName}</strong>! Your Valid Govt ID and credentials are currently under review by the <strong>Command Centre Admin</strong>. Once approved, you will appear live in the emergency network for nearby citizens.
                   </>
                 )}
               </p>
-              <p className="text-xs font-normal text-emerald-700 dark:text-emerald-400 mt-0.5">
+              <p className="text-xs font-normal text-emerald-700 dark:text-emerald-400 mt-1">
                 {tx(
-                  'Patients and emergency teams in your vicinity can now discover you for urgent first aid.',
-                  'आपके आसपास के मरीज़ और इमरजेंसी टीमें अब तुरंत प्राथमिक उपचार के लिए आपको खोज सकती हैं।'
+                  'Civic protocol: Only responders verified with a valid Govt ID by Admin are activated for citizens.',
+                  'नागरिक सुरक्षा नियम: केवल एडमिन द्वारा सत्यापित वैध सरकारी ID वाले रिस्पॉन्डर्स ही नागरिकों के लिए लाइव होते हैं।'
                 )}
               </p>
             </div>
           </div>
         )}
+
 
         {/* ─── TAB 1: SEARCH ─── */}
         {activeTab === 'search' && (
@@ -1063,6 +1096,40 @@ export default function FirstResponderNetwork() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        🏛️ {tx('Valid Govt ID Type *', 'वैध सरकारी ID प्रकार *')}
+                      </label>
+                      <select
+                        value={form.govtIdType}
+                        onChange={(e) => setFormKey('govtIdType', e.target.value)}
+                        className="w-full rounded-xl border border-rose-300 dark:border-rose-900 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      >
+                        {GOVT_ID_TYPES.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {hi ? t.labelHi : t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                        🔢 {tx('Govt ID / Registration Number *', 'सरकारी ID / रजिस्ट्रेशन नंबर *')}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={tx('e.g. MCI-2018-88219 or DL-VOL-901', 'जैसे MCI-2018-88219 या DL-VOL-901')}
+                        value={form.govtIdNumber}
+                        onChange={(e) => setFormKey('govtIdNumber', e.target.value)}
+                        className="w-full rounded-xl border border-rose-300 dark:border-rose-900 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+
                     <div className="rounded-xl border border-rose-200 dark:border-rose-800/60 bg-white dark:bg-slate-800 p-3 space-y-2">
                       <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
                         📄 {tx('Govt ID / Certificate Proof *', 'सरकारी ID / प्रमाणपत्र *')}

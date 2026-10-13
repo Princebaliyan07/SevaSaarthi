@@ -214,6 +214,8 @@ export async function registerFirstResponder(req, res) {
       lng,
       aadhaarNumber,
       isAadhaarVerified,
+      govtIdType,
+      govtIdNumber,
       profilePhoto,
       proofCertificate,
       videoCallAllowed,
@@ -230,7 +232,7 @@ export async function registerFirstResponder(req, res) {
     if (!proofCertificate || !proofCertificate.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Proof document is strictly mandatory for registration. Unverified registrations are not permitted.',
+        message: 'Valid Govt ID / Certificate proof document is strictly mandatory for registration.',
       });
     }
 
@@ -286,6 +288,10 @@ export async function registerFirstResponder(req, res) {
       lng: resolvedLng,
       aadhaarNumber: aadhaarNumber ? aadhaarNumber.replace(/\s/g, '') : '',
       isAadhaarVerified: true,
+      govtIdType: govtIdType || 'Medical Council Reg ID',
+      govtIdNumber: govtIdNumber ? String(govtIdNumber).trim() : '',
+      isApproved: false,
+      approvalStatus: 'pending',
       profilePhoto: profilePhoto.trim(),
       proofCertificate: proofCertificate.trim(),
       videoCallAllowed: Boolean(videoCallAllowed),
@@ -295,7 +301,8 @@ export async function registerFirstResponder(req, res) {
 
     return res.status(201).json({
       success: true,
-      message: 'Verified First Responder registered successfully! You are now live in the network.',
+      message:
+        'Registration submitted successfully! Your application with Govt ID is pending review by Command Centre Admin. Once approved, you will appear live in the emergency network for citizens nearby.',
       data: responder,
     });
   } catch (error) {
@@ -327,7 +334,8 @@ export async function searchFirstResponders(req, res) {
       }
     }
 
-    let filter = { isActive: true };
+    // Only return approved & active responders to citizens in public search
+    let filter = { isActive: true, isApproved: true };
 
     if (specification && specification !== 'all') {
       filter.specification = specification;
@@ -472,3 +480,145 @@ export async function toggleActive(req, res) {
     });
   }
 }
+
+/**
+ * Admin: Get all first responders (pending, approved, rejected, or all)
+ * GET /api/v1/first-responders/admin/all?status=...
+ */
+export async function getAdminResponders(req, res) {
+  try {
+    const { status = 'all', specification } = req.query;
+    let filter = {};
+
+    if (status && status !== 'all') {
+      filter.approvalStatus = status;
+    }
+
+    if (specification && specification !== 'all') {
+      filter.specification = specification;
+    }
+
+    const responders = await FirstResponder.find(filter)
+      .sort({ registeredAt: -1 })
+      .lean();
+
+    const pendingCount = await FirstResponder.countDocuments({ approvalStatus: 'pending' });
+    const approvedCount = await FirstResponder.countDocuments({ approvalStatus: 'approved' });
+    const totalCount = await FirstResponder.countDocuments();
+
+    return res.status(200).json({
+      success: true,
+      count: responders.length,
+      counts: {
+        pending: pendingCount,
+        approved: approvedCount,
+        total: totalCount,
+      },
+      data: responders,
+    });
+  } catch (error) {
+    console.error('Error fetching admin responders:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Server error while fetching admin responders.',
+    });
+  }
+}
+
+/**
+ * Admin: Approve a first responder
+ * PATCH /api/v1/first-responders/:id/approve
+ */
+export async function approveFirstResponder(req, res) {
+  try {
+    const { id } = req.params;
+    const { approvedBy = 'Command Centre Admin' } = req.body;
+
+    const responder = await FirstResponder.findById(id);
+    if (!responder) {
+      return res.status(404).json({ success: false, message: 'Responder not found.' });
+    }
+
+    responder.isApproved = true;
+    responder.approvalStatus = 'approved';
+    responder.approvedAt = new Date();
+    responder.approvedBy = approvedBy;
+    responder.rejectionReason = '';
+
+    await responder.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `First responder "${responder.name}" has been approved! They are now live on the public emergency network.`,
+      data: responder,
+    });
+  } catch (error) {
+    console.error('Error approving responder:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Server error while approving responder.',
+    });
+  }
+}
+
+/**
+ * Admin: Reject a first responder
+ * PATCH /api/v1/first-responders/:id/reject
+ */
+export async function rejectFirstResponder(req, res) {
+  try {
+    const { id } = req.params;
+    const { reason = 'Govt ID verification failed or insufficient credentials.' } = req.body;
+
+    const responder = await FirstResponder.findById(id);
+    if (!responder) {
+      return res.status(404).json({ success: false, message: 'Responder not found.' });
+    }
+
+    responder.isApproved = false;
+    responder.approvalStatus = 'rejected';
+    responder.rejectionReason = reason;
+
+    await responder.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `First responder "${responder.name}" application was rejected.`,
+      data: responder,
+    });
+  } catch (error) {
+    console.error('Error rejecting responder:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Server error while rejecting responder.',
+    });
+  }
+}
+
+/**
+ * Admin: Permanently delete a first responder
+ * DELETE /api/v1/first-responders/:id
+ */
+export async function deleteFirstResponder(req, res) {
+  try {
+    const { id } = req.params;
+    const deleted = await FirstResponder.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Responder record not found or already deleted.' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Responder "${deleted.name}" permanently deleted from system.`,
+      data: { id: deleted._id, name: deleted.name },
+    });
+  } catch (error) {
+    console.error('Error deleting responder:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Server error while deleting responder.',
+    });
+  }
+}
+
