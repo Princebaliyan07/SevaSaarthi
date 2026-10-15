@@ -6,6 +6,9 @@
 **An Integrated Civic Emergency, Healthcare & Disaster Mitigation Platform for India**
 
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-sevasaarthiindia.vercel.app-teal?style=for-the-badge)](https://sevasaarthiindia.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Technical Design](https://img.shields.io/badge/Docs-Technical_Design-blue?style=for-the-badge)](docs/TECHNICAL_DESIGN_DOCUMENT.md)
+[![Tests](https://img.shields.io/badge/Tests-17%20Passed-brightgreen?style=for-the-badge)](TEST_CASES.md)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
@@ -138,25 +141,33 @@ SevaSaarthi/
 ├── client/                      # React + Vite frontend (Vercel)
 │   ├── public/                  # Static assets
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── common/          # Badge, shared UI
-│   │   │   ├── command/         # Command Centre: agency cards, analytics, incident queue
-│   │   │   ├── disaster/        # Disaster and relief module
-│   │   │   ├── mela/            # Kumbh Mela: interactive map, crowd zones
-│   │   │   └── ai/              # AI features
+│   │   ├── components/          # Command centre, disaster radar, mela, AI triage
 │   │   ├── context/             # AuthContext, LanguageContext (Hindi/English)
 │   │   ├── pages/               # Route-level pages
-│   │   └── utils/               # Axios config, helpers
+│   │   └── services/            # Axios API & Socket.IO client integrations
+│   ├── .env.example             # Client environment configuration
 │   └── vite.config.js
 ├── server/                      # Node.js + Express backend (Render)
-│   ├── controllers/             # Business logic (e.g. incident.controller.js)
-│   ├── models/                  # Mongoose schemas
-│   ├── routes/                  # API route definitions
-│   ├── middleware/              # Auth, error handling
-│   ├── jobs/                    # node-cron scheduled tasks
-│   ├── .env.example             # Required environment variables
-│   └── server.js
-├── render.yaml                  # Render deployment config
+│   ├── src/
+│   │   ├── controllers/         # SOS, hospital, disaster, mela, volunteer controllers
+│   │   ├── models/              # Mongoose schemas (2dsphere geospatial)
+│   │   ├── routes/              # Express API route endpoints
+│   │   ├── services/            # NASA, NDMA SACHET, IMD ingestion & AI guardrails
+│   │   └── jobs/                # node-cron scheduled telemetry tasks
+│   ├── scripts/
+│   │   ├── seed.js              # Database seeder (hospitals, medicines, teams)
+│   │   └── test-api.js          # Automated 17-point test runner
+│   ├── .env.example             # Backend environment template
+│   └── src/server.js
+├── data/
+│   └── sample_data.json         # Offline sample dataset for evaluators
+├── docs/
+│   └── TECHNICAL_DESIGN_DOCUMENT.md # Full architecture & design specifications
+├── ARCHITECTURE.md              # Architectural diagrams & system overview
+├── TEST_CASES.md                # 17 Automated & manual test scenarios
+├── LICENSE                      # Open-source MIT License
+├── package.json                 # Unified root npm run scripts
+├── render.yaml                  # Render deployment configuration
 └── README.md
 ```
 
@@ -166,69 +177,93 @@ SevaSaarthi/
 
 ### Prerequisites
 - Node.js ≥ 18, npm ≥ 9
-- MongoDB Atlas cluster (free tier works)
-- Cloudinary account (for file uploads)
+- MongoDB Atlas cluster (free tier or local `mongodb://127.0.0.1:27017/sevasaarthi`)
 
-### Setup
+### Setup & Run
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/SevaSaarthi.git
+git clone https://github.com/Princebaliyan07/SevaSaarthi.git
 cd SevaSaarthi
 
-# 2. Install dependencies
+# 2. Install dependencies (Root, Server & Client)
+npm install
 cd server && npm install
 cd ../client && npm install
+cd ..
 
 # 3. Configure environment variables (see below)
 cp server/.env.example server/.env
+cp client/.env.example client/.env
 
-# 4. Start development servers
+# 4. (Optional) Seed Sample Data into MongoDB
+npm run seed
+
+# 5. Run Automated Test Suite (17 Scenarios)
+npm test
+
+# 6. Start development servers
 # Terminal 1 — Backend
-cd server && npm run dev
+npm run server
 
 # Terminal 2 — Frontend
-cd client && npm run dev
+npm run client
 ```
 
 Frontend: `http://localhost:5173` · Backend: `http://localhost:5000`
 
 ---
 
+## 🧪 Testing & Verification
+
+SevaSaarthi includes an automated end-to-end verification suite running 17 test cases covering 112 SOS dispatch, geospatial hospital queries, Jan Aushadhi generic discovery, AI red-flag clinical guardrails, and authentication.
+
+```bash
+npm test
+```
+
+> 📄 For full assertion details, expected payloads, and manual cURL commands, see [TEST_CASES.md](TEST_CASES.md).
+
+---
+
 ## 🔐 Environment Variables
 
 > [!CAUTION]
-> Never commit `.env` files or real credentials to version control. Add `.env` to `.gitignore`.
+> Never commit `.env` files or real credentials to version control. Keep `.env` in `.gitignore`.
 
-Create `server/.env`:
-
+### 1. Backend (`server/.env`):
 ```env
 # Server
 PORT=5000
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/<your-database-name>
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/sevasaarthi
 
-# Authentication
-JWT_SECRET=<your-strong-random-jwt-secret>
-JWT_EXPIRES_IN=7d
+# Authentication & Security
+ACCESS_TOKEN_SECRET=sevasaarthi_dev_secret_key_2026_super_secure
+ACCESS_TOKEN_EXPIRY=7d
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
 
-# Cloudinary (file uploads)
-CLOUDINARY_CLOUD_NAME=<your-cloud-name>
-CLOUDINARY_API_KEY=<your-api-key>
-CLOUDINARY_API_SECRET=<your-api-secret>
+# Periodic Telemetry Synchronization (minutes)
+SYNC_INTERVAL_MINUTES=5
 
-# Client origin (CORS)
-CLIENT_URL=http://localhost:5173
+# Official External Emergency Feeds (Public Endpoints)
+NASA_EONET_API_URL=https://eonet.gsfc.nasa.gov/api/v3/events
+NDMA_SACHET_URL=https://sachet.ndma.gov.in/cap_feed/rss
+IMD_WEATHER_URL=https://mausam.imd.gov.in/responsive/rss/national_weather.xml
 
-# External feeds (no keys required — public endpoints)
-NASA_EONET_URL=https://eonet.gsfc.nasa.gov/api/v3/events
-NDMA_SACHET_URL=https://sachet.ndma.gov.in/cap_public_website/FetchAllAlertDetails
+# Command Centre Official Administration Credentials (Optional)
+ADMIN_PHONE_1=
+ADMIN_PHONE_2=
+ADMIN_PASSWORD=
+```
 
-# Admin seed (optional — for initial setup only, remove after first run)
-ADMIN_EMAIL=<your-admin-email>
-ADMIN_PASSWORD=<your-strong-admin-password>
+### 2. Frontend (`client/.env`):
+```env
+# Point to backend (relative proxy or deployed Render URL)
+VITE_API_URL=/api/v1
+VITE_SOCKET_URL=http://localhost:5000
 ```
 
 ---

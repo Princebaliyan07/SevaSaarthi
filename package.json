@@ -1,15 +1,16 @@
 {
   "name": "sevasaarthi",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.jsnode ",
+  "description": "An Integrated Civic Emergency, Healthcare & Disaster Mitigation Platform for India",
+  "license": "MIT",
+  "author": "Prince Baliyan",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "express": "^5.2.1"
+    "test": "npm --prefix server test",
+    "test:db": "npm --prefix server run test:db",
+    "seed": "npm --prefix server run seed",
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "dev": "npm --prefix server run dev",
+    "build": "npm --prefix client run build"
   }
 }
