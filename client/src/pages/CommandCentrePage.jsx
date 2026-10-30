@@ -77,6 +77,54 @@ export default function CommandCentrePage() {
 
   const NAV_ITEMS = getNavItems(t);
 
+
+  // Automatically sign out after 3 browser reloads
+// while an admin session is active in this tab.
+const refreshCheckDone = useRef(false);
+
+useEffect(() => {
+  if (!isAdmin || refreshCheckDone.current) return;
+
+  refreshCheckDone.current = true;
+
+  const STORAGE_KEY = 'ss_command_refresh_count';
+
+  try {
+    const navigationType =
+      performance.getEntriesByType('navigation')[0]?.type;
+
+    // Count only actual browser reloads.
+    if (navigationType === 'reload') {
+      const previousCount = Number(
+        sessionStorage.getItem(STORAGE_KEY) || '0'
+      );
+
+      const nextCount =
+        Number.isSafeInteger(previousCount) && previousCount >= 0
+          ? previousCount + 1
+          : 1;
+
+      if (nextCount >= 3) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        logout();
+        return;
+      }
+
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        String(nextCount)
+      );
+    } else {
+      // Starting a new Command Centre visit:
+      // reset the reload counter.
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  } catch (error) {
+    // Fail closed if the refresh counter cannot be maintained.
+    logout();
+  }
+}, [isAdmin, logout]);
+
   // Admin login form state
   const [adminPhone, setAdminPhone] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
